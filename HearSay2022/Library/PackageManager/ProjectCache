@@ -13,10 +13,18 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639239391130000000
-    m_Hash: 1912914639
+      ticks: 639239397280000000
+    m_Hash: 1082540411
 m_EmbeddedPackageManifests:
-  m_ManifestsStatus: {}
+  m_ManifestsStatus:
+    /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json:
+      m_FilePath: /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json
+      m_PathExists: 1
+      m_ContentTrackingEnabled: 1
+      m_ModificationDate:
+        serializedVersion: 2
+        ticks: 638981872430000000
+      m_Hash: 951563328
 m_LocalPackages:
   m_LocalFileStatus: []
 m_ProjectPath: /Users/gyurim/HearSay2022/HearSay2022/Packages
@@ -3834,6 +3842,77 @@ m_ResolvedPackages:
     path: 
   unityLifecycle:
     version: 1.0.0
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  fingerprint: 
+- packageId: com.github.homuler.mediapipe@file:/Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe
+  testable: 1
+  isDirectDependency: 1
+  version: 0.16.3
+  source: 3
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe
+  assetPath: Packages/com.github.homuler.mediapipe
+  name: com.github.homuler.mediapipe
+  displayName: MediaPipe Unity Plugin
+  author:
+    name: homuler
+    email: 
+    url: 
+  category: 
+  type: 
+  description: A Unity Plugin to run MediaPipe CalculatorGraph
+  status: 0
+  errors: []
+  versions:
+    all: []
+    compatible: []
+    recommended: 
+    deprecated: []
+  dependencies:
+  - name: com.unity.ugui
+    version: 1.0.0
+  - name: com.unity.test-framework
+    version: 1.0.0
+  resolvedDependencies:
+  - name: com.unity.ugui
+    version: 1.0.0
+  - name: com.unity.modules.ui
+    version: 1.0.0
+  - name: com.unity.modules.imgui
+    version: 1.0.0
+  - name: com.unity.test-framework
+    version: 1.1.33
+  - name: com.unity.ext.nunit
+    version: 1.0.6
+  - name: com.unity.modules.jsonserialize
+    version: 1.0.0
+  keywords:
+  - mediapipe
+  - MediaPipe
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  isAssetStorePackage: 0
+  datePublishedTicks: 0
+  documentationUrl: https://github.com/homuler/MediaPipeUnityPlugin/wiki
+  hasRepository: 0
+  repository:
+    type: 
+    url: 
+    revision: 
+    path: 
+  unityLifecycle:
+    version: 
     nextVersion: 
     recommendedVersion: 
     isDeprecated: 0

@@ -1,0 +1,1209 @@
+Unity Editor version:    2022.3.62f3 (96770f904ca7)
+Branch:                  2022.3/respin/2022.3.62f2-4af31df585-v2
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 26.2 (Build 25C56)
+Darwin version:          25.2.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        16384 MB
+Using pre-set license
+Pro License: YES
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity
+-adb2
+-batchMode
+-noUpm
+-name
+AssetImportWorker1
+-projectPath
+/Users/gyurim/HearSay2022/HearSay2022
+-logFile
+Logs/AssetImportWorker1.log
+-srvPort
+63330
+Successfully changed project path to: /Users/gyurim/HearSay2022/HearSay2022
+/Users/gyurim/HearSay2022/HearSay2022
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [8472259648]  Target information:
+
+Player connection [8472259648]  * "[IP] 10.249.156.239 [Port] 0 [Flags] 2 [Guid] 3191574062 [EditorId] 3191574062 [Version] 1048832 [Id] OSXEditor(0,Gyurims-MacBook-Pro.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+
+Player connection [8472259648] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8472259648] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[PhysX] Initialized MultithreadedTaskDispatcher with 12 workers.
+Refreshing native plugins compatible for Editor in 21.98 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 2022.3.62f3 (96770f904ca7)
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/gyurim/HearSay2022/HearSay2022/Assets
+GfxDevice: creating device client; threaded=0; jobified=0
+ preferred device: Apple M2 Pro (high power)
+Metal devices available: 1
+0: Apple M2 Pro (high power)
+Using device Apple M2 Pro (high power)
+Initializing Metal device caps: Apple M2 Pro
+Initialize mono
+Mono path[0] = '/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/Managed'
+Mono path[1] = '/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56711
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Register platform support module: /Applications/Unity/Hub/Editor/2022.3.62f3/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Registered in 0.003793 seconds.
+- Loaded All Assemblies, in  0.278 seconds
+Native extension for Android target not found
+Android Extension - Scanning For ADB Devices 89 ms
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.258 seconds
+Domain Reload Profiling: 536ms
+	BeginReloadAssembly (105ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (1ms)
+	RebuildCommonClasses (24ms)
+	RebuildNativeTypeToScriptingClass (7ms)
+	initialDomainReloadingComplete (33ms)
+	LoadAllAssembliesAndSetupDomain (108ms)
+		LoadAssemblies (107ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (103ms)
+			TypeCache.Refresh (102ms)
+				TypeCache.ScanAssembly (90ms)
+			ScanForSourceGeneratedMonoScriptInfo (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (258ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (230ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (141ms)
+			SetLoadedEditorAssemblies (3ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (1ms)
+			ProcessInitializeOnLoadAttributes (60ms)
+			ProcessInitializeOnLoadMethodAttributes (25ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+========================================================================
+Worker process is ready to serve import requests
+Caller must complete domain reload
+Begin MonoManager ReloadAssembly
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.407 seconds
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.466 seconds
+Domain Reload Profiling: 868ms
+	BeginReloadAssembly (82ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (3ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (12ms)
+	RebuildCommonClasses (21ms)
+	RebuildNativeTypeToScriptingClass (8ms)
+	initialDomainReloadingComplete (21ms)
+	LoadAllAssembliesAndSetupDomain (269ms)
+		LoadAssemblies (228ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (89ms)
+			TypeCache.Refresh (78ms)
+				TypeCache.ScanAssembly (62ms)
+			ScanForSourceGeneratedMonoScriptInfo (9ms)
+			ResolveRequiredComponents (2ms)
+	FinalizeReload (467ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (379ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (7ms)
+			SetLoadedEditorAssemblies (2ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (28ms)
+			ProcessInitializeOnLoadAttributes (247ms)
+			ProcessInitializeOnLoadMethodAttributes (94ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (2ms)
+Launching external process: /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/Tools/UnityShaderCompiler
+Launched and connected shader compiler UnityShaderCompiler after 0.06 seconds
+Refreshing native plugins compatible for Editor in 2.26 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 2509 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 22 unused Assets / (47.4 KB). Loaded Objects now: 2985.
+Memory consumption went from 114.9 MB to 114.9 MB.
+Total: 5.688250 ms (FindLiveObjects: 0.099042 ms CreateObjectMapping: 0.041625 ms MarkObjects: 5.470209 ms  DeleteObjects: 0.076875 ms)
+
+AssetImportParameters requested are different than current active one (requested -> active):
+  custom:video-decoder-webm-vp8: 9c59270c3fd7afecdb556c50c9e8de78 -> 
+  custom:SearchIndexIgnoredProperties: e643bd26f0fe6173181afceb89e7c659 -> 
+  custom:container-demuxer-ogg: 62fdf1f143b41e24485cea50d1cbac27 -> 
+  custom:AudioImporter_EditorPlatform: 3918e3fc78b5a79bad01e8451be0beb8 -> 
+  custom:video-decoder-ogg-theora: a1e56fd34408186e4bbccfd4996cb3dc -> 
+  custom:framework-osx-AVFoundation: e770b220cccbd017edd2c1fefb359320 -> 
+  custom:video-encoder-webm-vp8: eb34c28f22e8b96e1ab97ce403110664 -> 
+  custom:audio-decoder-ogg-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+  custom:CustomObjectIndexerAttribute: 9a22284fe3817be447336de3de66b15e -> 
+  custom:container-demuxer-webm: 4f35f7cbe854078d1ac9338744f61a02 -> 
+  custom:audio-encoder-webm-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+  custom:container-muxer-webm: aa71ff27fc2769a1b78a27578f13a17b -> 
+========================================================================
+Received Prepare
+Caller must complete domain reload
+Begin MonoManager ReloadAssembly
+Thread 0x171def000 may have been prematurely finalized
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.422 seconds
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.814 seconds
+Domain Reload Profiling: 1236ms
+	BeginReloadAssembly (139ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (4ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (34ms)
+	RebuildCommonClasses (20ms)
+	RebuildNativeTypeToScriptingClass (7ms)
+	initialDomainReloadingComplete (15ms)
+	LoadAllAssembliesAndSetupDomain (242ms)
+		LoadAssemblies (254ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (68ms)
+			TypeCache.Refresh (54ms)
+				TypeCache.ScanAssembly (31ms)
+			ScanForSourceGeneratedMonoScriptInfo (9ms)
+			ResolveRequiredComponents (3ms)
+	FinalizeReload (814ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (388ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (8ms)
+			SetLoadedEditorAssemblies (3ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (33ms)
+			ProcessInitializeOnLoadAttributes (252ms)
+			ProcessInitializeOnLoadMethodAttributes (92ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (2ms)
+Refreshing native plugins compatible for Editor in 2.59 ms, found 3 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 2965 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 19 unused Assets / (113.7 KB). Loaded Objects now: 3444.
+Memory consumption went from 135.3 MB to 135.2 MB.
+Total: 5.728041 ms (FindLiveObjects: 0.115833 ms CreateObjectMapping: 0.048958 ms MarkObjects: 5.439209 ms  DeleteObjects: 0.123666 ms)
+
+Prepare: number of updated asset objects reloaded= 0
+AssetImportParameters requested are different than current active one (requested -> active):
+  custom:scripting/monoscript/fileName/GlobalInstanceTableTest.cs: dfb047ce18563b4c635f094968f3ec0c -> 
+  custom:scripting/monoscript/fileName/ImageFormat.cs: acb83984b95c0c60ce3fb2b5fa39ea62 -> 
+  custom:scripting/monoscript/fileName/CalculatorProfile.cs: 7cf4dd4c8be206cf77d6ad91bcee8d06 -> 
+  custom:scripting/monoscript/fileName/LandmarksToRenderDataCalculator.cs: 138c28ccf9fa8c5cd13d692b552df5af -> 
+  custom:scripting/monoscript/fileName/FaceDetectorTest.cs: 3e112686d9706b57f35a79718e2a14e9 -> 
+  custom:video-decoder-webm-vp8: 9c59270c3fd7afecdb556c50c9e8de78 -> 
+  custom:scripting/monoscript/fileName/MpResourceHandle.cs: 0f741e388663d8fe0ee0953b266e5eee -> 
+  custom:scripting/monoscript/fileName/EnumExtension.cs: abc44d2daa243a72b61094d93eb1d3dd -> 
+  custom:scripting/monoscript/fileName/WebCamSource.cs: a2444f788243d2c41416c707231000be -> 
+  custom:scripting/monoscript/fileName/GestureClassifierGraphOptions.cs: d340a274bc22040f25db8e47c5560774 -> 
+  custom:scripting/monoscript/fileName/MediaPipeVideoGraph.cs: a03f6f7cd28f6259aab2826d680ca621 -> 
+  custom:scripting/monoscript/fileName/StreamingAssetsResourceManager.cs: 66d8123e3f50959b4a46f2807cc50110 -> 
+  custom:scripting/monoscript/fileName/PacketFrequencyCalculator.cs: 78a7f90e8e96197edf39a836b8930710 -> 
+  custom:scripting/monoscript/fileName/HolisticTrackingSolution.cs: 93ba59ebdffeba701810f5df1eca138d -> 
+  custom:scripting/monoscript/fileName/ListExtension.cs: 63ef4204bf93f890daacda710ce20a58 -> 8db7c5229755f994a784254b492ce3d1
+  custom:scripting/monoscript/fileName/Locus.cs: 1fce52a9f0efd3c36fdea41da344d6fe -> 
+  custom:scripting/monoscript/fileName/BoxDetector.cs: fb8eaa139a9028eeeb3e7e672b47dfb8 -> 
+  custom:scripting/monoscript/fileName/ImageFrame_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/LandmarksToFloatsCalculator.cs: 8956263f3a3beb57e6c1b4b1514b9bdf -> 
+  custom:scripting/monoscript/fileName/Image.cs: 0b3576470421272ca405c6591865972e -> f32195bbbc1ca9edcb6c8c6185597e40
+  custom:scripting/monoscript/fileName/FaceDetectionConfigWindow.cs: d5aafe28fffc33d27b3c4f68c4aa31b8 -> 
+  custom:scripting/monoscript/fileName/GlContextOptions.cs: 33d36c2b848d74a39971fb71bfd431a4 -> 
+  custom:scripting/monoscript/fileName/RotationAngle.cs: fb94d0084f1d5a5017f4a3809cc10586 -> 
+  custom:scripting/monoscript/fileName/TaskInfo.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/ImageSegmentationConfigWindow.cs: 47573f16b53518aacd6c69532353f36b -> 
+  custom:scripting/monoscript/fileName/AutoFit.cs: 07724db01ca4e7b5966696fd0e59c107 -> 
+  custom:scripting/monoscript/fileName/DetectionResultAnnotationController.cs: 34bd45aa6a1899ed6b11ad7fdbe6346d -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerResultAnnotationController.cs: a0677a4107475f1f641948e19e1a80d4 -> 
+  custom:scripting/monoscript/fileName/Category.cs: 77fc1bdc50411dee96721b8c88dd2c00 -> 
+  custom:SearchIndexIgnoredProperties: e643bd26f0fe6173181afceb89e7c659 -> 
+  custom:scripting/precompiled-assembly-types:Google.Protobuf: f983e969626c57ace80cabf1ae942dda -> 
+  custom:scripting/monoscript/fileName/Matrix_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraphConfigExtension.cs: 7bf6e6ccd8b64c349c5db0fe808a670b -> 
+  custom:scripting/monoscript/fileName/BaseAudioTaskApi.cs: d49a05b291616ece466e3a9d5fa6539b -> 
+  custom:scripting/monoscript/fileName/Packet_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/OutputStreamPoller.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/AssociationCalculator.cs: e2ce61e3b171636f15a77671824b06d3 -> 
+  custom:scripting/monoscript/fileName/PacketResamplerCalculator.cs: 41e656c5a1b1fd37e3ec0afabab618d4 -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfig.cs: 592e8ac03531d51681d9f174b3c3036e -> 
+  custom:scripting/monoscript/fileName/FaceDetection.cs: c6c3dc836da4b5f5ec3ae8948ae373e1 -> 
+  custom:scripting/monoscript/fileName/Logger.cs: c86c7920bb1899306b80ec1feda9f1f2 -> 
+  custom:scripting/monoscript/fileName/TaskRunner_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectorOptions.cs: 46ec0c36bf046907ae1a0ed4be222f01 -> 
+  custom:scripting/monoscript/fileName/LineAnnotation.cs: aebf2cc272f6fb26c939df2d3ef28f77 -> 
+  custom:scripting/monoscript/fileName/CopyCalculator.cs: 47a202c51a4e4a1cc3b9fe74b60c626b -> 
+  custom:container-demuxer-ogg: 62fdf1f143b41e24485cea50d1cbac27 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkListAnnotationController.cs: 8e3bfd7f599b75065cec18d1ccf97833 -> 
+  custom:AudioImporter_EditorPlatform: 3918e3fc78b5a79bad01e8451be0beb8 -> 
+  custom:scripting/monoscript/fileName/FrameSelectionSolutionEvaluator.cs: 2bd8ecf02d068811a1d308a4857582c1 -> 
+  custom:scripting/monoscript/fileName/SerializedProtoVector.cs: 04522ee2c384a68f77c34abd00b6c4e6 -> 
+  custom:scripting/monoscript/fileName/ImageSourceConfig.cs: 81334efdaeaab83359b3ecb23d5942d2 -> 
+  custom:scripting/monoscript/fileName/VisibilityCopyCalculator.cs: 5ce10f932455b99a7ee63332a6b3072a -> 
+  custom:scripting/monoscript/fileName/PushPullFiltering.cs: 24f84e1d395ccd057496fa05f8f46b8c -> 
+  custom:scripting/monoscript/fileName/GlTextureInfo.cs: 583433f9da1b0750a53cd5f005ca1996 -> 
+  custom:scripting/monoscript/fileName/GlTextureBuffer.cs: 5abecea13f2c6539bd7807323d862ef4 -> 
+  custom:scripting/monoscript/fileName/Timestamp.cs: 9f52680571df6808cd2d90698f5ca078 -> 
+  custom:scripting/monoscript/fileName/AssetLoader.cs: 76e4a33bf4b0714d88b144e07356443e -> 
+  custom:scripting/monoscript/fileName/HandLandmarksDetectorGraphOptions.cs: c816ce7bc89d799bb20cfbf903713e28 -> 
+  custom:scripting/monoscript/fileName/AssetBundleResourceManager.cs: cd4c6d24fa636295651ee02cdfcb157f -> 
+  custom:scripting/monoscript/fileName/TensorsToSegmentationCalculator.cs: c22b9af1f322c99cc1790843fe2e0e11 -> 
+  custom:scripting/monoscript/fileName/StaticImageSource.cs: 7d1d9cf3f953d9ad99064a1a08cb3f97 -> 
+  custom:scripting/precompiled-assembly-types:Mediapipe.Tests.EditMode: eeb37c0e8352961e06c7915a422d619d -> 
+  custom:scripting/monoscript/fileName/FaceGeometry.cs: 74eb98dd66fe8e9d6eac79cb82f23d9f -> 
+  custom:scripting/monoscript/fileName/LandmarkProjectionCalculator.cs: 36dfa8c6d43f741b49891ed442e97001 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerOptions.cs: afb5694fd2def628790389a687c470e2 -> 
+  custom:scripting/monoscript/fileName/IrisLandmarkListAnnotation.cs: 380f44f3b62e1e3f3476d2e18fd272e9 -> 
+  custom:scripting/monoscript/fileName/RunningMode.cs: 0f6d722a2f2518beef2e7979ac20ecea -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterOptions.cs: 15aec5443635a4c484d25fca5a490871 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkListAnnotationController.cs: 0ecad5ea63f10c4b9b518c6961333c02 -> 
+  custom:scripting/monoscript/fileName/TrackedDetectionManagerConfig.cs: 0d4b4b658f9f8faff87d11e478df5a76 -> 
+  custom:scripting/monoscript/fileName/GlTextureBuffer_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/MotionSaliency.cs: 65e262907125c99ac436b6c9b9980f24 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkListWithIrisAnnotation.cs: badaa05c64956d01149297605bc1a7ec -> 
+  custom:scripting/monoscript/fileName/GpuResources_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/VisionTaskApiRunner.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/NativeClassificationResult.cs: 8dbb25f3b59c2939c6d0cd5c96c14683 -> 
+  custom:scripting/monoscript/fileName/InferenceCalculator.cs: 4487c09ec2a1113442c8c87f836b7585 -> 
+  custom:scripting/monoscript/fileName/GlTexture.cs: b4911303c835548b34bc4853821bc6b1 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerGraphOptions.cs: 9804e631cb7a632e5a72ffeb4e07f4e4 -> 
+  custom:scripting/monoscript/fileName/ClipVectorSizeCalculator.cs: 22031949202a77e95698836ef0548b00 -> 
+  custom:scripting/monoscript/fileName/OutputStreamPoller_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/MotionEstimation.cs: cfc3b6b03d2fba248e4148a67a6a0353 -> 
+  custom:scripting/monoscript/fileName/TimeSeriesFramerCalculator.cs: b82854df9ec8968709c20a2e56fa279c -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterResult.cs: eb0c12b25e657a5404b0be4e092bfb10 -> 
+  custom:scripting/monoscript/fileName/TfliteInferenceCalculator.cs: 6abc23d5d2daf4edd428f1ce35c28854 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerResult.cs: e75fc769dad07ae17bb8a754d7d2539e -> 
+  custom:scripting/monoscript/fileName/FaceGeometryGraphOptions.cs: e0856b1c45cc903894846aa6cc0dcb13 -> 
+  custom:scripting/monoscript/fileName/AudioClassifierTest.cs: db28bb90be52df4ef535f0872603979b -> 
+  custom:scripting/monoscript/fileName/LabelMap.cs: 25b4e671ca1f391dbbccddacd65a7b1f -> 
+  custom:scripting/monoscript/fileName/OpencvVideoEncoderCalculator.cs: ab26acc930159b2d7627b7052e6d86ad -> 
+  custom:scripting/monoscript/fileName/HandRoiRefinementGraphOptions.cs: bac66f4ef09e203dd185d4708cfded36 -> 
+  custom:scripting/monoscript/fileName/TensorsToLandmarksCalculator.cs: 15ec0ac755d39774e6a3f3c3e45568be -> 
+  custom:scripting/monoscript/fileName/HolisticTrackingConfig.cs: 486898e47b4dc625ee6996dbc26d2f69 -> 
+  custom:scripting/monoscript/fileName/TensorConverterCalculator.cs: 301eede1a90d99b9331774c530808575 -> 
+  custom:scripting/monoscript/fileName/GpuBufferFormat_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/DetectionListAnnotation.cs: 2a68fc415840841d9d45783f5f4b7eff -> 
+  custom:scripting/monoscript/fileName/Classification.cs: 6ec80685ad85a32f18a5d8c68e49c92d -> 
+  custom:scripting/monoscript/fileName/Calculator.cs: 3848cdadb3bad374a23dca79496bcf43 -> 
+  custom:scripting/monoscript/fileName/Classifications.cs: dcaf594274f1fb865fe99b44df2fb1f9 -> 
+  custom:scripting/monoscript/fileName/Gl.cs: 2debf3d2c0e49a024f9d7ef846c7b10c -> 
+  custom:scripting/monoscript/fileName/ModalContents.cs: 7db1a2f427ef067e6bda86d1986b3ecf -> 
+  custom:scripting/monoscript/fileName/AffineTransformData.cs: 71c5c767373e44b16803285df97391df -> 
+  custom:scripting/monoscript/fileName/TextureFrame.cs: 634e07b16856de6dde6d625e7de261f7 -> 
+  custom:scripting/monoscript/fileName/SetAlphaCalculator.cs: 0c9dd398379a9520cfbbff745026abad -> 
+  custom:scripting/monoscript/fileName/MotionAnalysis.cs: c8025ae474a5f8cf0da206fe826e016f -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelperTest.cs: afbe1e37e0cec8e135516806c718cf23 -> 
+  custom:scripting/monoscript/fileName/GpuResources.cs: 894e28d39bc3f8b4337844ab607ef04a -> 
+  custom:scripting/monoscript/fileName/GpuOrigin.cs: 5c6f65f1d10965eb0872ffea45b4194e -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkListAnnotation.cs: 5f1f8353f893ba0f00c89cb50ce94676 -> 
+  custom:scripting/monoscript/fileName/DetectionResult.cs: 6e105465576ea275797c14fe2baa7a63 -> 
+  custom:scripting/monoscript/fileName/AudioClassifierGraphOptions.cs: 6ad66e7b2e64b2fe2c6ddac5c8e13802 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkDetectionConfigWindow.cs: 7eac627c0a9a27ad93e1a157e07cca28 -> 
+  custom:scripting/monoscript/fileName/MaskOverlayAnnotation.cs: dd0b048dce9efcdbb10971dbf715a228 -> 
+  custom:scripting/monoscript/fileName/MultiHandLandmarkListAnnotationController.cs: 538e794588de85c70d90f58531492851 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerOptions.cs: b095d61358bc944d71942ba918262ed4 -> 
+  custom:scripting/monoscript/fileName/GlContextTest.cs: 7f70ad4b60ed18a6e94a67678251c5ad -> 
+  custom:scripting/monoscript/fileName/AudioClassifierOptions.cs: 7788182ec07dcde7e189a92397625b23 -> 
+  custom:scripting/monoscript/fileName/CameraMotion.cs: c332abb1df3fb2981c819abc625b50d7 -> 
+  custom:scripting/monoscript/fileName/MaskAnnotation.cs: c3375f690acc054e44f1fa4484b8c130 -> 
+  custom:scripting/monoscript/fileName/FlowPackager.cs: 1fd72cd10a24ddfd3847534c5f83f7c9 -> 
+  custom:scripting/monoscript/fileName/ResourceManager.cs: f279dda34254df85a98d4f61b2bbc673 -> 
+  custom:scripting/monoscript/fileName/NativeLandmark.cs: b4749db57c05583cfdc4a9d80ac3daf7 -> 
+  custom:video-decoder-ogg-theora: a1e56fd34408186e4bbccfd4996cb3dc -> 
+  custom:scripting/monoscript/fileName/GpuBuffer.cs: 9561fbcfb533b624a0a16c1e4e70b974 -> 
+  custom:scripting/monoscript/fileName/GlTextureTest.cs: d31aac3517f879043885f5c127d7834d -> 
+  custom:scripting/monoscript/fileName/NameUtil.cs: ee923bb457fc97e9180ccff54a935ae7 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraph_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/Packet_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ImageFrame_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/ImageCoordinateTest.cs: 83371481180109ab90ced84548617e68 -> 
+  custom:scripting/monoscript/fileName/PacketFrequency.cs: 8711777c09abbe6634062989f2e6915c -> 
+  custom:scripting/monoscript/fileName/SequenceShiftCalculator.cs: f9bb9be85929fb1664b78d225bf24ee6 -> 
+  custom:scripting/monoscript/fileName/OpencvEncodedImageToImageFrameCalculator.cs: 4bf12751dbd5bfd368ca477bdb1eb5ac -> 
+  custom:scripting/monoscript/fileName/Containers_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerResultAnnotationController.cs: 72a34058776878a77f63cd9670d99ca2 -> 
+  custom:scripting/monoscript/fileName/PacketGetterExtension.cs: 9723b705694e0cc1f055f2cb7eea3452 -> 
+  custom:scripting/monoscript/fileName/BadStatusException.cs: a5cd8ff1b19ccdc73addfe0f3d95aca1 -> 
+  custom:scripting/monoscript/fileName/CalculatorOptions.cs: 3f178bb62a06cda885843adee4d7a742 -> 
+  custom:scripting/monoscript/fileName/VisibilitySmoothingCalculator.cs: fe95737401fb87c99f203c0c5f09201d -> 
+  custom:scripting/monoscript/fileName/NativeRect.cs: 03cdd035ee779df3878b0af1619f6c76 -> 
+  custom:scripting/monoscript/fileName/ProtoMessageClearExtension.cs: 1ad0aa701399555b7727f538cbe0fd0a -> 
+  custom:scripting/monoscript/fileName/SplitVectorCalculator.cs: 6b2675b807f1dd39ccef9e74715b5db4 -> 
+  custom:scripting/monoscript/fileName/ObjectDetector.cs: 4d4ddfaa181b221b775a276050e3a16f -> 
+  custom:scripting/monoscript/fileName/ImageTransformationOptionsTest.cs: f7940228a8d892f235e57bac19a78487 -> 
+  custom:scripting/monoscript/fileName/MaskAnnotationController.cs: 3d6698db554ae7d717dd194950c2f7f6 -> 
+  custom:scripting/monoscript/fileName/NativeCategory.cs: 1c399edeb88fe6e155e03c75674a819c -> 
+  custom:scripting/monoscript/fileName/ListAnnotation.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/MediaPipePluginException.cs: 51ef5b954730c4852f496417cdce43cd -> 
+  custom:scripting/monoscript/fileName/ImageSource.cs: c79040da6e9ad7684e3f00a63acef1c9 -> 
+  custom:scripting/monoscript/fileName/HierarchicalAnnotation.cs: a1e54d425e8c2da966e95b26cf1a9ea2 -> 
+  custom:scripting/monoscript/fileName/TfliteConverterCalculator.cs: b29e0118e293680a1029ba87a5fa5ba2 -> 
+  custom:scripting/monoscript/fileName/PacketMapTest.cs: 2b971c877525627fecb56dd2ae4ef485 -> 
+  custom:scripting/monoscript/fileName/TimedBoxListIdToLabelCalculator.cs: 8524dceaf5f1f989df081a3cd40ccc2f -> 
+  custom:scripting/monoscript/fileName/RationalFactorResampleCalculator.cs: b58720022753118e471eb7b46b368d16 -> 
+  custom:scripting/monoscript/fileName/HelloWorld.cs: 788892dceeecf5464e8acd87dbb7ad8c -> 
+  custom:scripting/monoscript/fileName/FaceDetectorOptions.cs: fd573cca1c09fa2c9e936e6e014b1c8b -> 
+  custom:scripting/monoscript/fileName/RectToRenderScaleCalculator.cs: eccc4a19d1cbd5ae78779e6e439d324f -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarker.cs: ee734fc66d25ecb37a04ef244a4d5d52 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerGraphOptions.cs: e4852327d41ac3d8ca4f21fe66a40cd9 -> 
+  custom:scripting/monoscript/fileName/GlContext.cs: 555e6911309bc2673ae52192efe23e24 -> 
+  custom:scripting/monoscript/fileName/NormalizedRectListAnnotationController.cs: 8f9e885fc12017ad497f632032fec8a9 -> 
+  custom:scripting/monoscript/fileName/AnnotationOverlayCalculator.cs: 9d2e959f809a50f34a6535ddb637538a -> 
+  custom:scripting/monoscript/fileName/FaceDetectorGraphOptions.cs: 7fe325ea5a889bcc369125da821df05f -> 
+  custom:scripting/monoscript/fileName/TaskOptions.cs: d80eddd07e16eb0460038fb5a8b00fde -> 
+  custom:scripting/monoscript/fileName/MaskOverlayCalculator.cs: 6c8464e7621587641571f64b81136e7e -> 
+  custom:scripting/monoscript/fileName/GlTexture_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerResult.cs: 8d1a117e5b63e0b020b2351ef4bf2289 -> 
+  custom:scripting/monoscript/fileName/ToneEstimation.cs: e732dc0dba0db29e975d9aab135e17e5 -> 
+  custom:scripting/monoscript/fileName/SafeNativeMethods.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/PoseDetectorGraphOptions.cs: c498f6d0697a5869263a9f0a335cc227 -> 
+  custom:scripting/monoscript/fileName/PacketFactory.cs: d4bcbe65fe1046bd5c5c4dda39842e1d -> 
+  custom:scripting/monoscript/fileName/GlSurfaceSinkCalculator.cs: 3a5d02af52b4a0b6adb4d0d8223b50c4 -> 
+  custom:framework-osx-AVFoundation: e770b220cccbd017edd2c1fefb359320 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToSegmentationCalculator.cs: f9a89bd347a158ea85be2fd9fc5678fe -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkListWithMaskAnnotation.cs: 61f408b5941b1dbbf42cb1cd38de992e -> 
+  custom:scripting/monoscript/fileName/RegionFlowComputation.cs: cf6e9989047ade4a93241e87b29938dc -> 
+  custom:scripting/monoscript/fileName/PacketsCallbackTable.cs: 359aa3928aa455003abe49887f9386ed -> 
+  custom:scripting/monoscript/fileName/TensorsToDetectionsCalculator.cs: 8610be1706588d4ad71a83057df6ed42 -> 
+  custom:scripting/monoscript/fileName/NonMaxSuppressionCalculator.cs: 759044a6f0b7db8a1e854b01920b1ff1 -> 
+  custom:scripting/monoscript/fileName/BilateralFilterCalculator.cs: 781561782fd1d419a9eb459f22fe8437 -> 
+  custom:scripting/monoscript/fileName/RegionFlow.cs: 182bfbb5e2b264f17f763e65130378aa -> 
+  custom:scripting/monoscript/fileName/Util.cs: 2add2de9b768760e8607c4646c1197c4 -> 
+  custom:scripting/monoscript/fileName/PacketLatencyCalculator.cs: 40d9dac28e96333c13a9985b94e61e91 -> 
+  custom:scripting/monoscript/fileName/TopKScoresCalculator.cs: b408a0f9f27066123ede9b94e17256f9 -> 
+  custom:scripting/monoscript/fileName/RealWorldCoordinate.cs: ff9020086e5421cd6c03108264278f14 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerOptions.cs: d4ec12a781553c8a5dbb770b4834653a -> 
+  custom:scripting/monoscript/fileName/RectangleAnnotation.cs: 268be92edf0cd46a55152516552940cc -> 
+  custom:scripting/monoscript/fileName/GateCalculator.cs: 81fb92f7b3b7e308223020be3829ca50 -> 
+  custom:scripting/monoscript/fileName/ImageSegmentationConfig.cs: 5e45c7734ce23a90a20cf6ecad0b0e27 -> 
+  custom:scripting/monoscript/fileName/LabelsToRenderDataCalculator.cs: ff4791b47880ba9ec5c05fb858855e1f -> 
+  custom:scripting/monoscript/fileName/NormalizedRectAnnotationController.cs: 5e50929bab2bda484f956025c10cca15 -> 
+  custom:scripting/monoscript/fileName/Packet.cs: 5e0b3101ea46a2274c60f82d30e8f1f2 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkListAnnotation.cs: e24192fe64f5edb08966d5cccee146a0 -> 
+  custom:scripting/monoscript/fileName/GlScalerCalculator.cs: 284a868bf2c74f6fb9ceda1d22850584 -> 
+  custom:scripting/monoscript/fileName/ImageFileProperties.cs: 811b0ed333a78b551b45cd9150b4a064 -> 
+  custom:scripting/monoscript/fileName/MediapipeOptions.cs: 910f00fcf9b0ae455adad19b6350ef3f -> 
+  custom:scripting/monoscript/fileName/ClassifierOptions.cs: 1b4d9af9ce993b9732c02bfd1edb9374 -> 
+  custom:scripting/monoscript/fileName/UniquePtrHandle.cs: 08fa1649fcccce72c8494d85a231059d -> 
+  custom:scripting/monoscript/fileName/SignalAbortAttribute.cs: 9787cf9710456192a9ad18eecfea2d73 -> 
+  custom:scripting/monoscript/fileName/UnicodeInlineText.cs: ad902f8d3538e9444001793dbac02173 -> 
+  custom:scripting/monoscript/fileName/QuantizeFloatVectorCalculator.cs: 356ab621d501760179de36a13d5f9db6 -> 
+  custom:scripting/monoscript/fileName/ImageProcessingOptions.cs: ca0a0ad4beb319f8086e0f300a137295 -> 
+  custom:scripting/monoscript/fileName/Anchor.cs: 189ace53090ac24d7612dfbc932cc3c2 -> 
+  custom:scripting/monoscript/fileName/NativeDetectionResult.cs: e596baba627e8fa00614d016f1f5999a -> 
+  custom:scripting/monoscript/fileName/PointListAnnotation.cs: e9b59af5493fb10286ee4b307eb5b1d2 -> 
+  custom:scripting/monoscript/fileName/ConnectionAnnotation.cs: 6b2099a21ce67f990246f7bc57e4a0a9 -> 
+  custom:scripting/monoscript/fileName/GeometryPipelineCalculator.cs: cb7088226122a7565ecadb81d1aa7223 -> 
+  custom:scripting/monoscript/fileName/HolisticTrackingGraph.cs: 5cf378675ba41e574717e66a42abd4f8 -> 
+  custom:scripting/monoscript/fileName/ImageSourceProvider.cs: 090ede97fcb952145419e5bb5f7c78e4 -> 
+  custom:scripting/monoscript/fileName/GestureEmbedderGraphOptions.cs: 9ff52e426f4cad9b954308bdbba78528 -> 
+  custom:scripting/monoscript/fileName/DetectionsToRenderDataCalculator.cs: 7d0e47951ddd93f86e0eab03fe8f27ad -> 
+  custom:scripting/monoscript/fileName/CalculatorGraph_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerGraphOptions.cs: 236027828864d4a1fc01807d428e40c0 -> 
+  custom:scripting/monoscript/fileName/BaseOptionsTest.cs: 9aeb9397a1b3976d9117a2a58fff6bbf -> 
+  custom:scripting/monoscript/fileName/Calculator_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/precompiled-assembly-types:System.Runtime.CompilerServices.Unsafe: 4f83dd30d4d7964b63b36d2fe1e95684 -> 
+  custom:scripting/monoscript/fileName/StabilizedLogCalculator.cs: f1a10f82089cc3673846d69ee7ac696c -> 
+  custom:video-encoder-webm-vp8: eb34c28f22e8b96e1ab97ce403110664 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerRunner.cs: 05ca60add5b4caf1fb48b29ca2a0a644 -> 
+  custom:scripting/monoscript/fileName/LandmarksToTensorCalculator.cs: d72cb3b286f348eca4227bbc2ee6ec9d -> 
+  custom:scripting/monoscript/fileName/ImageCoordinate.cs: 23b715fc0f4cfac06c4142443830a8f9 -> 
+  custom:scripting/monoscript/fileName/TimestampTest.cs: 79342e051ca8619d1190b2f991fe8760 -> 
+  custom:scripting/monoscript/fileName/ThresholdingCalculator.cs: 527f5da586750f3f4120e479009b49dc -> 
+  custom:scripting/monoscript/fileName/ImageSegmenter.cs: dce0c5e13309a0d8828320498ba43d92 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkDetectionConfig.cs: bb80dab64aa3dff2747dc0c292e6d157 -> 
+  custom:scripting/monoscript/fileName/ToneModels.cs: cf58445c0d1c4f5a0c2a81f00d62d53c -> 
+  custom:scripting/monoscript/fileName/TensorsToFloatsCalculator.cs: 84cac79c778926627af5a69befdfedb6 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarksDetectorGraphOptions.cs: c7d1dde5fbdee5d40de9ce0df982883e -> 
+  custom:scripting/monoscript/fileName/Color.cs: 0ce6bcf780562c3563385a2daa6444c5 -> 052bd00c2f811370ae18ff5c84d60ae7
+  custom:scripting/monoscript/fileName/SpectrogramCalculator.cs: 1851cd78a5e98d612ee050e11a744a36 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkDetectionConfig.cs: 3d619cd675b474169f94863e6211e9f0 -> 
+  custom:scripting/monoscript/fileName/BoxTracker.cs: c520a1d24af7fdd9b4f547e681f03242 -> 
+  custom:scripting/monoscript/fileName/ThreadPoolExecutor.cs: 1a8e97131439f47f8bcdb4a183b0072d -> 
+  custom:scripting/monoscript/fileName/Timestamp_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/RotationMode.cs: 7c31b6b2e5525161b991df74492ee84b -> 
+  custom:scripting/monoscript/fileName/Status.cs: 172ea1a4fb7fd8e40ae4fc6affc8bdb1 -> 
+  custom:scripting/monoscript/fileName/DetectionListAnnotationController.cs: 3faddb21b6fa12dc7f8317629a4e73a9 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerGraphOptions.cs: e29927e68177758cd71403f206274922 -> 
+  custom:scripting/monoscript/fileName/Latency.cs: d3dc288aa690208e53edc23d20290158 -> 
+  custom:scripting/monoscript/fileName/BaseVisionTaskApi.cs: 4dab2c4636cfbbe422d57b3e74f69439 -> 
+  custom:audio-decoder-ogg-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+  custom:scripting/monoscript/fileName/Modal.cs: 95eb74ad7efb255592df12ca4191314a -> 
+  custom:scripting/monoscript/fileName/Acceleration.cs: 6ac205a1c1c2dfb622c98d608d67a571 -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfigTest.cs: 7e40ddceb77856817397e533f7e5d3a2 -> 
+  custom:scripting/monoscript/fileName/ConnectionListAnnotation.cs: 58ddc9904ec36ecf434dd236c36c0c85 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectionConfig.cs: 012f1ffd0433e6716f4c9514945731ae -> 
+  custom:scripting/monoscript/fileName/StreamHandler.cs: e7315159a4abd62417dfe6949cf507f2 -> 
+  custom:scripting/monoscript/fileName/ModalButton.cs: e46880e4a6866dd3d28739eaf798c65a -> 
+  custom:scripting/monoscript/fileName/OpencvImageEncoderCalculator.cs: 6a921316c479298eae231830d5196117 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerResult.cs: 6b474ffdec5cffce6510e5281d7491ef -> 
+  custom:scripting/monoscript/fileName/ConcatenateVectorCalculator.cs: 3094ce536ec3a1b85715af086c0e1eac -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerResult.cs: 59adaf7485f6b72ade863bb429ee104c -> 
+  custom:scripting/monoscript/fileName/SerializedProto.cs: 4af8ee9771d5472db40a2709668d5ac6 -> 
+  custom:scripting/monoscript/fileName/Stdlib_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/MotionModels.cs: d9fdd9742271e8b50ec97c7ab46b83ed -> 
+  custom:scripting/monoscript/fileName/ImageFormatExtension.cs: 93a824a6b304cf837ccdc7ebc6ebc5b1 -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelper_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/BoxDetectorCalculator.cs: c3297f2de6bf668ba5efa0fb869eaf1f -> 
+  custom:scripting/monoscript/fileName/PacketValidatorExtension.cs: 9471f86444c00de6cbabc286a1b6bc7f -> 
+  custom:scripting/monoscript/fileName/MatrixData.cs: 9a70627d5d873f80e5173cb5b70cbe02 -> 
+  custom:scripting/monoscript/fileName/RecolorCalculator.cs: 2e89534549cd354f3a03f0ccf38236be -> 
+  custom:scripting/monoscript/fileName/DetectionAnnotationController.cs: 7469eeeaa8b330dc9503336502fac4ac -> 
+  custom:scripting/monoscript/fileName/GpuResourcesTest.cs: e4eafae2981a397154b4cb88e1242ca4 -> 
+  custom:scripting/monoscript/fileName/NativeArrayExtension.cs: 2e20f62576612e45815ab0aa5c3dd492 -> 
+  custom:scripting/monoscript/fileName/PacketGenerator.cs: 8f25a1eb35803d6fc9a271cb086533a8 -> 
+  custom:scripting/monoscript/fileName/GlobalInstanceTable.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/RoiTrackingCalculator.cs: 4a78d23c66415380aa4837a37cc71c95 -> 
+  custom:scripting/monoscript/fileName/AsyncGlContext.cs: 3b08661f376cc2ec7ced5b4aa7e34212 -> 
+  custom:scripting/monoscript/fileName/Gl_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerTest.cs: b8ff9e2af88dd1f9af4e6187b5f32ee1 -> 
+  custom:scripting/monoscript/fileName/Gl_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/LogicCalculator.cs: 773c3021f9fd4ea2894f51c59636512f -> 
+  custom:scripting/monoscript/fileName/GlSyncPoint.cs: edc937f0ca37dedae0557b34643d5398 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraphTest.cs: d118c8478363f85025263badf428c379 -> 
+  custom:scripting/monoscript/fileName/HandDetectorGraphOptions.cs: 756b0fd15ef599580f74c82153454c28 -> 
+  custom:CustomObjectIndexerAttribute: 9a22284fe3817be447336de3de66b15e -> 
+  custom:scripting/monoscript/fileName/GpuBuffer_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/LegacySolutionRunner.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/PoseWorldLandmarkListAnnotationController.cs: cc1805e6306429b7408e5783cb9ff53b -> 
+  custom:scripting/monoscript/fileName/NativeKeypoint.cs: eddeb18deb43eca38a925d94ad256620 -> 
+  custom:scripting/monoscript/fileName/GlContext_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/GpuResources_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/MediaPipeVideoConfig.cs: 0879715806b9941e2c551f486caec5b8 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerOptions.cs: 7f880a5053f98960546ba49be069ba56 -> 
+  custom:scripting/monoscript/fileName/AnnotationController.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/SolutionMenu.cs: 74c0a81b726fe82cf53f6a9f3461f245 -> 
+  custom:scripting/monoscript/fileName/StatusHandler.cs: 96887ad130d0189df4d9e34cf8d7eebb -> 
+  custom:scripting/monoscript/fileName/DetectionsToRectsCalculator.cs: 3f05db5105a7bd7a62aa10cb6f11caac -> 
+  custom:scripting/monoscript/fileName/PointAnnotation.cs: 103753d4a6baaf9b2dbf260f181c6774 -> 
+  custom:scripting/monoscript/fileName/ValidateName.cs: 2e72c3c3222dde14bdae13fbf04dd56b -> 
+  custom:scripting/monoscript/fileName/GraphProfileCalculator.cs: 1c45e13e8ce4e794f0121119dbf995d6 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizer.cs: 91e5bad4ed0f2865be3b6651ce8d5b82 -> 
+  custom:scripting/monoscript/fileName/Protobuf.cs: 49719eba99d5389760bdff23022628fa -> 
+  custom:scripting/monoscript/fileName/VideoSource.cs: c6ee69c39d59c5470deea0d299db4ef6 -> 
+  custom:scripting/monoscript/fileName/RefineLandmarksFromHeatmapCalculator.cs: 65ea6edc7e5cc97f1aa6e26313d7619e -> 
+  custom:scripting/monoscript/fileName/SharedPtrHandle.cs: 3f8f63b9d84af0b0259c5e64cbf95eed -> 
+  custom:scripting/monoscript/fileName/GpuOnlyAttribute.cs: 0a8a0c122a5341dc739ef72751ec2040 -> 
+  custom:scripting/monoscript/fileName/RectangleListAnnotation.cs: 6cf471d6f808c0f23c9c0aeab0a548b9 -> 
+  custom:scripting/monoscript/fileName/ValidateNameTest.cs: a9b0961579e0b455dc018415bb73242e -> 
+  custom:scripting/monoscript/fileName/ConstantSidePacketCalculator.cs: e89409f09ef25ec943f90f6af06f1fa1 -> 
+  custom:scripting/monoscript/fileName/TaskRunner.cs: 9defee681c469f9ea956c90d8fb94519 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToDetectionsCalculator.cs: 80af26483ee286c7c190ac99baf60334 -> 
+  custom:scripting/monoscript/fileName/GlTexture_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/RenderData.cs: 45e7e4db7837f4852dfc18b7cd26ce63 -> 
+  custom:scripting/monoscript/fileName/AudioClassifier.cs: 78b483497bb727d3a5904c26d0844b63 -> 
+  custom:scripting/monoscript/fileName/StructArray.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/Glog.cs: 144d5425780dc247cdaa6f77cce24751 -> 
+  custom:scripting/monoscript/fileName/ResourceUtil_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/Arrow.cs: 8ccec98b5bbce60a89a23cbcfe9f670c -> 
+  custom:scripting/monoscript/fileName/NameUtilTest.cs: e89a44dbb2211c8bd34a6e85819a8fc8 -> 
+  custom:scripting/monoscript/fileName/ScaleMode.cs: 0e326f3dff1f04669679ef8997e6697a -> 
+  custom:scripting/monoscript/fileName/ImageFrameExtensionTest.cs: e87e0152c6d9a770cf6ba2a9b4be9618 -> 
+  custom:scripting/monoscript/fileName/OpticalFlowFieldData.cs: 90f2850b8d4aa14e06d210da43478eb9 -> 
+  custom:scripting/monoscript/fileName/FaceDetectionConfig.cs: f9444aaa2aeee87064912dfbc82be6e8 -> 
+  custom:scripting/monoscript/fileName/NormalizedLandmarkListAnnotationController.cs: 4df4fb319309c9f25a4c611161f07128 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerResult.cs: 3bda1242b5872849a6935ce40558e23d -> 
+  custom:scripting/monoscript/fileName/MediaPipeVideoSolution.cs: 889a8d391a677ec308ccac390802fa47 -> 
+  custom:scripting/monoscript/fileName/TrackedDetectionManagerCalculator.cs: 8f32342d8bcab3f9f7bbf62f61eaa44b -> 
+  custom:scripting/monoscript/fileName/ImageCroppingCalculator.cs: c5e40c3b058e14e55135462cc38a0f66 -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterGraphOptions.cs: 83d18cad03ed15177a550b5f0ad77878 -> 
+  custom:scripting/monoscript/fileName/Protobuf_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/FaceMeshLegacy.cs: 72ab7326b3b4dbd6c4f4050af9686e2c -> 
+  custom:scripting/monoscript/fileName/AudioDecoder.cs: 68dcc918222526b8e22b6a914f59077f -> 
+  custom:scripting/monoscript/fileName/Glog_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectorTest.cs: 6d600df38abf6a03e6c386578ee0c181 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToLandmarksCalculator.cs: 583215f4d8027c8bc9ae9c1ac82efd78 -> 
+  custom:container-demuxer-webm: 4f35f7cbe854078d1ac9338744f61a02 -> 
+  custom:scripting/monoscript/fileName/FaceBlendshapesGraphOptions.cs: 8872b935957b7316f8378e8f8314ed8a -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterResultAnnotationController.cs: a763646644efeaed22fb24c61c0739bd -> 
+  custom:scripting/monoscript/fileName/PacketThinnerCalculator.cs: 280ea5d4ec4870ad3d2c4a1faf4e6818 -> 
+  custom:scripting/monoscript/fileName/HandLandmarker.cs: 15aa71bcf1d874e94b72f49073100166 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkListAnnotation.cs: e1b561879fad543e0f9aab82afc16d89 -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterRunner.cs: b607d3cd0300262de3202cad1e17ce33 -> 
+  custom:scripting/monoscript/fileName/DequantizeByteArrayCalculator.cs: 6590f459003707e73125ad67300a1479 -> 
+  custom:scripting/monoscript/fileName/Bootstrap.cs: 0093cbe16410146a79742da642d2c606 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraph.cs: 542e373db313084a6425f4610c7d98a9 -> 
+  custom:scripting/monoscript/fileName/Rasterization.cs: 946989f0d4c30d6d91e6401ccf50686d -> 
+  custom:scripting/monoscript/fileName/Timestamp_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/TaskApiRunner.cs: d59ce6014665ae613e2377346b186bda -> 
+  custom:scripting/monoscript/fileName/DetectionLabelIdToTextCalculator.cs: d168225ce87e1253e3e32935c3a074cc -> 
+  custom:scripting/monoscript/fileName/MultiFaceLandmarkListAnnotation.cs: 02f7560448f755a692c7c7327e6637df -> 
+  custom:scripting/monoscript/fileName/ImageFrame.cs: 744fbcd1849a53c4e950138cc431c594 -> 
+  custom:scripting/monoscript/fileName/LabelAnnotation.cs: 88ca00b8a2a0c1178fe22930a828498f -> 
+  custom:scripting/monoscript/fileName/MultiPoseLandmarkListWithMaskAnnotation.cs: 8c962af78f76fee32165764d9bbc745d -> 
+  custom:scripting/monoscript/fileName/Image_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelper.cs: a28486eaea1a3cfcd90f219d55c182ac -> 
+  custom:scripting/monoscript/fileName/SsdAnchorsCalculator.cs: 0fe60510e1513a2c033d34cfea3ca47b -> 
+  custom:scripting/monoscript/fileName/FaceDetector.cs: 414e657d47a173deb1b4373a0995b991 -> 
+  custom:scripting/monoscript/fileName/TaskRunnerTest.cs: 5dcb9a81fcfc2dbf2413bc5dfb380175 -> 
+  custom:scripting/monoscript/fileName/GpuManager.cs: de840eab5c947ad79f6f760a55402777 -> 
+  custom:scripting/monoscript/fileName/Screen.cs: 2064582746b02f31d8c413c390f8452d -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfig_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/Image_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterTest.cs: ba0d92aad315f837ea8bea5d78e36129 -> 
+  custom:scripting/monoscript/fileName/GpuBufferFormat_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectorRunner.cs: feda46d2c0302f1c0c91f48aba8f0c5d -> 
+  custom:scripting/monoscript/fileName/AppSettings.cs: 7a7c7f22e101365fe86b6234298582cc -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerRunner.cs: 6bd10f23f3827bffd718cd211b8c7517 -> 
+  custom:scripting/monoscript/fileName/MfccMelCalculators.cs: fe10bc6616f85d782e039f5af0481b22 -> 
+  custom:scripting/monoscript/fileName/Detection.cs: 13862cd84efb32a284155eeb468b40a9 -> 
+  custom:scripting/monoscript/fileName/FeatureDetectorCalculator.cs: 8117aca907bce30486b1cddd847c3cf4 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToClassificationCalculator.cs: eaa9296a174cef172cf518ff99ed2bc6 -> 
+  custom:scripting/monoscript/fileName/LandmarksSmoothingCalculator.cs: 0dac19bcd8d77e95af26cc7e0971f1a7 -> 
+  custom:scripting/monoscript/fileName/DisposableObject.cs: 1863b011bf0a725ead7238076695e803 -> 
+  custom:scripting/monoscript/fileName/ImageTest.cs: 80b00ef1a071cfd489705a2498f10cfa -> 
+  custom:audio-encoder-webm-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+  custom:scripting/monoscript/fileName/LocationData.cs: 4874ae00be52fa78dd0e47637fa8f035 -> 
+  custom:scripting/monoscript/fileName/ImageFrameTest.cs: d5b3f07727e74e58344104305c1d39ac -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerTest.cs: 806b2492675aa08961090222ec0c40c7 -> 
+  custom:scripting/monoscript/fileName/ImageToTensorCalculator.cs: 265e45cfa7bdde62705488c4bf528e10 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarker.cs: 5f9cdd68c4f538cb775f8f5ec3d24f22 -> 
+  custom:scripting/monoscript/fileName/FrameSelection.cs: 33662b08d5b31a2b7c5d77fa6d52f627 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkDetectionConfigWindow.cs: 2f11cba45fa85d22cdfe7305264634be -> 
+  custom:scripting/monoscript/fileName/TfliteCustomOpResolverCalculator.cs: 92e36257ca7a02dc3704c947e3094c45 -> 
+  custom:scripting/monoscript/fileName/TimedBoxListToRenderDataCalculator.cs: 8d429d22fe9bc11f1e1832567c17e62a -> 
+  custom:scripting/monoscript/fileName/GraphRunner.cs: 5635509633de6c9ceeb8e559cd3ac991 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarksDetectorGraphOptions.cs: 6563cef32156b7c91289e3c7981e96a1 -> 
+  custom:scripting/monoscript/fileName/GlContext_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/Rect.cs: 99892004b0190437ed835ffd1567e712 -> 
+  custom:scripting/monoscript/fileName/NativeMatrix.cs: 7c7dd2dd84b023325f3789c65ff5a579 -> 
+  custom:scripting/monoscript/fileName/MultiHandLandmarkListAnnotation.cs: a5578a57691800dca87d81af4326cb55 -> 
+  custom:scripting/monoscript/fileName/Matrix.cs: 29459c0a283a0ae039fcfa57890a5b5d -> 
+  custom:scripting/monoscript/fileName/ClassificationResult.cs: a519957553b7bfe709ae92662e297ef3 -> 
+  custom:scripting/monoscript/fileName/PacketExtension.cs: 1e2680e257ad76fa130af5e9ca636a8e -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerOptions.cs: e007641e35ec3b631708483f3a1c11d4 -> 
+  custom:scripting/monoscript/fileName/ImageTransformationOptions.cs: fdcd32137c51fcdc43d6d27222a8df8a -> 
+  custom:scripting/monoscript/fileName/Rect_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerGraphOptions.cs: 5df71d1861979421f00427b531f561f7 -> 
+  custom:scripting/monoscript/fileName/Absl_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkDetectionConfigWindow.cs: 25980581ab7429a97f49dba41c1175fb -> 
+  custom:scripting/monoscript/fileName/ObjectDetectionConfigWindows.cs: b2a7285297cf38947881ba62a92c405e -> 
+  custom:scripting/monoscript/fileName/LocalFileContentsCalculator.cs: 2649d19d9167ba7a12d8441763c2672b -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfig_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerResultAnnotationController.cs: 80f9420ece7f57889fe699c5d5c5026f -> 
+  custom:scripting/monoscript/fileName/Keypoint.cs: a326e8c93133c00f8a3aff0ba75ff724 -> 
+  custom:scripting/monoscript/fileName/MultiPoseLandmarkListAnnotation.cs: 37d4478d166e9274eb44feea4349d965 -> 
+  custom:scripting/monoscript/fileName/WarpAffineCalculator.cs: 68ec1a21c62b071adf02830c1aa73c80 -> 
+  custom:scripting/monoscript/fileName/MediaPipeException.cs: 433a178d79de3252525616a155dad4f5 -> 
+  custom:scripting/monoscript/fileName/TensorsToClassificationCalculator.cs: e00a733cf49437765a865ad148d3baa8 -> 
+  custom:scripting/monoscript/fileName/VideoPreStreamCalculator.cs: f256f35af668fbcd1188f91d173289f7 -> 
+  custom:scripting/monoscript/fileName/PacketClonerCalculator.cs: 1c736a5b6ebe04ee138d2a444baffb96 -> 
+  custom:scripting/monoscript/fileName/GlTextureBuffer_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ImageCloneCalculator.cs: 3abc0e68e36d99ba20897ebf31c09e26 -> 
+  custom:scripting/monoscript/fileName/PacketTest.cs: 2abd009155039b6f6f04697dd7821849 -> 
+  custom:scripting/monoscript/fileName/MpReturnCode.cs: 074dcc0581fa2750fe38754b96b617c4 -> 
+  custom:scripting/monoscript/fileName/GpuBufferFormat.cs: 3358b4fa1d7dad3981029a9213685032 -> 
+  custom:scripting/monoscript/fileName/Connection.cs: 43006af3d469617c2dfb1f58a9f47bd7 -> 
+  custom:scripting/monoscript/fileName/ExternalFile.cs: 9031df99c21cfad636d306d4aec3eee4 -> 
+  custom:scripting/monoscript/fileName/ScaleImageCalculator.cs: 9d7152b3550783881d509720f43ef29c -> 
+  custom:scripting/monoscript/fileName/RectTransformationCalculator.cs: 179d5b26ac30e76b30d964bddfa97301 -> 
+  custom:scripting/precompiled-assembly-types:Assembly-CSharp: 8768456633971f1d024fb30149f1b15d -> 
+  custom:scripting/monoscript/fileName/StdString.cs: 6493e5de79dbb3553ab4b90cb2bbbfe3 -> 
+  custom:scripting/monoscript/fileName/LocalResourceManager.cs: ccb9a00dfe28ccdbd9336504b867ff15 -> 
+  custom:scripting/monoscript/fileName/ResourceUtil.cs: b2d07cca8641a2de00e5219a0a5d3ade -> 
+  custom:scripting/monoscript/fileName/HandLandmarkDetectionConfig.cs: 3e4807f83f9aec3f88c6ddb2bde659c7 -> 
+  custom:scripting/monoscript/fileName/ImageArray.cs: 0e93d177dd22c665790636867be5ed01 -> 
+  custom:scripting/monoscript/fileName/DetectionAnnotation.cs: eee2c4c6045657d9077a00f784a5170f -> 
+  custom:scripting/monoscript/fileName/OutputStream.cs: 849ed7f5b11c9db237ef61b01c5a5104 -> 
+  custom:scripting/monoscript/fileName/SegmentationSmoothingCalculator.cs: d683e28a6348d4874ebb25067855356a -> 
+  custom:scripting/monoscript/fileName/TimeSeriesHeader.cs: 8ff53485a0d1527a07802355b3394631 -> 
+  custom:scripting/monoscript/fileName/Tracking.cs: 14c3e35a08234570a0a7e6a45d909a35 -> 
+  custom:scripting/monoscript/fileName/HandGestureRecognizerGraphOptions.cs: faf0ea39633e73a22f281e862e517554 -> 
+  custom:scripting/monoscript/fileName/Landmark.cs: a61717c434a8aef4b08748f4e6fef9dd -> 
+  custom:scripting/monoscript/fileName/MotionAnalysisCalculator.cs: 551e7a876c4f8963f94aa253e50742da -> 
+  custom:scripting/monoscript/fileName/ImageFrameExtension.cs: 5b18cec28558b2a9cb226c24a643b1e2 -> 
+  custom:scripting/monoscript/fileName/RectToRenderDataCalculator.cs: 223337aadf729e365968942ecafa5a92 -> 
+  custom:scripting/monoscript/fileName/FlowLimiterCalculator.cs: 79748249ee517ed1f034916c7b8c995c -> 
+  custom:scripting/monoscript/fileName/FaceLandmarker.cs: 86bdc4f8ecb5f12b92305848fb13df3d -> 
+  custom:scripting/monoscript/fileName/LandmarksToDetectionCalculator.cs: 0dc72cabccfac89a47e503a0ab7f37ab -> 
+  custom:scripting/monoscript/fileName/SegmenterOptions.cs: c4e899a4e5be2cf3d21669b9192ef2f8 -> 
+  custom:scripting/monoscript/fileName/UnsafeNativeMethods.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/Mesh3D.cs: ef390615c72dd80fa5e22bd53ad8e91c -> 
+  custom:scripting/monoscript/fileName/InternalException.cs: 3a8713fe6905fb8b4bd4c92da3c4026c -> 
+  custom:scripting/monoscript/fileName/WaitForResult.cs: 2ed61bd90ebec189f402344b0206ed8b -> 
+  custom:scripting/monoscript/fileName/FilterDetectionsCalculator.cs: c082fc790a555160f291c9e0b0924696 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerRunner.cs: 32e04630a3c452efb2c23b70c21243ae -> 
+  custom:container-muxer-webm: aa71ff27fc2769a1b78a27578f13a17b -> 
+  custom:scripting/monoscript/fileName/MultiFaceLandmarkListAnnotationController.cs: e8c8fc410a610ca75a78daa187989007 -> 
+  custom:scripting/monoscript/fileName/ImageTransformationCalculator.cs: 756edb3667ae2e9964cf8d1a7d5cae06 -> 
+  custom:scripting/monoscript/fileName/GpuBuffer_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/CircleAnnotation.cs: 7f172887c060907712699389eed7372a -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkListAnnotationController.cs: 5868019015b49ebc1cd0b6367137f405 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkListAnnotation.cs: 7ae7a22c9668ecfb55c98b5000fddab2 -> 
+  custom:scripting/monoscript/fileName/StatusTest.cs: 9494de054ac36148f4f37299cc11c5cb -> 
+  custom:scripting/monoscript/fileName/FaceDetectorRunner.cs: c3f406dfb60efbded9dd411e627f6865 -> 
+  custom:scripting/monoscript/fileName/TaskExtension.cs: 38429cd3d47996603ab823bc585b761a -> 
+  custom:scripting/monoscript/fileName/Absl_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/FlowToImageCalculator.cs: 17592d9c2e6c9437406959aa1c895869 -> 
+  custom:scripting/monoscript/fileName/FlowPackagerCalculator.cs: ebf98587a6e086511c66bcc7e07250bf -> 
+  custom:scripting/monoscript/fileName/BoxTrackerCalculator.cs: 677aebe2f5912d3094e390edd8a70eab -> 
+  custom:scripting/monoscript/fileName/TextureFramePool.cs: f8a357c2f6192bc34799f513eb008d13 -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelper_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/precompiled-assembly-types:Mediapipe.Runtime: 7899ef96996576a092fe841003991007 -> 
+  custom:scripting/monoscript/fileName/TextureFormatExtension.cs: c71316ee4e5a58c82dd8503ef2f5d9fc -> 
+  custom:scripting/monoscript/fileName/PacketMap.cs: 9f47bef97cd7e17b779b4774304cf4df -> 
+  custom:scripting/monoscript/fileName/BaseOptions.cs: 0717053ea45fb72811cdac9ad6082aba -> 
+========================================================================
+Received Prepare
+Caller must complete domain reload
+Begin MonoManager ReloadAssembly
+Thread 0x172007000 may have been prematurely finalized
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.306 seconds
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.939 seconds
+Domain Reload Profiling: 1245ms
+	BeginReloadAssembly (119ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (4ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (35ms)
+	RebuildCommonClasses (20ms)
+	RebuildNativeTypeToScriptingClass (7ms)
+	initialDomainReloadingComplete (18ms)
+	LoadAllAssembliesAndSetupDomain (140ms)
+		LoadAssemblies (188ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (11ms)
+			TypeCache.Refresh (8ms)
+				TypeCache.ScanAssembly (0ms)
+			ScanForSourceGeneratedMonoScriptInfo (0ms)
+			ResolveRequiredComponents (3ms)
+	FinalizeReload (939ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (385ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (8ms)
+			SetLoadedEditorAssemblies (3ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (33ms)
+			ProcessInitializeOnLoadAttributes (247ms)
+			ProcessInitializeOnLoadMethodAttributes (93ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (2ms)
+Refreshing native plugins compatible for Editor in 2.51 ms, found 3 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 2965 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 19 unused Assets / (113.7 KB). Loaded Objects now: 3447.
+Memory consumption went from 145.3 MB to 145.2 MB.
+Total: 5.893333 ms (FindLiveObjects: 0.117833 ms CreateObjectMapping: 0.044625 ms MarkObjects: 5.630833 ms  DeleteObjects: 0.099833 ms)
+
+Prepare: number of updated asset objects reloaded= 0
+AssetImportParameters requested are different than current active one (requested -> active):
+  custom:scripting/monoscript/fileName/GlobalInstanceTableTest.cs: dfb047ce18563b4c635f094968f3ec0c -> 
+  custom:scripting/monoscript/fileName/ImageFormat.cs: acb83984b95c0c60ce3fb2b5fa39ea62 -> 
+  custom:scripting/monoscript/fileName/CalculatorProfile.cs: 7cf4dd4c8be206cf77d6ad91bcee8d06 -> 
+  custom:scripting/monoscript/fileName/LandmarksToRenderDataCalculator.cs: 138c28ccf9fa8c5cd13d692b552df5af -> 
+  custom:scripting/monoscript/fileName/FaceDetectorTest.cs: 3e112686d9706b57f35a79718e2a14e9 -> 
+  custom:video-decoder-webm-vp8: 9c59270c3fd7afecdb556c50c9e8de78 -> 
+  custom:scripting/monoscript/fileName/MpResourceHandle.cs: 0f741e388663d8fe0ee0953b266e5eee -> 
+  custom:scripting/monoscript/fileName/EnumExtension.cs: abc44d2daa243a72b61094d93eb1d3dd -> 
+  custom:scripting/monoscript/fileName/WebCamSource.cs: a2444f788243d2c41416c707231000be -> 
+  custom:scripting/monoscript/fileName/GestureClassifierGraphOptions.cs: d340a274bc22040f25db8e47c5560774 -> 
+  custom:scripting/monoscript/fileName/MediaPipeVideoGraph.cs: a03f6f7cd28f6259aab2826d680ca621 -> 
+  custom:scripting/monoscript/fileName/StreamingAssetsResourceManager.cs: 66d8123e3f50959b4a46f2807cc50110 -> 
+  custom:scripting/monoscript/fileName/PacketFrequencyCalculator.cs: 78a7f90e8e96197edf39a836b8930710 -> 
+  custom:scripting/monoscript/fileName/HolisticTrackingSolution.cs: 93ba59ebdffeba701810f5df1eca138d -> 
+  custom:scripting/monoscript/fileName/ListExtension.cs: 63ef4204bf93f890daacda710ce20a58 -> 8db7c5229755f994a784254b492ce3d1
+  custom:scripting/monoscript/fileName/Locus.cs: 1fce52a9f0efd3c36fdea41da344d6fe -> 
+  custom:scripting/monoscript/fileName/BoxDetector.cs: fb8eaa139a9028eeeb3e7e672b47dfb8 -> 
+  custom:scripting/monoscript/fileName/ImageFrame_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/LandmarksToFloatsCalculator.cs: 8956263f3a3beb57e6c1b4b1514b9bdf -> 
+  custom:scripting/monoscript/fileName/Image.cs: 0b3576470421272ca405c6591865972e -> f32195bbbc1ca9edcb6c8c6185597e40
+  custom:scripting/monoscript/fileName/FaceDetectionConfigWindow.cs: d5aafe28fffc33d27b3c4f68c4aa31b8 -> 
+  custom:scripting/monoscript/fileName/GlContextOptions.cs: 33d36c2b848d74a39971fb71bfd431a4 -> 
+  custom:scripting/monoscript/fileName/RotationAngle.cs: fb94d0084f1d5a5017f4a3809cc10586 -> 
+  custom:scripting/monoscript/fileName/TaskInfo.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/ImageSegmentationConfigWindow.cs: 47573f16b53518aacd6c69532353f36b -> 
+  custom:scripting/monoscript/fileName/AutoFit.cs: 07724db01ca4e7b5966696fd0e59c107 -> 
+  custom:scripting/monoscript/fileName/DetectionResultAnnotationController.cs: 34bd45aa6a1899ed6b11ad7fdbe6346d -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerResultAnnotationController.cs: a0677a4107475f1f641948e19e1a80d4 -> 
+  custom:scripting/monoscript/fileName/Category.cs: 77fc1bdc50411dee96721b8c88dd2c00 -> 
+  custom:SearchIndexIgnoredProperties: e643bd26f0fe6173181afceb89e7c659 -> 
+  custom:scripting/precompiled-assembly-types:Google.Protobuf: f983e969626c57ace80cabf1ae942dda -> 
+  custom:scripting/monoscript/fileName/Matrix_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraphConfigExtension.cs: 7bf6e6ccd8b64c349c5db0fe808a670b -> 
+  custom:scripting/monoscript/fileName/BaseAudioTaskApi.cs: d49a05b291616ece466e3a9d5fa6539b -> 
+  custom:scripting/monoscript/fileName/Packet_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/OutputStreamPoller.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/AssociationCalculator.cs: e2ce61e3b171636f15a77671824b06d3 -> 
+  custom:scripting/monoscript/fileName/PacketResamplerCalculator.cs: 41e656c5a1b1fd37e3ec0afabab618d4 -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfig.cs: 592e8ac03531d51681d9f174b3c3036e -> 
+  custom:scripting/monoscript/fileName/FaceDetection.cs: c6c3dc836da4b5f5ec3ae8948ae373e1 -> 
+  custom:scripting/monoscript/fileName/Logger.cs: c86c7920bb1899306b80ec1feda9f1f2 -> 
+  custom:scripting/monoscript/fileName/TaskRunner_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectorOptions.cs: 46ec0c36bf046907ae1a0ed4be222f01 -> 
+  custom:scripting/monoscript/fileName/LineAnnotation.cs: aebf2cc272f6fb26c939df2d3ef28f77 -> 
+  custom:scripting/monoscript/fileName/CopyCalculator.cs: 47a202c51a4e4a1cc3b9fe74b60c626b -> 
+  custom:container-demuxer-ogg: 62fdf1f143b41e24485cea50d1cbac27 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkListAnnotationController.cs: 8e3bfd7f599b75065cec18d1ccf97833 -> 
+  custom:AudioImporter_EditorPlatform: 3918e3fc78b5a79bad01e8451be0beb8 -> 
+  custom:scripting/monoscript/fileName/FrameSelectionSolutionEvaluator.cs: 2bd8ecf02d068811a1d308a4857582c1 -> 
+  custom:scripting/monoscript/fileName/SerializedProtoVector.cs: 04522ee2c384a68f77c34abd00b6c4e6 -> 
+  custom:scripting/monoscript/fileName/ImageSourceConfig.cs: 81334efdaeaab83359b3ecb23d5942d2 -> 
+  custom:scripting/monoscript/fileName/VisibilityCopyCalculator.cs: 5ce10f932455b99a7ee63332a6b3072a -> 
+  custom:scripting/monoscript/fileName/PushPullFiltering.cs: 24f84e1d395ccd057496fa05f8f46b8c -> 
+  custom:scripting/monoscript/fileName/GlTextureInfo.cs: 583433f9da1b0750a53cd5f005ca1996 -> 
+  custom:scripting/monoscript/fileName/GlTextureBuffer.cs: 5abecea13f2c6539bd7807323d862ef4 -> 
+  custom:scripting/monoscript/fileName/Timestamp.cs: 9f52680571df6808cd2d90698f5ca078 -> 
+  custom:scripting/monoscript/fileName/AssetLoader.cs: 76e4a33bf4b0714d88b144e07356443e -> 
+  custom:scripting/monoscript/fileName/HandLandmarksDetectorGraphOptions.cs: c816ce7bc89d799bb20cfbf903713e28 -> 
+  custom:scripting/monoscript/fileName/AssetBundleResourceManager.cs: cd4c6d24fa636295651ee02cdfcb157f -> 
+  custom:scripting/monoscript/fileName/TensorsToSegmentationCalculator.cs: c22b9af1f322c99cc1790843fe2e0e11 -> 
+  custom:scripting/monoscript/fileName/StaticImageSource.cs: 7d1d9cf3f953d9ad99064a1a08cb3f97 -> 
+  custom:scripting/precompiled-assembly-types:Mediapipe.Tests.EditMode: eeb37c0e8352961e06c7915a422d619d -> 
+  custom:scripting/monoscript/fileName/FaceGeometry.cs: 74eb98dd66fe8e9d6eac79cb82f23d9f -> 
+  custom:scripting/monoscript/fileName/LandmarkProjectionCalculator.cs: 36dfa8c6d43f741b49891ed442e97001 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerOptions.cs: afb5694fd2def628790389a687c470e2 -> 
+  custom:scripting/monoscript/fileName/IrisLandmarkListAnnotation.cs: 380f44f3b62e1e3f3476d2e18fd272e9 -> 
+  custom:scripting/monoscript/fileName/RunningMode.cs: 0f6d722a2f2518beef2e7979ac20ecea -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterOptions.cs: 15aec5443635a4c484d25fca5a490871 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkListAnnotationController.cs: 0ecad5ea63f10c4b9b518c6961333c02 -> 
+  custom:scripting/monoscript/fileName/TrackedDetectionManagerConfig.cs: 0d4b4b658f9f8faff87d11e478df5a76 -> 
+  custom:scripting/monoscript/fileName/GlTextureBuffer_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/MotionSaliency.cs: 65e262907125c99ac436b6c9b9980f24 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkListWithIrisAnnotation.cs: badaa05c64956d01149297605bc1a7ec -> 
+  custom:scripting/monoscript/fileName/GpuResources_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/VisionTaskApiRunner.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/NativeClassificationResult.cs: 8dbb25f3b59c2939c6d0cd5c96c14683 -> 
+  custom:scripting/monoscript/fileName/InferenceCalculator.cs: 4487c09ec2a1113442c8c87f836b7585 -> 
+  custom:scripting/monoscript/fileName/GlTexture.cs: b4911303c835548b34bc4853821bc6b1 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerGraphOptions.cs: 9804e631cb7a632e5a72ffeb4e07f4e4 -> 
+  custom:scripting/monoscript/fileName/ClipVectorSizeCalculator.cs: 22031949202a77e95698836ef0548b00 -> 
+  custom:scripting/monoscript/fileName/OutputStreamPoller_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/MotionEstimation.cs: cfc3b6b03d2fba248e4148a67a6a0353 -> 
+  custom:scripting/monoscript/fileName/TimeSeriesFramerCalculator.cs: b82854df9ec8968709c20a2e56fa279c -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterResult.cs: eb0c12b25e657a5404b0be4e092bfb10 -> 
+  custom:scripting/monoscript/fileName/TfliteInferenceCalculator.cs: 6abc23d5d2daf4edd428f1ce35c28854 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerResult.cs: e75fc769dad07ae17bb8a754d7d2539e -> 
+  custom:scripting/monoscript/fileName/FaceGeometryGraphOptions.cs: e0856b1c45cc903894846aa6cc0dcb13 -> 
+  custom:scripting/monoscript/fileName/AudioClassifierTest.cs: db28bb90be52df4ef535f0872603979b -> 
+  custom:scripting/monoscript/fileName/LabelMap.cs: 25b4e671ca1f391dbbccddacd65a7b1f -> 
+  custom:scripting/monoscript/fileName/OpencvVideoEncoderCalculator.cs: ab26acc930159b2d7627b7052e6d86ad -> 
+  custom:scripting/monoscript/fileName/HandRoiRefinementGraphOptions.cs: bac66f4ef09e203dd185d4708cfded36 -> 
+  custom:scripting/monoscript/fileName/TensorsToLandmarksCalculator.cs: 15ec0ac755d39774e6a3f3c3e45568be -> 
+  custom:scripting/monoscript/fileName/HolisticTrackingConfig.cs: 486898e47b4dc625ee6996dbc26d2f69 -> 
+  custom:scripting/monoscript/fileName/TensorConverterCalculator.cs: 301eede1a90d99b9331774c530808575 -> 
+  custom:scripting/monoscript/fileName/GpuBufferFormat_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/DetectionListAnnotation.cs: 2a68fc415840841d9d45783f5f4b7eff -> 
+  custom:scripting/monoscript/fileName/Classification.cs: 6ec80685ad85a32f18a5d8c68e49c92d -> 
+  custom:scripting/monoscript/fileName/Calculator.cs: 3848cdadb3bad374a23dca79496bcf43 -> 
+  custom:scripting/monoscript/fileName/Classifications.cs: dcaf594274f1fb865fe99b44df2fb1f9 -> 
+  custom:scripting/monoscript/fileName/Gl.cs: 2debf3d2c0e49a024f9d7ef846c7b10c -> 
+  custom:scripting/monoscript/fileName/ModalContents.cs: 7db1a2f427ef067e6bda86d1986b3ecf -> 
+  custom:scripting/monoscript/fileName/AffineTransformData.cs: 71c5c767373e44b16803285df97391df -> 
+  custom:scripting/monoscript/fileName/TextureFrame.cs: 634e07b16856de6dde6d625e7de261f7 -> 
+  custom:scripting/monoscript/fileName/SetAlphaCalculator.cs: 0c9dd398379a9520cfbbff745026abad -> 
+  custom:scripting/monoscript/fileName/MotionAnalysis.cs: c8025ae474a5f8cf0da206fe826e016f -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelperTest.cs: afbe1e37e0cec8e135516806c718cf23 -> 
+  custom:scripting/monoscript/fileName/GpuResources.cs: 894e28d39bc3f8b4337844ab607ef04a -> 
+  custom:scripting/monoscript/fileName/GpuOrigin.cs: 5c6f65f1d10965eb0872ffea45b4194e -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkListAnnotation.cs: 5f1f8353f893ba0f00c89cb50ce94676 -> 
+  custom:scripting/monoscript/fileName/DetectionResult.cs: 6e105465576ea275797c14fe2baa7a63 -> 
+  custom:scripting/monoscript/fileName/AudioClassifierGraphOptions.cs: 6ad66e7b2e64b2fe2c6ddac5c8e13802 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkDetectionConfigWindow.cs: 7eac627c0a9a27ad93e1a157e07cca28 -> 
+  custom:scripting/monoscript/fileName/MaskOverlayAnnotation.cs: dd0b048dce9efcdbb10971dbf715a228 -> 
+  custom:scripting/monoscript/fileName/MultiHandLandmarkListAnnotationController.cs: 538e794588de85c70d90f58531492851 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerOptions.cs: b095d61358bc944d71942ba918262ed4 -> 
+  custom:scripting/monoscript/fileName/GlContextTest.cs: 7f70ad4b60ed18a6e94a67678251c5ad -> 
+  custom:scripting/monoscript/fileName/AudioClassifierOptions.cs: 7788182ec07dcde7e189a92397625b23 -> 
+  custom:scripting/monoscript/fileName/CameraMotion.cs: c332abb1df3fb2981c819abc625b50d7 -> 
+  custom:scripting/monoscript/fileName/MaskAnnotation.cs: c3375f690acc054e44f1fa4484b8c130 -> 
+  custom:scripting/monoscript/fileName/FlowPackager.cs: 1fd72cd10a24ddfd3847534c5f83f7c9 -> 
+  custom:scripting/monoscript/fileName/ResourceManager.cs: f279dda34254df85a98d4f61b2bbc673 -> 
+  custom:scripting/monoscript/fileName/NativeLandmark.cs: b4749db57c05583cfdc4a9d80ac3daf7 -> 
+  custom:video-decoder-ogg-theora: a1e56fd34408186e4bbccfd4996cb3dc -> 
+  custom:scripting/monoscript/fileName/GpuBuffer.cs: 9561fbcfb533b624a0a16c1e4e70b974 -> 
+  custom:scripting/monoscript/fileName/GlTextureTest.cs: d31aac3517f879043885f5c127d7834d -> 
+  custom:scripting/monoscript/fileName/NameUtil.cs: ee923bb457fc97e9180ccff54a935ae7 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraph_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/Packet_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ImageFrame_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/ImageCoordinateTest.cs: 83371481180109ab90ced84548617e68 -> 
+  custom:scripting/monoscript/fileName/PacketFrequency.cs: 8711777c09abbe6634062989f2e6915c -> 
+  custom:scripting/monoscript/fileName/SequenceShiftCalculator.cs: f9bb9be85929fb1664b78d225bf24ee6 -> 
+  custom:scripting/monoscript/fileName/OpencvEncodedImageToImageFrameCalculator.cs: 4bf12751dbd5bfd368ca477bdb1eb5ac -> 
+  custom:scripting/monoscript/fileName/Containers_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerResultAnnotationController.cs: 72a34058776878a77f63cd9670d99ca2 -> 
+  custom:scripting/monoscript/fileName/PacketGetterExtension.cs: 9723b705694e0cc1f055f2cb7eea3452 -> 
+  custom:scripting/monoscript/fileName/BadStatusException.cs: a5cd8ff1b19ccdc73addfe0f3d95aca1 -> 
+  custom:scripting/monoscript/fileName/CalculatorOptions.cs: 3f178bb62a06cda885843adee4d7a742 -> 
+  custom:scripting/monoscript/fileName/VisibilitySmoothingCalculator.cs: fe95737401fb87c99f203c0c5f09201d -> 
+  custom:scripting/monoscript/fileName/NativeRect.cs: 03cdd035ee779df3878b0af1619f6c76 -> 
+  custom:scripting/monoscript/fileName/ProtoMessageClearExtension.cs: 1ad0aa701399555b7727f538cbe0fd0a -> 
+  custom:scripting/monoscript/fileName/SplitVectorCalculator.cs: 6b2675b807f1dd39ccef9e74715b5db4 -> 
+  custom:scripting/monoscript/fileName/ObjectDetector.cs: 4d4ddfaa181b221b775a276050e3a16f -> 
+  custom:scripting/monoscript/fileName/ImageTransformationOptionsTest.cs: f7940228a8d892f235e57bac19a78487 -> 
+  custom:scripting/monoscript/fileName/MaskAnnotationController.cs: 3d6698db554ae7d717dd194950c2f7f6 -> 
+  custom:scripting/monoscript/fileName/NativeCategory.cs: 1c399edeb88fe6e155e03c75674a819c -> 
+  custom:scripting/monoscript/fileName/ListAnnotation.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/MediaPipePluginException.cs: 51ef5b954730c4852f496417cdce43cd -> 
+  custom:scripting/monoscript/fileName/ImageSource.cs: c79040da6e9ad7684e3f00a63acef1c9 -> 
+  custom:scripting/monoscript/fileName/HierarchicalAnnotation.cs: a1e54d425e8c2da966e95b26cf1a9ea2 -> 
+  custom:scripting/monoscript/fileName/TfliteConverterCalculator.cs: b29e0118e293680a1029ba87a5fa5ba2 -> 
+  custom:scripting/monoscript/fileName/PacketMapTest.cs: 2b971c877525627fecb56dd2ae4ef485 -> 
+  custom:scripting/monoscript/fileName/TimedBoxListIdToLabelCalculator.cs: 8524dceaf5f1f989df081a3cd40ccc2f -> 
+  custom:scripting/monoscript/fileName/RationalFactorResampleCalculator.cs: b58720022753118e471eb7b46b368d16 -> 
+  custom:scripting/monoscript/fileName/HelloWorld.cs: 788892dceeecf5464e8acd87dbb7ad8c -> 
+  custom:scripting/monoscript/fileName/FaceDetectorOptions.cs: fd573cca1c09fa2c9e936e6e014b1c8b -> 
+  custom:scripting/monoscript/fileName/RectToRenderScaleCalculator.cs: eccc4a19d1cbd5ae78779e6e439d324f -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarker.cs: ee734fc66d25ecb37a04ef244a4d5d52 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerGraphOptions.cs: e4852327d41ac3d8ca4f21fe66a40cd9 -> 
+  custom:scripting/monoscript/fileName/GlContext.cs: 555e6911309bc2673ae52192efe23e24 -> 
+  custom:scripting/monoscript/fileName/NormalizedRectListAnnotationController.cs: 8f9e885fc12017ad497f632032fec8a9 -> 
+  custom:scripting/monoscript/fileName/AnnotationOverlayCalculator.cs: 9d2e959f809a50f34a6535ddb637538a -> 
+  custom:scripting/monoscript/fileName/FaceDetectorGraphOptions.cs: 7fe325ea5a889bcc369125da821df05f -> 
+  custom:scripting/monoscript/fileName/TaskOptions.cs: d80eddd07e16eb0460038fb5a8b00fde -> 
+  custom:scripting/monoscript/fileName/MaskOverlayCalculator.cs: 6c8464e7621587641571f64b81136e7e -> 
+  custom:scripting/monoscript/fileName/GlTexture_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerResult.cs: 8d1a117e5b63e0b020b2351ef4bf2289 -> 
+  custom:scripting/monoscript/fileName/ToneEstimation.cs: e732dc0dba0db29e975d9aab135e17e5 -> 
+  custom:scripting/monoscript/fileName/SafeNativeMethods.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/PoseDetectorGraphOptions.cs: c498f6d0697a5869263a9f0a335cc227 -> 
+  custom:scripting/monoscript/fileName/PacketFactory.cs: d4bcbe65fe1046bd5c5c4dda39842e1d -> 
+  custom:scripting/monoscript/fileName/GlSurfaceSinkCalculator.cs: 3a5d02af52b4a0b6adb4d0d8223b50c4 -> 
+  custom:framework-osx-AVFoundation: e770b220cccbd017edd2c1fefb359320 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToSegmentationCalculator.cs: f9a89bd347a158ea85be2fd9fc5678fe -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkListWithMaskAnnotation.cs: 61f408b5941b1dbbf42cb1cd38de992e -> 
+  custom:scripting/monoscript/fileName/RegionFlowComputation.cs: cf6e9989047ade4a93241e87b29938dc -> 
+  custom:scripting/monoscript/fileName/PacketsCallbackTable.cs: 359aa3928aa455003abe49887f9386ed -> 
+  custom:scripting/monoscript/fileName/TensorsToDetectionsCalculator.cs: 8610be1706588d4ad71a83057df6ed42 -> 
+  custom:scripting/monoscript/fileName/NonMaxSuppressionCalculator.cs: 759044a6f0b7db8a1e854b01920b1ff1 -> 
+  custom:scripting/monoscript/fileName/BilateralFilterCalculator.cs: 781561782fd1d419a9eb459f22fe8437 -> 
+  custom:scripting/monoscript/fileName/RegionFlow.cs: 182bfbb5e2b264f17f763e65130378aa -> 
+  custom:scripting/monoscript/fileName/Util.cs: 2add2de9b768760e8607c4646c1197c4 -> 
+  custom:scripting/monoscript/fileName/PacketLatencyCalculator.cs: 40d9dac28e96333c13a9985b94e61e91 -> 
+  custom:scripting/monoscript/fileName/TopKScoresCalculator.cs: b408a0f9f27066123ede9b94e17256f9 -> 
+  custom:scripting/monoscript/fileName/RealWorldCoordinate.cs: ff9020086e5421cd6c03108264278f14 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerOptions.cs: d4ec12a781553c8a5dbb770b4834653a -> 
+  custom:scripting/monoscript/fileName/RectangleAnnotation.cs: 268be92edf0cd46a55152516552940cc -> 
+  custom:scripting/monoscript/fileName/GateCalculator.cs: 81fb92f7b3b7e308223020be3829ca50 -> 
+  custom:scripting/monoscript/fileName/ImageSegmentationConfig.cs: 5e45c7734ce23a90a20cf6ecad0b0e27 -> 
+  custom:scripting/monoscript/fileName/LabelsToRenderDataCalculator.cs: ff4791b47880ba9ec5c05fb858855e1f -> 
+  custom:scripting/monoscript/fileName/NormalizedRectAnnotationController.cs: 5e50929bab2bda484f956025c10cca15 -> 
+  custom:scripting/monoscript/fileName/Packet.cs: 5e0b3101ea46a2274c60f82d30e8f1f2 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkListAnnotation.cs: e24192fe64f5edb08966d5cccee146a0 -> 
+  custom:scripting/monoscript/fileName/GlScalerCalculator.cs: 284a868bf2c74f6fb9ceda1d22850584 -> 
+  custom:scripting/monoscript/fileName/ImageFileProperties.cs: 811b0ed333a78b551b45cd9150b4a064 -> 
+  custom:scripting/monoscript/fileName/MediapipeOptions.cs: 910f00fcf9b0ae455adad19b6350ef3f -> 
+  custom:scripting/monoscript/fileName/ClassifierOptions.cs: 1b4d9af9ce993b9732c02bfd1edb9374 -> 
+  custom:scripting/monoscript/fileName/UniquePtrHandle.cs: 08fa1649fcccce72c8494d85a231059d -> 
+  custom:scripting/monoscript/fileName/SignalAbortAttribute.cs: 9787cf9710456192a9ad18eecfea2d73 -> 
+  custom:scripting/monoscript/fileName/UnicodeInlineText.cs: ad902f8d3538e9444001793dbac02173 -> 
+  custom:scripting/monoscript/fileName/QuantizeFloatVectorCalculator.cs: 356ab621d501760179de36a13d5f9db6 -> 
+  custom:scripting/monoscript/fileName/ImageProcessingOptions.cs: ca0a0ad4beb319f8086e0f300a137295 -> 
+  custom:scripting/monoscript/fileName/Anchor.cs: 189ace53090ac24d7612dfbc932cc3c2 -> 
+  custom:scripting/monoscript/fileName/NativeDetectionResult.cs: e596baba627e8fa00614d016f1f5999a -> 
+  custom:scripting/monoscript/fileName/PointListAnnotation.cs: e9b59af5493fb10286ee4b307eb5b1d2 -> 
+  custom:scripting/monoscript/fileName/ConnectionAnnotation.cs: 6b2099a21ce67f990246f7bc57e4a0a9 -> 
+  custom:scripting/monoscript/fileName/GeometryPipelineCalculator.cs: cb7088226122a7565ecadb81d1aa7223 -> 
+  custom:scripting/monoscript/fileName/HolisticTrackingGraph.cs: 5cf378675ba41e574717e66a42abd4f8 -> 
+  custom:scripting/monoscript/fileName/ImageSourceProvider.cs: 090ede97fcb952145419e5bb5f7c78e4 -> 
+  custom:scripting/monoscript/fileName/GestureEmbedderGraphOptions.cs: 9ff52e426f4cad9b954308bdbba78528 -> 
+  custom:scripting/monoscript/fileName/DetectionsToRenderDataCalculator.cs: 7d0e47951ddd93f86e0eab03fe8f27ad -> 
+  custom:scripting/monoscript/fileName/CalculatorGraph_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerGraphOptions.cs: 236027828864d4a1fc01807d428e40c0 -> 
+  custom:scripting/monoscript/fileName/BaseOptionsTest.cs: 9aeb9397a1b3976d9117a2a58fff6bbf -> 
+  custom:scripting/monoscript/fileName/Calculator_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/precompiled-assembly-types:System.Runtime.CompilerServices.Unsafe: 4f83dd30d4d7964b63b36d2fe1e95684 -> 
+  custom:scripting/monoscript/fileName/StabilizedLogCalculator.cs: f1a10f82089cc3673846d69ee7ac696c -> 
+  custom:video-encoder-webm-vp8: eb34c28f22e8b96e1ab97ce403110664 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerRunner.cs: 05ca60add5b4caf1fb48b29ca2a0a644 -> 
+  custom:scripting/monoscript/fileName/LandmarksToTensorCalculator.cs: d72cb3b286f348eca4227bbc2ee6ec9d -> 
+  custom:scripting/monoscript/fileName/ImageCoordinate.cs: 23b715fc0f4cfac06c4142443830a8f9 -> 
+  custom:scripting/monoscript/fileName/TimestampTest.cs: 79342e051ca8619d1190b2f991fe8760 -> 
+  custom:scripting/monoscript/fileName/ThresholdingCalculator.cs: 527f5da586750f3f4120e479009b49dc -> 
+  custom:scripting/monoscript/fileName/ImageSegmenter.cs: dce0c5e13309a0d8828320498ba43d92 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkDetectionConfig.cs: bb80dab64aa3dff2747dc0c292e6d157 -> 
+  custom:scripting/monoscript/fileName/ToneModels.cs: cf58445c0d1c4f5a0c2a81f00d62d53c -> 
+  custom:scripting/monoscript/fileName/TensorsToFloatsCalculator.cs: 84cac79c778926627af5a69befdfedb6 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarksDetectorGraphOptions.cs: c7d1dde5fbdee5d40de9ce0df982883e -> 
+  custom:scripting/monoscript/fileName/Color.cs: 0ce6bcf780562c3563385a2daa6444c5 -> 052bd00c2f811370ae18ff5c84d60ae7
+  custom:scripting/monoscript/fileName/SpectrogramCalculator.cs: 1851cd78a5e98d612ee050e11a744a36 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkDetectionConfig.cs: 3d619cd675b474169f94863e6211e9f0 -> 
+  custom:scripting/monoscript/fileName/BoxTracker.cs: c520a1d24af7fdd9b4f547e681f03242 -> 
+  custom:scripting/monoscript/fileName/ThreadPoolExecutor.cs: 1a8e97131439f47f8bcdb4a183b0072d -> 
+  custom:scripting/monoscript/fileName/Timestamp_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/RotationMode.cs: 7c31b6b2e5525161b991df74492ee84b -> 
+  custom:scripting/monoscript/fileName/Status.cs: 172ea1a4fb7fd8e40ae4fc6affc8bdb1 -> 
+  custom:scripting/monoscript/fileName/DetectionListAnnotationController.cs: 3faddb21b6fa12dc7f8317629a4e73a9 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerGraphOptions.cs: e29927e68177758cd71403f206274922 -> 
+  custom:scripting/monoscript/fileName/Latency.cs: d3dc288aa690208e53edc23d20290158 -> 
+  custom:scripting/monoscript/fileName/BaseVisionTaskApi.cs: 4dab2c4636cfbbe422d57b3e74f69439 -> 
+  custom:audio-decoder-ogg-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+  custom:scripting/monoscript/fileName/Modal.cs: 95eb74ad7efb255592df12ca4191314a -> 
+  custom:scripting/monoscript/fileName/Acceleration.cs: 6ac205a1c1c2dfb622c98d608d67a571 -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfigTest.cs: 7e40ddceb77856817397e533f7e5d3a2 -> 
+  custom:scripting/monoscript/fileName/ConnectionListAnnotation.cs: 58ddc9904ec36ecf434dd236c36c0c85 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectionConfig.cs: 012f1ffd0433e6716f4c9514945731ae -> 
+  custom:scripting/monoscript/fileName/StreamHandler.cs: e7315159a4abd62417dfe6949cf507f2 -> 
+  custom:scripting/monoscript/fileName/ModalButton.cs: e46880e4a6866dd3d28739eaf798c65a -> 
+  custom:scripting/monoscript/fileName/OpencvImageEncoderCalculator.cs: 6a921316c479298eae231830d5196117 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerResult.cs: 6b474ffdec5cffce6510e5281d7491ef -> 
+  custom:scripting/monoscript/fileName/ConcatenateVectorCalculator.cs: 3094ce536ec3a1b85715af086c0e1eac -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerResult.cs: 59adaf7485f6b72ade863bb429ee104c -> 
+  custom:scripting/monoscript/fileName/SerializedProto.cs: 4af8ee9771d5472db40a2709668d5ac6 -> 
+  custom:scripting/monoscript/fileName/Stdlib_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/MotionModels.cs: d9fdd9742271e8b50ec97c7ab46b83ed -> 
+  custom:scripting/monoscript/fileName/ImageFormatExtension.cs: 93a824a6b304cf837ccdc7ebc6ebc5b1 -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelper_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/BoxDetectorCalculator.cs: c3297f2de6bf668ba5efa0fb869eaf1f -> 
+  custom:scripting/monoscript/fileName/PacketValidatorExtension.cs: 9471f86444c00de6cbabc286a1b6bc7f -> 
+  custom:scripting/monoscript/fileName/MatrixData.cs: 9a70627d5d873f80e5173cb5b70cbe02 -> 
+  custom:scripting/monoscript/fileName/RecolorCalculator.cs: 2e89534549cd354f3a03f0ccf38236be -> 
+  custom:scripting/monoscript/fileName/DetectionAnnotationController.cs: 7469eeeaa8b330dc9503336502fac4ac -> 
+  custom:scripting/monoscript/fileName/GpuResourcesTest.cs: e4eafae2981a397154b4cb88e1242ca4 -> 
+  custom:scripting/monoscript/fileName/NativeArrayExtension.cs: 2e20f62576612e45815ab0aa5c3dd492 -> 
+  custom:scripting/monoscript/fileName/PacketGenerator.cs: 8f25a1eb35803d6fc9a271cb086533a8 -> 
+  custom:scripting/monoscript/fileName/GlobalInstanceTable.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/RoiTrackingCalculator.cs: 4a78d23c66415380aa4837a37cc71c95 -> 
+  custom:scripting/monoscript/fileName/AsyncGlContext.cs: 3b08661f376cc2ec7ced5b4aa7e34212 -> 
+  custom:scripting/monoscript/fileName/Gl_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerTest.cs: b8ff9e2af88dd1f9af4e6187b5f32ee1 -> 
+  custom:scripting/monoscript/fileName/Gl_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/LogicCalculator.cs: 773c3021f9fd4ea2894f51c59636512f -> 
+  custom:scripting/monoscript/fileName/GlSyncPoint.cs: edc937f0ca37dedae0557b34643d5398 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraphTest.cs: d118c8478363f85025263badf428c379 -> 
+  custom:scripting/monoscript/fileName/HandDetectorGraphOptions.cs: 756b0fd15ef599580f74c82153454c28 -> 
+  custom:CustomObjectIndexerAttribute: 9a22284fe3817be447336de3de66b15e -> 
+  custom:scripting/monoscript/fileName/GpuBuffer_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/LegacySolutionRunner.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/PoseWorldLandmarkListAnnotationController.cs: cc1805e6306429b7408e5783cb9ff53b -> 
+  custom:scripting/monoscript/fileName/NativeKeypoint.cs: eddeb18deb43eca38a925d94ad256620 -> 
+  custom:scripting/monoscript/fileName/GlContext_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/GpuResources_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/MediaPipeVideoConfig.cs: 0879715806b9941e2c551f486caec5b8 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerOptions.cs: 7f880a5053f98960546ba49be069ba56 -> 
+  custom:scripting/monoscript/fileName/AnnotationController.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/SolutionMenu.cs: 74c0a81b726fe82cf53f6a9f3461f245 -> 
+  custom:scripting/monoscript/fileName/StatusHandler.cs: 96887ad130d0189df4d9e34cf8d7eebb -> 
+  custom:scripting/monoscript/fileName/DetectionsToRectsCalculator.cs: 3f05db5105a7bd7a62aa10cb6f11caac -> 
+  custom:scripting/monoscript/fileName/PointAnnotation.cs: 103753d4a6baaf9b2dbf260f181c6774 -> 
+  custom:scripting/monoscript/fileName/ValidateName.cs: 2e72c3c3222dde14bdae13fbf04dd56b -> 
+  custom:scripting/monoscript/fileName/GraphProfileCalculator.cs: 1c45e13e8ce4e794f0121119dbf995d6 -> 
+  custom:scripting/monoscript/fileName/GestureRecognizer.cs: 91e5bad4ed0f2865be3b6651ce8d5b82 -> 
+  custom:scripting/monoscript/fileName/Protobuf.cs: 49719eba99d5389760bdff23022628fa -> 
+  custom:scripting/monoscript/fileName/VideoSource.cs: c6ee69c39d59c5470deea0d299db4ef6 -> 
+  custom:scripting/monoscript/fileName/RefineLandmarksFromHeatmapCalculator.cs: 65ea6edc7e5cc97f1aa6e26313d7619e -> 
+  custom:scripting/monoscript/fileName/SharedPtrHandle.cs: 3f8f63b9d84af0b0259c5e64cbf95eed -> 
+  custom:scripting/monoscript/fileName/GpuOnlyAttribute.cs: 0a8a0c122a5341dc739ef72751ec2040 -> 
+  custom:scripting/monoscript/fileName/RectangleListAnnotation.cs: 6cf471d6f808c0f23c9c0aeab0a548b9 -> 
+  custom:scripting/monoscript/fileName/ValidateNameTest.cs: a9b0961579e0b455dc018415bb73242e -> 
+  custom:scripting/monoscript/fileName/ConstantSidePacketCalculator.cs: e89409f09ef25ec943f90f6af06f1fa1 -> 
+  custom:scripting/monoscript/fileName/TaskRunner.cs: 9defee681c469f9ea956c90d8fb94519 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToDetectionsCalculator.cs: 80af26483ee286c7c190ac99baf60334 -> 
+  custom:scripting/monoscript/fileName/GlTexture_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/RenderData.cs: 45e7e4db7837f4852dfc18b7cd26ce63 -> 
+  custom:scripting/monoscript/fileName/AudioClassifier.cs: 78b483497bb727d3a5904c26d0844b63 -> 
+  custom:scripting/monoscript/fileName/StructArray.cs: 90647cc400823b41df847a6cbfc29026 -> 
+  custom:scripting/monoscript/fileName/Glog.cs: 144d5425780dc247cdaa6f77cce24751 -> 
+  custom:scripting/monoscript/fileName/ResourceUtil_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/Arrow.cs: 8ccec98b5bbce60a89a23cbcfe9f670c -> 
+  custom:scripting/monoscript/fileName/NameUtilTest.cs: e89a44dbb2211c8bd34a6e85819a8fc8 -> 
+  custom:scripting/monoscript/fileName/ScaleMode.cs: 0e326f3dff1f04669679ef8997e6697a -> 
+  custom:scripting/monoscript/fileName/ImageFrameExtensionTest.cs: e87e0152c6d9a770cf6ba2a9b4be9618 -> 
+  custom:scripting/monoscript/fileName/OpticalFlowFieldData.cs: 90f2850b8d4aa14e06d210da43478eb9 -> 
+  custom:scripting/monoscript/fileName/FaceDetectionConfig.cs: f9444aaa2aeee87064912dfbc82be6e8 -> 
+  custom:scripting/monoscript/fileName/NormalizedLandmarkListAnnotationController.cs: 4df4fb319309c9f25a4c611161f07128 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerResult.cs: 3bda1242b5872849a6935ce40558e23d -> 
+  custom:scripting/monoscript/fileName/MediaPipeVideoSolution.cs: 889a8d391a677ec308ccac390802fa47 -> 
+  custom:scripting/monoscript/fileName/TrackedDetectionManagerCalculator.cs: 8f32342d8bcab3f9f7bbf62f61eaa44b -> 
+  custom:scripting/monoscript/fileName/ImageCroppingCalculator.cs: c5e40c3b058e14e55135462cc38a0f66 -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterGraphOptions.cs: 83d18cad03ed15177a550b5f0ad77878 -> 
+  custom:scripting/monoscript/fileName/Protobuf_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/FaceMeshLegacy.cs: 72ab7326b3b4dbd6c4f4050af9686e2c -> 
+  custom:scripting/monoscript/fileName/AudioDecoder.cs: 68dcc918222526b8e22b6a914f59077f -> 
+  custom:scripting/monoscript/fileName/Glog_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectorTest.cs: 6d600df38abf6a03e6c386578ee0c181 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToLandmarksCalculator.cs: 583215f4d8027c8bc9ae9c1ac82efd78 -> 
+  custom:container-demuxer-webm: 4f35f7cbe854078d1ac9338744f61a02 -> 
+  custom:scripting/monoscript/fileName/FaceBlendshapesGraphOptions.cs: 8872b935957b7316f8378e8f8314ed8a -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterResultAnnotationController.cs: a763646644efeaed22fb24c61c0739bd -> 
+  custom:scripting/monoscript/fileName/PacketThinnerCalculator.cs: 280ea5d4ec4870ad3d2c4a1faf4e6818 -> 
+  custom:scripting/monoscript/fileName/HandLandmarker.cs: 15aa71bcf1d874e94b72f49073100166 -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkListAnnotation.cs: e1b561879fad543e0f9aab82afc16d89 -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterRunner.cs: b607d3cd0300262de3202cad1e17ce33 -> 
+  custom:scripting/monoscript/fileName/DequantizeByteArrayCalculator.cs: 6590f459003707e73125ad67300a1479 -> 
+  custom:scripting/monoscript/fileName/Bootstrap.cs: 0093cbe16410146a79742da642d2c606 -> 
+  custom:scripting/monoscript/fileName/CalculatorGraph.cs: 542e373db313084a6425f4610c7d98a9 -> 
+  custom:scripting/monoscript/fileName/Rasterization.cs: 946989f0d4c30d6d91e6401ccf50686d -> 
+  custom:scripting/monoscript/fileName/Timestamp_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/TaskApiRunner.cs: d59ce6014665ae613e2377346b186bda -> 
+  custom:scripting/monoscript/fileName/DetectionLabelIdToTextCalculator.cs: d168225ce87e1253e3e32935c3a074cc -> 
+  custom:scripting/monoscript/fileName/MultiFaceLandmarkListAnnotation.cs: 02f7560448f755a692c7c7327e6637df -> 
+  custom:scripting/monoscript/fileName/ImageFrame.cs: 744fbcd1849a53c4e950138cc431c594 -> 
+  custom:scripting/monoscript/fileName/LabelAnnotation.cs: 88ca00b8a2a0c1178fe22930a828498f -> 
+  custom:scripting/monoscript/fileName/MultiPoseLandmarkListWithMaskAnnotation.cs: 8c962af78f76fee32165764d9bbc745d -> 
+  custom:scripting/monoscript/fileName/Image_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelper.cs: a28486eaea1a3cfcd90f219d55c182ac -> 
+  custom:scripting/monoscript/fileName/SsdAnchorsCalculator.cs: 0fe60510e1513a2c033d34cfea3ca47b -> 
+  custom:scripting/monoscript/fileName/FaceDetector.cs: 414e657d47a173deb1b4373a0995b991 -> 
+  custom:scripting/monoscript/fileName/TaskRunnerTest.cs: 5dcb9a81fcfc2dbf2413bc5dfb380175 -> 
+  custom:scripting/monoscript/fileName/GpuManager.cs: de840eab5c947ad79f6f760a55402777 -> 
+  custom:scripting/monoscript/fileName/Screen.cs: 2064582746b02f31d8c413c390f8452d -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfig_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/Image_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ImageSegmenterTest.cs: ba0d92aad315f837ea8bea5d78e36129 -> 
+  custom:scripting/monoscript/fileName/GpuBufferFormat_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/ObjectDetectorRunner.cs: feda46d2c0302f1c0c91f48aba8f0c5d -> 
+  custom:scripting/monoscript/fileName/AppSettings.cs: 7a7c7f22e101365fe86b6234298582cc -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkerRunner.cs: 6bd10f23f3827bffd718cd211b8c7517 -> 
+  custom:scripting/monoscript/fileName/MfccMelCalculators.cs: fe10bc6616f85d782e039f5af0481b22 -> 
+  custom:scripting/monoscript/fileName/Detection.cs: 13862cd84efb32a284155eeb468b40a9 -> 
+  custom:scripting/monoscript/fileName/FeatureDetectorCalculator.cs: 8117aca907bce30486b1cddd847c3cf4 -> 
+  custom:scripting/monoscript/fileName/TfliteTensorsToClassificationCalculator.cs: eaa9296a174cef172cf518ff99ed2bc6 -> 
+  custom:scripting/monoscript/fileName/LandmarksSmoothingCalculator.cs: 0dac19bcd8d77e95af26cc7e0971f1a7 -> 
+  custom:scripting/monoscript/fileName/DisposableObject.cs: 1863b011bf0a725ead7238076695e803 -> 
+  custom:scripting/monoscript/fileName/ImageTest.cs: 80b00ef1a071cfd489705a2498f10cfa -> 
+  custom:audio-encoder-webm-vorbis: bf7c407c2cedff20999df2af8eb42d56 -> 
+  custom:scripting/monoscript/fileName/LocationData.cs: 4874ae00be52fa78dd0e47637fa8f035 -> 
+  custom:scripting/monoscript/fileName/ImageFrameTest.cs: d5b3f07727e74e58344104305c1d39ac -> 
+  custom:scripting/monoscript/fileName/GestureRecognizerTest.cs: 806b2492675aa08961090222ec0c40c7 -> 
+  custom:scripting/monoscript/fileName/ImageToTensorCalculator.cs: 265e45cfa7bdde62705488c4bf528e10 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarker.cs: 5f9cdd68c4f538cb775f8f5ec3d24f22 -> 
+  custom:scripting/monoscript/fileName/FrameSelection.cs: 33662b08d5b31a2b7c5d77fa6d52f627 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkDetectionConfigWindow.cs: 2f11cba45fa85d22cdfe7305264634be -> 
+  custom:scripting/monoscript/fileName/TfliteCustomOpResolverCalculator.cs: 92e36257ca7a02dc3704c947e3094c45 -> 
+  custom:scripting/monoscript/fileName/TimedBoxListToRenderDataCalculator.cs: 8d429d22fe9bc11f1e1832567c17e62a -> 
+  custom:scripting/monoscript/fileName/GraphRunner.cs: 5635509633de6c9ceeb8e559cd3ac991 -> 
+  custom:scripting/monoscript/fileName/PoseLandmarksDetectorGraphOptions.cs: 6563cef32156b7c91289e3c7981e96a1 -> 
+  custom:scripting/monoscript/fileName/GlContext_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/Rect.cs: 99892004b0190437ed835ffd1567e712 -> 
+  custom:scripting/monoscript/fileName/NativeMatrix.cs: 7c7dd2dd84b023325f3789c65ff5a579 -> 
+  custom:scripting/monoscript/fileName/MultiHandLandmarkListAnnotation.cs: a5578a57691800dca87d81af4326cb55 -> 
+  custom:scripting/monoscript/fileName/Matrix.cs: 29459c0a283a0ae039fcfa57890a5b5d -> 
+  custom:scripting/monoscript/fileName/ClassificationResult.cs: a519957553b7bfe709ae92662e297ef3 -> 
+  custom:scripting/monoscript/fileName/PacketExtension.cs: 1e2680e257ad76fa130af5e9ca636a8e -> 
+  custom:scripting/monoscript/fileName/HolisticLandmarkerOptions.cs: e007641e35ec3b631708483f3a1c11d4 -> 
+  custom:scripting/monoscript/fileName/ImageTransformationOptions.cs: fdcd32137c51fcdc43d6d27222a8df8a -> 
+  custom:scripting/monoscript/fileName/Rect_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerGraphOptions.cs: 5df71d1861979421f00427b531f561f7 -> 
+  custom:scripting/monoscript/fileName/Absl_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkDetectionConfigWindow.cs: 25980581ab7429a97f49dba41c1175fb -> 
+  custom:scripting/monoscript/fileName/ObjectDetectionConfigWindows.cs: b2a7285297cf38947881ba62a92c405e -> 
+  custom:scripting/monoscript/fileName/LocalFileContentsCalculator.cs: 2649d19d9167ba7a12d8441763c2672b -> 
+  custom:scripting/monoscript/fileName/ValidatedGraphConfig_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkerResultAnnotationController.cs: 80f9420ece7f57889fe699c5d5c5026f -> 
+  custom:scripting/monoscript/fileName/Keypoint.cs: a326e8c93133c00f8a3aff0ba75ff724 -> 
+  custom:scripting/monoscript/fileName/MultiPoseLandmarkListAnnotation.cs: 37d4478d166e9274eb44feea4349d965 -> 
+  custom:scripting/monoscript/fileName/WarpAffineCalculator.cs: 68ec1a21c62b071adf02830c1aa73c80 -> 
+  custom:scripting/monoscript/fileName/MediaPipeException.cs: 433a178d79de3252525616a155dad4f5 -> 
+  custom:scripting/monoscript/fileName/TensorsToClassificationCalculator.cs: e00a733cf49437765a865ad148d3baa8 -> 
+  custom:scripting/monoscript/fileName/VideoPreStreamCalculator.cs: f256f35af668fbcd1188f91d173289f7 -> 
+  custom:scripting/monoscript/fileName/PacketClonerCalculator.cs: 1c736a5b6ebe04ee138d2a444baffb96 -> 
+  custom:scripting/monoscript/fileName/GlTextureBuffer_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/ImageCloneCalculator.cs: 3abc0e68e36d99ba20897ebf31c09e26 -> 
+  custom:scripting/monoscript/fileName/PacketTest.cs: 2abd009155039b6f6f04697dd7821849 -> 
+  custom:scripting/monoscript/fileName/MpReturnCode.cs: 074dcc0581fa2750fe38754b96b617c4 -> 
+  custom:scripting/monoscript/fileName/GpuBufferFormat.cs: 3358b4fa1d7dad3981029a9213685032 -> 
+  custom:scripting/monoscript/fileName/Connection.cs: 43006af3d469617c2dfb1f58a9f47bd7 -> 
+  custom:scripting/monoscript/fileName/ExternalFile.cs: 9031df99c21cfad636d306d4aec3eee4 -> 
+  custom:scripting/monoscript/fileName/ScaleImageCalculator.cs: 9d7152b3550783881d509720f43ef29c -> 
+  custom:scripting/monoscript/fileName/RectTransformationCalculator.cs: 179d5b26ac30e76b30d964bddfa97301 -> 
+  custom:scripting/precompiled-assembly-types:Assembly-CSharp: 8768456633971f1d024fb30149f1b15d -> 
+  custom:scripting/monoscript/fileName/StdString.cs: 6493e5de79dbb3553ab4b90cb2bbbfe3 -> 
+  custom:scripting/monoscript/fileName/LocalResourceManager.cs: ccb9a00dfe28ccdbd9336504b867ff15 -> 
+  custom:scripting/monoscript/fileName/ResourceUtil.cs: b2d07cca8641a2de00e5219a0a5d3ade -> 
+  custom:scripting/monoscript/fileName/HandLandmarkDetectionConfig.cs: 3e4807f83f9aec3f88c6ddb2bde659c7 -> 
+  custom:scripting/monoscript/fileName/ImageArray.cs: 0e93d177dd22c665790636867be5ed01 -> 
+  custom:scripting/monoscript/fileName/DetectionAnnotation.cs: eee2c4c6045657d9077a00f784a5170f -> 
+  custom:scripting/monoscript/fileName/OutputStream.cs: 849ed7f5b11c9db237ef61b01c5a5104 -> 
+  custom:scripting/monoscript/fileName/SegmentationSmoothingCalculator.cs: d683e28a6348d4874ebb25067855356a -> 
+  custom:scripting/monoscript/fileName/TimeSeriesHeader.cs: 8ff53485a0d1527a07802355b3394631 -> 
+  custom:scripting/monoscript/fileName/Tracking.cs: 14c3e35a08234570a0a7e6a45d909a35 -> 
+  custom:scripting/monoscript/fileName/HandGestureRecognizerGraphOptions.cs: faf0ea39633e73a22f281e862e517554 -> 
+  custom:scripting/monoscript/fileName/Landmark.cs: a61717c434a8aef4b08748f4e6fef9dd -> 
+  custom:scripting/monoscript/fileName/MotionAnalysisCalculator.cs: 551e7a876c4f8963f94aa253e50742da -> 
+  custom:scripting/monoscript/fileName/ImageFrameExtension.cs: 5b18cec28558b2a9cb226c24a643b1e2 -> 
+  custom:scripting/monoscript/fileName/RectToRenderDataCalculator.cs: 223337aadf729e365968942ecafa5a92 -> 
+  custom:scripting/monoscript/fileName/FlowLimiterCalculator.cs: 79748249ee517ed1f034916c7b8c995c -> 
+  custom:scripting/monoscript/fileName/FaceLandmarker.cs: 86bdc4f8ecb5f12b92305848fb13df3d -> 
+  custom:scripting/monoscript/fileName/LandmarksToDetectionCalculator.cs: 0dc72cabccfac89a47e503a0ab7f37ab -> 
+  custom:scripting/monoscript/fileName/SegmenterOptions.cs: c4e899a4e5be2cf3d21669b9192ef2f8 -> 
+  custom:scripting/monoscript/fileName/UnsafeNativeMethods.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/Mesh3D.cs: ef390615c72dd80fa5e22bd53ad8e91c -> 
+  custom:scripting/monoscript/fileName/InternalException.cs: 3a8713fe6905fb8b4bd4c92da3c4026c -> 
+  custom:scripting/monoscript/fileName/WaitForResult.cs: 2ed61bd90ebec189f402344b0206ed8b -> 
+  custom:scripting/monoscript/fileName/FilterDetectionsCalculator.cs: c082fc790a555160f291c9e0b0924696 -> 
+  custom:scripting/monoscript/fileName/FaceLandmarkerRunner.cs: 32e04630a3c452efb2c23b70c21243ae -> 
+  custom:container-muxer-webm: aa71ff27fc2769a1b78a27578f13a17b -> 
+  custom:scripting/monoscript/fileName/MultiFaceLandmarkListAnnotationController.cs: e8c8fc410a610ca75a78daa187989007 -> 
+  custom:scripting/monoscript/fileName/ImageTransformationCalculator.cs: 756edb3667ae2e9964cf8d1a7d5cae06 -> 
+  custom:scripting/monoscript/fileName/GpuBuffer_Safe.cs: 98eb040e58f24b4d133ec0872f55b9b6 -> 
+  custom:scripting/monoscript/fileName/CircleAnnotation.cs: 7f172887c060907712699389eed7372a -> 
+  custom:scripting/monoscript/fileName/PoseLandmarkListAnnotationController.cs: 5868019015b49ebc1cd0b6367137f405 -> 
+  custom:scripting/monoscript/fileName/HandLandmarkListAnnotation.cs: 7ae7a22c9668ecfb55c98b5000fddab2 -> 
+  custom:scripting/monoscript/fileName/StatusTest.cs: 9494de054ac36148f4f37299cc11c5cb -> 
+  custom:scripting/monoscript/fileName/FaceDetectorRunner.cs: c3f406dfb60efbded9dd411e627f6865 -> 
+  custom:scripting/monoscript/fileName/TaskExtension.cs: 38429cd3d47996603ab823bc585b761a -> 
+  custom:scripting/monoscript/fileName/Absl_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/monoscript/fileName/FlowToImageCalculator.cs: 17592d9c2e6c9437406959aa1c895869 -> 
+  custom:scripting/monoscript/fileName/FlowPackagerCalculator.cs: ebf98587a6e086511c66bcc7e07250bf -> 
+  custom:scripting/monoscript/fileName/BoxTrackerCalculator.cs: 677aebe2f5912d3094e390edd8a70eab -> 
+  custom:scripting/monoscript/fileName/TextureFramePool.cs: f8a357c2f6192bc34799f513eb008d13 -> 
+  custom:scripting/monoscript/fileName/GlCalculatorHelper_Unsafe.cs: aabde153db09b292dd1b1e702d18ce32 -> 
+  custom:scripting/precompiled-assembly-types:Mediapipe.Runtime: 7899ef96996576a092fe841003991007 -> 
+  custom:scripting/monoscript/fileName/TextureFormatExtension.cs: c71316ee4e5a58c82dd8503ef2f5d9fc -> 
+  custom:scripting/monoscript/fileName/PacketMap.cs: 9f47bef97cd7e17b779b4774304cf4df -> 
+  custom:scripting/monoscript/fileName/BaseOptions.cs: 0717053ea45fb72811cdac9ad6082aba -> 
