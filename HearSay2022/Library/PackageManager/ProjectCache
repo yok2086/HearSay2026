@@ -5,16 +5,16 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639239412740000000
-    m_Hash: 265313926
+      ticks: 639239577790000000
+    m_Hash: 772578782
   m_LockFileStatus:
     m_FilePath: /Users/gyurim/HearSay2022/HearSay2022/Packages/packages-lock.json
     m_PathExists: 1
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639239412740000000
-    m_Hash: 198567918
+      ticks: 639239577790000000
+    m_Hash: 3131129295
 m_EmbeddedPackageManifests:
   m_ManifestsStatus:
     /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json:
@@ -1793,6 +1793,63 @@ m_ResolvedPackages:
     path: 
   unityLifecycle:
     version: 2.1.12
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  fingerprint: 
+- packageId: com.whisper.unity@https://github.com/Macoron/whisper.unity.git?path=/Packages/com.whisper.unity
+  testable: 0
+  isDirectDependency: 1
+  version: 1.4.0
+  source: 5
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.whisper.unity@529a628a91
+  assetPath: Packages/com.whisper.unity
+  name: com.whisper.unity
+  displayName: Whisper
+  author:
+    name: Macoron
+    email: 
+    url: https://github.com/Macoron
+  category: 
+  type: 
+  description: 'Whisper is high-performance automatic speech recognition (ASR) model,
+    developed by OpenAI.
+
+
+    This is Unity bindings of whisper.cpp infrence implementation.'
+  status: 0
+  errors: []
+  versions:
+    all: []
+    compatible: []
+    recommended: 
+    deprecated: []
+  dependencies: []
+  resolvedDependencies: []
+  keywords: []
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  isAssetStorePackage: 0
+  datePublishedTicks: 0
+  documentationUrl: https://github.com/Macoron/whisper.unity/blob/master/README.md
+  hasRepository: 0
+  repository:
+    type: 
+    url: 
+    revision: 
+    path: 
+  unityLifecycle:
+    version: 
     nextVersion: 
     recommendedVersion: 
     isDeprecated: 0
