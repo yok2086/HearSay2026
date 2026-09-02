@@ -110,6 +110,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Bootstrap.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageReadMode.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoSolution.cs" />
+    <Compile Include="Assets/Samples/5 - Streaming/StreamingSampleMic.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSource.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/TaskApiRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfigWindows.cs" />
@@ -1047,6 +1048,14 @@
     </Reference>
     <Reference Include="UnityEngine.Advertisements.Editor">
       <HintPath>Library/ScriptAssemblies/UnityEngine.Advertisements.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="com.whisper.unity.editor">
+      <HintPath>Library/ScriptAssemblies/com.whisper.unity.editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="com.whisper.unity">
+      <HintPath>Library/ScriptAssemblies/com.whisper.unity.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.2D.Sprite.Editor">
