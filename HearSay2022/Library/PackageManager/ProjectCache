@@ -5,16 +5,16 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639239577790000000
-    m_Hash: 772578782
+      ticks: 639239997040000000
+    m_Hash: 1691662975
   m_LockFileStatus:
     m_FilePath: /Users/gyurim/HearSay2022/HearSay2022/Packages/packages-lock.json
     m_PathExists: 1
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639239577790000000
-    m_Hash: 3131129295
+      ticks: 639239997040000000
+    m_Hash: 2452091089
 m_EmbeddedPackageManifests:
   m_ManifestsStatus:
     /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json:
@@ -30,6 +30,69 @@ m_LocalPackages:
 m_ProjectPath: /Users/gyurim/HearSay2022/HearSay2022/Packages
 m_EditorVersion: 2022.3.62f3 (96770f904ca7)
 m_ResolvedPackages:
+- packageId: com.srcnalt.openai-unity@https://github.com/srcnalt/OpenAI-Unity.git
+  testable: 0
+  isDirectDependency: 1
+  version: 0.2.2
+  source: 5
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.srcnalt.openai-unity@054467e2a2
+  assetPath: Packages/com.srcnalt.openai-unity
+  name: com.srcnalt.openai-unity
+  displayName: OpenAI Unity
+  author:
+    name: Sercan (Sarge) Altundas
+    email: 
+    url: https://github.com/srcnalt
+  category: 
+  type: 
+  description: An unofficial OpenAI Unity package that aims to help you use OpenAI
+    API directly in Unity game engine.
+  status: 0
+  errors: []
+  versions:
+    all: []
+    compatible: []
+    recommended: 
+    deprecated: []
+  dependencies:
+  - name: com.unity.nuget.newtonsoft-json
+    version: 3.2.1
+  resolvedDependencies:
+  - name: com.unity.nuget.newtonsoft-json
+    version: 3.2.1
+  keywords:
+  - openai
+  - chatgpt
+  - dalle
+  - ai
+  - whisper
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  isAssetStorePackage: 0
+  datePublishedTicks: 0
+  documentationUrl: 
+  hasRepository: 0
+  repository:
+    type: 
+    url: 
+    revision: 
+    path: 
+  unityLifecycle:
+    version: 
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  fingerprint: 
 - packageId: com.unity.2d.sprite@1.0.0
   testable: 0
   isDirectDependency: 1
