@@ -12,6 +12,7 @@ Shader "Unlit/MediaPipe/Overlay Mask Shader"
     SubShader
     {
         Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+
         ZWrite Off
         Blend SrcAlpha OneMinusSrcAlpha
         LOD 100
@@ -19,10 +20,9 @@ Shader "Unlit/MediaPipe/Overlay Mask Shader"
         Pass
         {
             CGPROGRAM
+
             #pragma vertex vert
             #pragma fragment frag
-            // make fog work
-            #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
 
@@ -42,36 +42,75 @@ Shader "Unlit/MediaPipe/Overlay Mask Shader"
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
-            v2f vert (appdata v)
-            {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                UNITY_TRANSFER_FOG(o,o.vertex);
-                return o;
-            }
-
             sampler2D _MaskTex;
 
             int _Width;
             int _Height;
             float _Threshold;
-            uniform StructuredBuffer<float> _MaskBuffer;
 
-            fixed4 frag (v2f i) : SV_Target
+            StructuredBuffer<float> _MaskBuffer;
+
+            v2f vert(appdata v)
             {
-                // sample the texture
-                fixed4 emptyCol = (0.0, 0.0, 0.0, 0.0);
-                fixed4 maskCol = tex2D(_MaskTex, i.uv);
-                int idx = int(i.uv.y * _Height) * _Width + int(i.uv.x * _Width);
-                float mask = _MaskBuffer[idx];
-                maskCol.a = lerp(0.0, mask, step(_Threshold, mask));
-                fixed4 col = lerp(emptyCol, maskCol, step(_Threshold, mask));
+                v2f o;
 
-                // apply fog
-                UNITY_APPLY_FOG(i.fogCoord, col);
-                return col;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+
+                UNITY_TRANSFER_FOG(o, o.vertex);
+
+                return o;
             }
+
+            float GetMask(float2 uv)
+            {
+                uv = saturate(uv);
+
+                int x = min((int)(uv.x * _Width), _Width - 1);
+                int y = min((int)(uv.y * _Height), _Height - 1);
+
+                int idx = y * _Width + x;
+
+                return _MaskBuffer[idx];
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                float2 pixel = float2(3.0 / _Width, 3.0 / _Height);
+
+                float center = GetMask(i.uv);
+
+                // Check the surrounding pixels.
+                float top    = GetMask(i.uv + float2(0, pixel.y));
+                float bottom = GetMask(i.uv - float2(0, pixel.y));
+                float left   = GetMask(i.uv - float2(pixel.x, 0));
+                float right  = GetMask(i.uv + float2(pixel.x, 0));
+
+                float topLeft     = GetMask(i.uv + float2(-pixel.x, pixel.y));
+                float topRight    = GetMask(i.uv + float2(pixel.x, pixel.y));
+                float bottomLeft  = GetMask(i.uv + float2(-pixel.x, -pixel.y));
+                float bottomRight = GetMask(i.uv + float2(pixel.x, -pixel.y));
+
+                float centerPerson = step(_Threshold, center);
+
+                float neighborPerson = max(
+                    max(max(top, bottom), max(left, right)),
+                    max(max(topLeft, topRight), max(bottomLeft, bottomRight))
+                );
+
+                neighborPerson = step(_Threshold, neighborPerson);
+
+                // Only draw where the mask changes from background to person.
+                float outline = neighborPerson * (1.0 - centerPerson);
+
+                // Neon yellow.
+                fixed4 outlineColor = fixed4(1.0, 1.0, 0.0, outline);
+
+                UNITY_APPLY_FOG(i.fogCoord, outlineColor);
+
+                return outlineColor;
+            }
+
             ENDCG
         }
     }
