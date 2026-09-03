@@ -175,9 +175,9 @@
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Logger.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Marshal/NativeRect.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Tasks/Vision/GestureRecognizer/Proto/GestureClassifierGraphOptions.cs" />
-    <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/PInvoke/NativeMethods/Framework/Calculator_Unsafe.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Framework/PacketValidatorExtension.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Tasks/Components/Containers/ClassificationResult.cs" />
+    <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/PInvoke/NativeMethods/Framework/Calculator_Unsafe.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Framework/Formats/MatrixData.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Calculators/Image/ImageCroppingCalculator.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Tasks/Vision/ImageSegmenter/ImageSegmenterOptions.cs" />

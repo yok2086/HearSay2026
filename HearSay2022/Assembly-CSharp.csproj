@@ -109,8 +109,8 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSourceType.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Bootstrap.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageReadMode.cs" />
-    <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoSolution.cs" />
     <Compile Include="Assets/Samples/5 - Streaming/StreamingSampleMic.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoSolution.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSource.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/TaskApiRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfigWindows.cs" />
@@ -1007,8 +1007,8 @@
       <HintPath>Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Services.Core">
-      <HintPath>Library/ScriptAssemblies/Unity.Services.Core.dll</HintPath>
+    <Reference Include="com.whisper.unity">
+      <HintPath>Library/ScriptAssemblies/com.whisper.unity.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Purchasing.Common">
@@ -1025,6 +1025,10 @@
     </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Services.Core">
+      <HintPath>Library/ScriptAssemblies/Unity.Services.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.SpatialTracking">
@@ -1047,20 +1051,20 @@
       <HintPath>Library/ScriptAssemblies/UnityEditor.XR.LegacyInputHelpers.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.Advertisements.Editor">
-      <HintPath>Library/ScriptAssemblies/UnityEngine.Advertisements.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="com.whisper.unity.editor">
       <HintPath>Library/ScriptAssemblies/com.whisper.unity.editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="com.whisper.unity">
-      <HintPath>Library/ScriptAssemblies/com.whisper.unity.dll</HintPath>
+    <Reference Include="UnityEngine.Advertisements.Editor">
+      <HintPath>Library/ScriptAssemblies/UnityEngine.Advertisements.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.2D.Sprite.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.2D.Sprite.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="OpenAI.Editor">
+      <HintPath>Library/ScriptAssemblies/OpenAI.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Timeline">
@@ -1089,6 +1093,10 @@
     </Reference>
     <Reference Include="UnityEngine.Purchasing.Codeless">
       <HintPath>Library/ScriptAssemblies/UnityEngine.Purchasing.Codeless.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="OpenAI.Runtime">
+      <HintPath>Library/ScriptAssemblies/OpenAI.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
