@@ -300,8 +300,8 @@
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Modules/FaceDetection/FaceDetection.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Framework/Formats/AffineTransformData.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Framework/Packet.cs" />
-    <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/PInvoke/UnsafeNativeMethods.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Calculators/Tflite/TfliteInferenceCalculator.cs" />
+    <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/PInvoke/UnsafeNativeMethods.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Framework/Port/Status.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Calculators/Image/OpencvImageEncoderCalculator.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Calculators/Core/DequantizeByteArrayCalculator.cs" />
@@ -373,8 +373,8 @@
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Tasks/Vision/GestureRecognizer/GestureRecognizerOptions.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Gpu/Egl.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Calculators/Tensor/TensorsToLandmarksCalculator.cs" />
-    <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Tasks/Vision/GestureRecognizer/Proto/GestureRecognizerGraphOptions.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/PInvoke/MpReturnCode.cs" />
+    <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Tasks/Vision/GestureRecognizer/Proto/GestureRecognizerGraphOptions.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Protobuf/Framework/Formats/ImageFileProperties.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Unity/Annotation/FaceLandmarkListAnnotationController.cs" />
     <Compile Include="Packages/com.github.homuler.mediapipe/Runtime/Scripts/Tasks/Vision/FaceLandmarker/FaceLandmarkerResult.cs" />
