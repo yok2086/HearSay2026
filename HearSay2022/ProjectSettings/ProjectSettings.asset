@@ -164,6 +164,7 @@ PlayerSettings:
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
     Android: com.DefaultCompany.HearSay2022
+    Standalone: com.DefaultCompany.HearSay2022
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -412,7 +413,8 @@ PlayerSettings:
   enableCrashReportAPI: 0
   cameraUsageDescription: 
   locationUsageDescription: 
-  microphoneUsageDescription: 
+  microphoneUsageDescription: 'This application needs microphone access for speech
+    recognition. '
   bluetoothUsageDescription: 
   macOSTargetOSVersion: 10.13.0
   switchNMETAOverride: 
