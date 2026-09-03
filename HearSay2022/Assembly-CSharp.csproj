@@ -118,6 +118,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/WaitForResult.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/AppSettings.cs" />
+    <Compile Include="Assets/MicPermissionTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/MediaPipeUnity/Tutorial/Custom Graph/face_mesh_desktop_live.txt" />

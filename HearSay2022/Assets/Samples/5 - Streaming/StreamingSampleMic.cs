@@ -46,7 +46,15 @@ namespace Whisper.Samples
 
         private void OnRecordStop(AudioChunk recordedAudio)
         {
-            Debug.Log($"MIC STOPPED — samples: {recordedAudio.Data.Length}");
+            float max = 0f;
+
+            foreach (float sample in recordedAudio.Data)
+            {
+                max = Mathf.Max(max, Mathf.Abs(sample));
+            }
+
+            Debug.Log($"MIC — samples: {recordedAudio.Data.Length}, max volume: {max}");
+
             buttonText.text = "Record";
         }
 
