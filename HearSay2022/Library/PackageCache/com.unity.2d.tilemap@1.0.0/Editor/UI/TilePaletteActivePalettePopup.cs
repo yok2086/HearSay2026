@@ -13,7 +13,7 @@ namespace UnityEditor.Tilemaps
     {
         internal const string k_ToolbarId = "Tools/Tile Palette Active Palette";
 
-        private static string kNullGameObjectName = L10n.Tr("No Valid Palette");
+        private static string kNullGameObjectName = L10n.Tr("Create New Tile Palette");
         private static string kLabelTooltip =
             L10n.Tr("Specifies the currently active Palette used for painting in the Scene View.");
 
@@ -77,7 +77,7 @@ namespace UnityEditor.Tilemaps
 
         private void OnDetachFromPanel(DetachFromPanelEvent evt)
         {
-            GridPaintingState.palettesChanged -= UpdateTargets;
+            GridPaintingState.palettesChanged += UpdateTargets;
             GridPaintingState.paletteChanged -= OnPaletteChanged;
         }
 
@@ -110,7 +110,6 @@ namespace UnityEditor.Tilemaps
             {
                 choices.Add(target);
             }
-            formatSelectedValueCallback = FormatSelectedValueCallback;
         }
 
         private void UpdateActivePalette()

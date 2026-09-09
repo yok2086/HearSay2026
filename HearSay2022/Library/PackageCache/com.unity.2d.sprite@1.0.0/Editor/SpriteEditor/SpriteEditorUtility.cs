@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEvent = UnityEngine.Event;
@@ -174,6 +175,18 @@ namespace UnityEditor.U2D.Sprites
             w = EditorGUI.IntField(fieldRect, labelW, w);
 
             EditorGUIUtility.labelWidth = oldLabelWidth;
+        }
+
+        public static void DetermineGridCellSizeWithCellCount(int width, int height, Vector2 offset, Vector2 padding, Vector2 cellCount, out Vector2 cellSize)
+        {
+            cellSize.x = (width - offset.x -  (padding.x * Math.Max(0, cellCount.x - 1))) / cellCount.x;
+            cellSize.y = (height - offset.y - (padding.y * Math.Max(0, cellCount.y - 1))) / cellCount.y;
+
+            cellSize.x = Mathf.Floor(cellSize.x);
+            cellSize.y = Mathf.Floor(cellSize.y);
+
+            cellSize.x = Mathf.Clamp(cellSize.x, 1, width);
+            cellSize.y = Mathf.Clamp(cellSize.y, 1, height);
         }
     }
 }

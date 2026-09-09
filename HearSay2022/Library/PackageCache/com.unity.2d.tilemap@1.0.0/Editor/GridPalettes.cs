@@ -69,10 +69,7 @@ namespace UnityEditor.Tilemaps
             private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
             {
                 if (!GridPaintingState.savingPalette)
-                {
                     CleanCache();
-                    palettesChanged?.Invoke();
-                }
             }
         }
 

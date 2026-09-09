@@ -5,7 +5,6 @@ using UnityEditor.U2D.Sprites;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Object = UnityEngine.Object;
 
 namespace UnityEditor._2D.Sprite.Editor
 {
@@ -30,7 +29,6 @@ namespace UnityEditor._2D.Sprite.Editor
         string[] m_SuggestedNames;
         private IMGUIContainer m_SecondaryTextureInspectorContainer;
         internal List<SecondarySpriteTexture> secondaryTextureList { get; private set; }
-        Dictionary<int, Texture2D> m_PreviewTexture;
 
         public override string moduleName
         {
@@ -109,7 +107,6 @@ namespace UnityEditor._2D.Sprite.Editor
 
         public override void OnModuleActivate()
         {
-            m_PreviewTexture = new Dictionary<int, Texture2D>();
             var secondaryTextureDataProvider = spriteEditor.GetDataProvider<ISecondaryTextureDataProvider>();
             secondaryTextureList = secondaryTextureDataProvider.textures == null ? new List<SecondarySpriteTexture>() : secondaryTextureDataProvider.textures.ToList();
 
@@ -169,34 +166,10 @@ namespace UnityEditor._2D.Sprite.Editor
             }
 
             if (m_ReorderableList.index >= 0 && m_ReorderableList.index < secondaryTextureList.Count)
-            {
-                var generatedPreview = GetPreviewTexture(secondaryTextureList[m_ReorderableList.index].texture, width, height);
-                previewTexture = generatedPreview ?? secondaryTextureList[m_ReorderableList.index].texture;
-            }
+                previewTexture = secondaryTextureList[m_ReorderableList.index].texture;
 
             if (previewTexture != null)
                 spriteEditor.SetPreviewTexture(previewTexture, width, height);
-        }
-
-
-        Texture2D GetPreviewTexture(Object texture, int width, int height)
-        {
-            Texture2D previewTexture = null;
-            if (texture != null)
-            {
-                int instanceID = texture.GetInstanceID();
-                if (!m_PreviewTexture.TryGetValue(instanceID, out previewTexture))
-                {
-                    var assetPath = AssetDatabase.GetAssetPath(texture);
-                    if (assetPath != null && assetPath.Length > 0)
-                    {
-                        previewTexture = AssetPreviewUpdater.CreatePreview(texture, null, assetPath, width, height);
-                        m_PreviewTexture[instanceID] = previewTexture;
-                    }
-                }
-            }
-
-            return previewTexture;
         }
 
         public override void OnModuleDeactivate()
@@ -204,8 +177,6 @@ namespace UnityEditor._2D.Sprite.Editor
             DisplayMainTexture();
             if (spriteEditor.GetMainVisualContainer().Contains(m_SecondaryTextureInspectorContainer))
                 spriteEditor.GetMainVisualContainer().Remove(m_SecondaryTextureInspectorContainer);
-            m_PreviewTexture.Clear();
-            m_PreviewTexture = null;
         }
 
         void DrawSpriteSecondaryTextureElement(Rect rect, int index, bool isActive, bool isFocused)

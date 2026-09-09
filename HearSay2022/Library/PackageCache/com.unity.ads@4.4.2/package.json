@@ -42,5 +42,6 @@
       "description": "Contains sample scene and scripts for loading and showing ads with the Unity Ads SDK",
       "path": "Samples~"
     }
-  ]
+  ],
+  "_fingerprint": "a7b997f68a1d40387ca4d33fc75578709c140a37"
 }

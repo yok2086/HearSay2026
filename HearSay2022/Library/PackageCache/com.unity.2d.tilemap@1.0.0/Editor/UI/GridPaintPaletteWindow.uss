@@ -34,9 +34,12 @@
     right: 24px;
 }
 
+.unity-grid-paint-palette-window {
+    background-color: var(--unity-colors-tab-background-checked);
+}
+
 .unity-tilepalette-activetargets {
     min-height: 30px;
-    height: 30px;
     align-items: center;
     justify-content: center;
 }
@@ -60,8 +63,13 @@
 .unity-toolbar-button:checked {
     background-color: var(--unity-overlay-buttons-on-color);
 }
+
 .unity-toolbar-button:active {
     background-color: var(--unity-colors-button-background-pressed);
+}
+
+.unity-toolbar-toggle:checked {
+    background-color: var(--unity-overlay-buttons-on-color);
 }
 
 .unity-editor-toolbar__button-strip-element {

@@ -6,15 +6,24 @@ namespace UnityEditor.Tilemaps
 {
     internal class TilePaletteActiveTargetsDropdownMenu : IGenericMenu
     {
-        private const float k_ActiveTargetDropdownWidth = 190f;
+        private const float k_ActiveTargetDropdownWidth = 200f;
 
         private GridPaintTargetsDropdown m_Dropdown;
+        private TilePaletteCreateTargetsDropdownMenu m_Menu;
 
         public TilePaletteActiveTargetsDropdownMenu()
         {
-            int index = GridPaintingState.scenePaintTarget != null ? Array.IndexOf(GridPaintingState.validTargets, GridPaintingState.scenePaintTarget) : 0;
+            var index =
+                GridPaintingState.validTargets != null && GridPaintingState.scenePaintTarget != null
+                ? Array.IndexOf(GridPaintingState.validTargets, GridPaintingState.scenePaintTarget)
+                : -1;
             var menuData = new GridPaintTargetsDropdown.MenuItemProvider();
-            m_Dropdown = new GridPaintTargetsDropdown(menuData, index, null, SelectTarget, k_ActiveTargetDropdownWidth);
+            m_Dropdown = new GridPaintTargetsDropdown(menuData, index, null, SelectTarget, HoverTarget, k_ActiveTargetDropdownWidth);
+        }
+
+        private void OnClose()
+        {
+            PopupWindow.Show(default, m_Dropdown);
         }
 
         public void AddItem(string itemName, bool isChecked, System.Action action)
@@ -40,6 +49,12 @@ namespace UnityEditor.Tilemaps
 
         private static void SelectTarget(int i, object o)
         {
+            if ((GridPaintingState.validTargets == null && i > 0)
+                || (GridPaintingState.validTargets != null && i >= GridPaintingState.validTargets.Length))
+            {
+                return;
+            }
+
             var obj = o as GameObject;
             var isPrefabInstance = TilePalettePrefabUtility.IsObjectPrefabInstance(obj);
             if (isPrefabInstance)
@@ -76,6 +91,35 @@ namespace UnityEditor.Tilemaps
             }
 
             GridPaintingState.scenePaintTarget = obj;
+        }
+
+        private void HoverTarget(int index, Rect itemRect)
+        {
+            var targets = GridPaintingState.validTargets;
+            var count = 0;
+            if (targets != null)
+                count = targets.Length;
+
+            if (index < count)
+            {
+                if (m_Menu != null)
+                {
+                    m_Menu.Close();
+                    m_Menu = null;
+                }
+                return;
+            }
+
+            if (!GridPaintCreateTargetsDropdown.IsOpen)
+            {
+                m_Menu = new TilePaletteCreateTargetsDropdownMenu(OnClose);
+
+                var popupRect = itemRect;
+                popupRect.x += itemRect.width;
+                popupRect.y -= itemRect.height;
+
+                m_Menu.DropDown(popupRect);
+            }
         }
     }
 }

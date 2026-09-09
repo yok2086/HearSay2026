@@ -18,8 +18,8 @@ namespace UnityEditor.Tilemaps
             public static readonly string defaultToolsEditorPref = "TilemapEditorTool.DefaultTools";
 
             public static readonly GUIContent defaultToolsLabel = EditorGUIUtility.TrTextContent("Default Tile Palette Tools");
-            public static readonly GUIContent addLabel = EditorGUIUtility.TrTextContent("+", "Add to Defaults");
-            public static readonly GUIContent removeLabel = EditorGUIUtility.TrTextContent("-", "Remove from Defaults");
+            public static readonly GUIContent addLabel = EditorGUIUtility.TrTextContent("<<", "Add to Defaults");
+            public static readonly GUIContent removeLabel = EditorGUIUtility.TrTextContent(">>", "Remove from Defaults");
             public static readonly GUIContent saveLabel = EditorGUIUtility.TrTextContent("Save", "Save Defaults");
             public static readonly GUIContent revertLabel = EditorGUIUtility.TrTextContent("Revert", "Revert Changes");
             public static readonly GUIContent resetLabel = EditorGUIUtility.TrTextContent("Reset", "Reset Defaults");
@@ -216,7 +216,7 @@ namespace UnityEditor.Tilemaps
 
             m_DefaultTypes.DoLayoutList();
 
-            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginVertical(GUILayout.Width(100));
             if (GUILayout.Button(TilemapEditorToolProperties.addLabel))
             {
                 var otherIndex = m_OtherTypes.index;

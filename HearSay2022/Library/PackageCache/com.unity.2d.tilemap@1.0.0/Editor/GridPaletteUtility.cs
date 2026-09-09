@@ -9,7 +9,37 @@ namespace UnityEditor.Tilemaps
     /// </summary>
     public static class GridPaletteUtility
     {
+        internal enum GridPaletteType
+        {
+            Rectangle,
+            HexagonalPointTop,
+            HexagonalFlatTop,
+            Isometric,
+            IsometricZAsY,
+        };
+
         internal static readonly Vector3 defaultSortAxis = new Vector3(0f, 0f, 1f);
+
+        internal static GridLayout.CellLayout GetCellLayoutFromGridPaletteType(GridPaletteType paletteType)
+        {
+            switch (paletteType)
+            {
+                case GridPaletteType.HexagonalPointTop:
+                case GridPaletteType.HexagonalFlatTop:
+                {
+                    return GridLayout.CellLayout.Hexagon;
+                }
+                case GridPaletteType.Isometric:
+                {
+                    return GridLayout.CellLayout.Isometric;
+                }
+                case GridPaletteType.IsometricZAsY:
+                {
+                    return GridLayout.CellLayout.IsometricZAsY;
+                }
+            }
+            return GridLayout.CellLayout.Rectangle;
+        }
 
         internal static RectInt GetBounds(GameObject palette)
         {
@@ -71,8 +101,10 @@ namespace UnityEditor.Tilemaps
             string defaultPath = ProjectBrowser.s_LastInteractedProjectBrowser ? ProjectBrowser.s_LastInteractedProjectBrowser.GetActiveFolderPath() : "Assets";
             string folderPath = EditorUtility.SaveFolderPanel("Create palette into folder ", defaultPath, "");
             folderPath = FileUtil.GetProjectRelativePath(folderPath);
-            if (!TilePaletteSaveUtility.ValidateSaveFolder(folderPath))
+
+            if (string.IsNullOrEmpty(folderPath))
                 return null;
+
             return CreateNewPalette(folderPath, name, layout, cellSizing, cellSize, swizzle, sortMode, sortAxis);
         }
 
