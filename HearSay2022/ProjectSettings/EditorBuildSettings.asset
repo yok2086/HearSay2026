@@ -9,4 +9,9 @@ EditorBuildSettings:
     path: Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/Hand Landmark
       Detection.unity
     guid: 98d49dcfe667ea822a91d6b74f7cb2e9
-  m_configObjects: {}
+  m_configObjects:
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: e9bc6ab490aab4db8914b661f96250e3, type: 2}
+    UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: e6d7fab2f76ed42ccafe09e25a550afc, type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 3a165e2bff389411bac16df9bf588e2c, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 10a5dc5b54fa94853a7b8146c944e970, type: 2}
+  m_UseUCBPForAssetBundles: 0
