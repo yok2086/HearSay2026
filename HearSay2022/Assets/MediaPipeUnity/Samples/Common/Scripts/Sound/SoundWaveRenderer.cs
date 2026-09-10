@@ -1,113 +1,228 @@
-using TMPro;
+
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SoundWaveRenderer : MonoBehaviour
 {
-    public DummySoundInput soundInput;
-    public RectTransform waveTransform;
-    public TMP_Text waveText;
+    public RectTransform[] ripples;
 
-    public float pulseSpeed = 8f;
-    public float minScale = 0.8f;
-    public float maxScale = 1.2f;
+    [Header("Ripple Movement")]
+    public float rippleDistance = 120f;
+    public float duration = 1.2f;
+    public float rippleGap = 60f;
 
-    public float sideOffset = 350f;
-    public float verticalOffset = 200f;
+    [Header("Ripple Size")]
+    public float startSize = 50f;
+    public float endSize = 160f;
 
-    public float soundDuration = 3f;
+    [Header("Sound Duration")]
+    public float soundDuration = 5f;
 
+    [Header("Position")]
+    public float startOffset = 180f;
+
+    [Header("Ripple Delay")]
+    public float rippleDelay = 0.25f;
+
+    private bool isPlaying = false;
     private float soundTimer = 0f;
+    private float rippleTimer = 0f;
+
+    private Vector2 direction;
+    private Vector2 startPosition;
 
     void Start()
     {
-        waveText.gameObject.SetActive(false);
+        HideRipples();
     }
 
     void Update()
     {
-        if (soundInput == null || waveText == null || waveTransform == null)
-            return;
-
-        // Arrow key starts a new 5-second sound
-        if (Input.GetKeyDown(KeyCode.LeftArrow) ||
-            Input.GetKeyDown(KeyCode.RightArrow) ||
-            Input.GetKeyDown(KeyCode.UpArrow) ||
-            Input.GetKeyDown(KeyCode.DownArrow))
+        // LEFT
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            soundTimer = 0f;
+            StartSound(
+                Vector2.left,
+                new Vector2(-startOffset, 0f)
+            );
         }
 
-        // Space stops the sound
-        if (!soundInput.SoundPresent)
+        // RIGHT
+        if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            waveText.gameObject.SetActive(false);
-            return;
+            StartSound(
+                Vector2.right,
+                new Vector2(startOffset, 0f)
+            );
         }
 
-        // Count up the timer
+        // UP
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            StartSound(
+                Vector2.up,
+                new Vector2(0f, startOffset)
+            );
+        }
+
+        // DOWN
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            StartSound(
+                Vector2.down,
+                new Vector2(0f, -startOffset)
+            );
+        }
+
+        // SPACE = STOP
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            StopSound();
+        }
+
+        if (!isPlaying)
+            return;
+
         soundTimer += Time.deltaTime;
 
-        // Hide after 5 seconds
+        // Stop after sound duration
         if (soundTimer >= soundDuration)
         {
-            waveText.gameObject.SetActive(false);
+            StopSound();
             return;
         }
 
-        // Show the wave
-        waveText.gameObject.SetActive(true);
+        rippleTimer += Time.deltaTime;
 
-        // Choose direction
-        switch (soundInput.CurrentDirection)
+        AnimateRipples();
+    }
+
+    void AnimateRipples()
+    {
+        for (int i = 0; i < ripples.Length; i++)
         {
-            case DummySoundInput.SoundDirection.Left:
+            RectTransform ripple = ripples[i];
 
-                waveText.text = ")))";
+            // Ripple 1 starts first
+            // Ripple 2 follows
+            // Ripple 3 follows
+            float t =
+                (rippleTimer - i * rippleDelay)
+                / duration;
 
-                waveTransform.anchoredPosition =
-                    new Vector2(-sideOffset, 0);
+            // Not started yet
+            if (t < 0f)
+            {
+                ripple.gameObject.SetActive(false);
+                continue;
+            }
 
-                break;
+            // Finished
+            if (t > 1f)
+            {
+                ripple.gameObject.SetActive(false);
+                continue;
+            }
 
+            ripple.gameObject.SetActive(true);
 
-            case DummySoundInput.SoundDirection.Right:
+            // Smooth progress from 0 → 1
+            float progress =
+                Mathf.SmoothStep(0f, 1f, t);
 
-                waveText.text = "(((";
+            // --------------------------------
+            // POSITION
+            // --------------------------------
 
-                waveTransform.anchoredPosition =
-                    new Vector2(sideOffset, 0);
+            float startingGap =
+                i * rippleGap;
 
-                break;
+            Vector2 individualStart =
+                startPosition +
+                direction * startingGap;
 
+            ripple.anchoredPosition =
+                individualStart +
+                direction *
+                (rippleDistance * progress);
 
-            case DummySoundInput.SoundDirection.Up:
+            // --------------------------------
+            // GROW BIGGER
+            // --------------------------------
 
-                waveText.text = ")))";
+            float size =
+                Mathf.Lerp(
+                    startSize,
+                    endSize,
+                    progress
+                );
 
-                waveTransform.anchoredPosition =
-                    new Vector2(0, verticalOffset);
+            ripple.SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Horizontal,
+                size
+            );
 
-                break;
+            ripple.SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Vertical,
+                size
+            );
 
+            // --------------------------------
+            // FADE OUT
+            // --------------------------------
 
-            case DummySoundInput.SoundDirection.Down:
+            Image image =
+                ripple.GetComponent<Image>();
 
-                waveText.text = "(((";
+            if (image != null)
+            {
+                Color color = image.color;
 
-                waveTransform.anchoredPosition =
-                    new Vector2(0, -verticalOffset);
+                color.a =
+                    Mathf.Lerp(
+                        0.9f,
+                        0f,
+                        progress
+                    );
 
-                break;
+                image.color = color;
+            }
         }
+    }
 
-        // Pulsing animation
-        float pulse =
-            (Mathf.Sin(Time.time * pulseSpeed) + 1f) / 2f;
 
-        float scale =
-            Mathf.Lerp(minScale, maxScale, pulse);
+    void StartSound(
+        Vector2 newDirection,
+        Vector2 newStartPosition
+    )
+    {
+        direction = newDirection;
+        startPosition = newStartPosition;
 
-        waveTransform.localScale =
-            Vector3.one * scale;
+        soundTimer = 0f;
+        rippleTimer = 0f;
+
+        isPlaying = true;
+
+        HideRipples();
+    }
+
+    void StopSound()
+    {
+        isPlaying = false;
+
+        soundTimer = 0f;
+        rippleTimer = 0f;
+
+        HideRipples();
+    }
+
+    void HideRipples()
+    {
+        foreach (RectTransform ripple in ripples)
+        {
+            if (ripple != null)
+                ripple.gameObject.SetActive(false);
+        }
     }
 }

@@ -110,6 +110,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/InferenceMode.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/AutoFit.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/ImageSourceConfig.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/RippleEffect.cs" />
     <Compile Include="Assets/MediaPipeUnity/Tutorial/Custom Graph/FaceMeshLegacy.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Landmark Detection/FaceLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkerRunner.cs" />
