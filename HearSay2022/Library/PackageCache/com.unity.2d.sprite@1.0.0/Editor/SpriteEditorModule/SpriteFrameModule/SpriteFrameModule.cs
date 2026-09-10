@@ -24,14 +24,13 @@ namespace UnityEditor.U2D.Sprites
 
         private const float kOverlapTolerance = 0.00001f;
         private StringBuilder m_SpriteNameStringBuilder;
-        bool m_SpriteRectValidated = false;
 
         private List<Rect> m_PotentialRects;
         public List<Rect> potentialRects
         {
             set => m_PotentialRects = value;
         }
-        internal static Func<string, string, string, string, string, int> onShowComplexDialog = EditorUtility.DisplayDialogComplex;
+
         public SpriteFrameModule(ISpriteEditor sw, IEventSystem es, IUndoSystem us, IAssetDatabase ad) :
             base("Sprite Editor", sw, es, us, ad)
         {}
@@ -69,7 +68,6 @@ namespace UnityEditor.U2D.Sprites
         public override void OnModuleActivate()
         {
             base.OnModuleActivate();
-            m_SpriteRectValidated = false;
             spriteEditor.enableMouseMoveEvent = true;
             m_SpriteFrameModuleContext = new SpriteFrameModuleContext(this);
             ShortcutIntegration.instance.contextManager.RegisterToolContext(m_SpriteFrameModuleContext);
@@ -77,41 +75,9 @@ namespace UnityEditor.U2D.Sprites
             m_PotentialRects = null;
         }
 
-        void ValidateSpriteRects()
-        {
-            if (m_TextureDataProvider != null && !m_SpriteRectValidated)
-            {
-                m_SpriteRectValidated = true;
-                int width, height;
-                m_TextureDataProvider.GetTextureActualWidthAndHeight(out width, out height);
-                for (int i = 0; i < m_RectsCache.spriteRects.Count; ++i)
-                {
-                    var s = m_RectsCache.spriteRects[i];
-                    if(s.rect.x < 0 || s.rect.y < 0 || s.rect.xMax > width || s.rect.yMax > height)
-                    {
-                        var response = onShowComplexDialog("Invalid Sprite Rect", $"Sprite Rect {s.name} is outside the bounds of the texture.", "Remove", "Keep", "Resize");
-                        switch (response)
-                        {
-                            case 0:
-                                m_RectsCache.Remove(s);
-                                i--;
-                                spriteEditor.SetDataModified();
-                                break;
-                            case 2:
-                                s.rect = ClampSpriteRect(s.rect, width, height);
-                                spriteEditor.SetDataModified();
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
         public override void OnModuleDeactivate()
         {
             base.OnModuleDeactivate();
-            EditorApplication.delayCall -= ValidateSpriteRects;
-            m_SpriteRectValidated = true;
             ShortcutIntegration.instance.contextManager.DeregisterToolContext(m_SpriteFrameModuleContext);
             m_PotentialRects = null;
             m_AlphaPixelCache = null;
@@ -134,58 +100,6 @@ namespace UnityEditor.U2D.Sprites
             var name = m_SpriteNameStringBuilder.ToString();
             m_SpriteNameStringBuilder.Length = originalLength;
             return name;
-        }
-
-        // 1. Find top-most rectangle
-        // 2. Sweep it vertically to find out all rects from that "row"
-        // 3. goto 1.
-        // This will give us nicely sorted left->right top->down list of rectangles
-        // Works for most sprite sheets pretty nicely
-        private List<Rect> SortRects(List<Rect> rects)
-        {
-            List<Rect> result = new List<Rect>();
-
-            while (rects.Count > 0)
-            {
-                // Because the slicing algorithm works from bottom-up, the topmost rect is the last one in the array
-                Rect r = rects[rects.Count - 1];
-                Rect sweepRect = new Rect(0, r.yMin, textureActualWidth, r.height);
-
-                List<Rect> rowRects = RectSweep(rects, sweepRect);
-
-                if (rowRects.Count > 0)
-                    result.AddRange(rowRects);
-                else
-                {
-                    // We didn't find any rects, just dump the remaining rects and continue
-                    result.AddRange(rects);
-                    break;
-                }
-            }
-            return result;
-        }
-
-        private List<Rect> RectSweep(List<Rect> rects, Rect sweepRect)
-        {
-            if (rects == null || rects.Count == 0)
-                return new List<Rect>();
-
-            List<Rect> containedRects = new List<Rect>();
-
-            foreach (Rect rect in rects)
-            {
-                if (rect.Overlaps(sweepRect))
-                    containedRects.Add(rect);
-            }
-
-            // Remove found rects from original list
-            foreach (Rect rect in containedRects)
-                rects.Remove(rect);
-
-            // Sort found rects by x position
-            containedRects.Sort((a, b) => a.x.CompareTo(b.x));
-
-            return containedRects;
         }
 
         private int AddSprite(Rect frame, int alignment, Vector2 pivot, AutoSlicingMethod slicingMethod, int originalCount, ref int nameIndex)
@@ -323,7 +237,9 @@ namespace UnityEditor.U2D.Sprites
 
             var textureToUse = GetTextureToSlice();
             List<Rect> frames = new List<Rect>(InternalSpriteUtility.GenerateAutomaticSpriteRectangles((UnityTexture2D)textureToUse, minimumSpriteSize, 0));
-            frames = SortRects(frames);
+            if (frames.Count == 0)
+                frames.Add(new Rect(0, 0, textureToUse.width, textureToUse.height));
+
             int index = 0;
             int originalCount = m_RectsCache.spriteRects.Count;
 

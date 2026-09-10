@@ -46,6 +46,12 @@ namespace UnityEditor.U2D.Sprites
             return true;
         }
 
+        protected override int alphaTolerance
+        {
+            get => SpriteOutlineModulePreference.physicsAlphaTolerance;
+            set => SpriteOutlineModulePreference.physicsAlphaTolerance = value;
+        }
+
         protected override void LoadOutline()
         {
             m_Outline = ScriptableObject.CreateInstance<SpriteOutlineModel>();
@@ -65,7 +71,7 @@ namespace UnityEditor.U2D.Sprites
             var physicsShape = m_Outline[spriteRect.spriteID];
             var physicsShapes = GenerateSpriteRectOutline(spriteRect.rect,
                 Math.Abs(physicsShape.tessellationDetail - (-1f)) < Mathf.Epsilon ? kDefaultPhysicsTessellationDetail : physicsShape.tessellationDetail,
-                kDefaultPhysicsAlphaTolerance, m_TextureDataProvider);
+                kDefaultPhysicsAlphaTolerance, m_TextureDataProvider, m_SpriteOutlineToolElement.optimizeOutline);
             m_Outline[spriteRect.spriteID].spriteOutlines = physicsShapes;
             spriteEditorWindow.SetDataModified();
         }

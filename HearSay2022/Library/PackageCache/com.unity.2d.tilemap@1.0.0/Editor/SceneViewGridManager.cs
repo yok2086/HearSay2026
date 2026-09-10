@@ -16,9 +16,6 @@ namespace UnityEditor.Tilemaps
         [SerializeField]
         private GridLayout m_ActiveGridProxy;
 
-        [SerializeField]
-        private bool m_RegisteredGridProxy;
-
         private Dictionary<SceneView, bool> m_SceneViewShowGridMap;
 
         private bool m_RegisteredEventHandlers;
@@ -99,9 +96,9 @@ namespace UnityEditor.Tilemaps
             else
                 gridProxy = Selection.activeGameObject != null ? Selection.activeGameObject.GetComponentInParent<GridLayout>() : null;
 
-            if (gridProxy != m_ActiveGridProxy || (m_RegisteredGridProxy && gridProxy == null))
+            if (gridProxy != m_ActiveGridProxy)
             {
-                if (!m_RegisteredGridProxy && m_ActiveGridProxy == null)
+                if (m_ActiveGridProxy == null)
                 {
                     // Disable SceneView grid if there is now a GridProxy. Store user settings to be restored.
                     StoreSceneViewShowGrid(false);
@@ -111,7 +108,6 @@ namespace UnityEditor.Tilemaps
                     RestoreSceneViewShowGrid();
                 }
                 m_ActiveGridProxy = gridProxy;
-                m_RegisteredGridProxy = m_ActiveGridProxy != null;
                 FlushCachedGridProxy();
                 SceneView.RepaintAll();
             }

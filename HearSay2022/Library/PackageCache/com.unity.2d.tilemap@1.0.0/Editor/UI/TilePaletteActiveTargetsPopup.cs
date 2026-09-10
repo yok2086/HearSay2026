@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.UIElements.Experimental;
 
 namespace UnityEditor.Tilemaps
 {
@@ -11,7 +12,7 @@ namespace UnityEditor.Tilemaps
     /// </summary>
     public sealed class TilePaletteActiveTargetsPopup : PopupField<GameObject>
     {
-        private static string k_NullGameObjectName = L10n.Tr("No Valid Target");
+        private static string k_NullGameObjectName = GridPaintTargetsDropdown.k_CreateNewPaintTargetName;
 
         private static string k_LabelTooltip =
             L10n.Tr("Specifies the currently active Tilemap used for painting in the Scene View.");
@@ -41,17 +42,25 @@ namespace UnityEditor.Tilemaps
         /// </summary>
         private new static readonly string inputUssClassName = ussClassName + "__input";
         /// <summary>
-        /// USS class name of input elements in elements of this type when warning is shown.
-        /// </summary>
-        private static readonly string inputWarningUssClassName = inputUssClassName + "--warning";
-        /// <summary>
         /// USS class name of warning elements in elements of this type.
         /// </summary>
         private static readonly string warningUssClassName = ussClassName + "__warning";
+        /// <summary>
+        /// USS class name of input elements in elements of this type when create target hint is shown.
+        /// </summary>
+        private static readonly string createHintUssClassName = ussClassName + "__create";
 
         private readonly VisualElement m_WarningIconElement;
 
         private static List<GameObject> s_InvalidTargetsList = new List<GameObject>();
+
+        private bool needCreate
+        {
+            get => GridPaintingState.scenePaintTarget == null
+                    && (GridPaintingState.validTargets == null
+                    || GridPaintingState.validTargets.Length == 0);
+        }
+        private ValueAnimation<StyleValues> currentAnim;
 
         /// <summary>
         /// Initializes and returns an instance of TilePaletteActiveTargetsPopup.
@@ -79,7 +88,6 @@ namespace UnityEditor.Tilemaps
             m_WarningIconElement.name = "Warning Icon";
             m_WarningIconElement.AddToClassList(warningUssClassName);
             m_WarningIconElement.tooltip = k_WarningTooltip;
-
             contentContainer.Add(m_WarningIconElement);
 
             RegisterCallback<AttachToPanelEvent>(OnAttachedToPanel);
@@ -96,18 +104,22 @@ namespace UnityEditor.Tilemaps
         {
             GridPaintingState.scenePaintTargetChanged += OnScenePaintTargetChanged;
             GridPaintingState.validTargetsChanged += UpdateTargets;
+            GridPaintingState.scenePaintTargetEdited += OnScenePaintTargetEdited;
         }
 
         private void OnDetachFromPanel(DetachFromPanelEvent evt)
         {
             GridPaintingState.scenePaintTargetChanged -= OnScenePaintTargetChanged;
             GridPaintingState.validTargetsChanged -= UpdateTargets;
+            GridPaintingState.scenePaintTargetEdited -= OnScenePaintTargetEdited;
         }
 
         private string FormatSelectedValueCallback(GameObject go)
         {
             if (go != null)
                 return go.name;
+            if (GridPaintingState.scenePaintTarget != null)
+                return GridPaintingState.scenePaintTarget.name;
             return k_NullGameObjectName;
         }
 
@@ -139,6 +151,7 @@ namespace UnityEditor.Tilemaps
             {
                 choices.Add(target);
             }
+            SetValueWithoutNotify(GridPaintingState.scenePaintTarget);
         }
 
         private void UpdateActiveTarget()
@@ -151,17 +164,46 @@ namespace UnityEditor.Tilemaps
             }
             index = newIndex;
 
-            bool needWarning = TilePalettePrefabUtility.IsObjectPrefabInstance(GridPaintingState.scenePaintTarget);
-            if (needWarning)
-            {
-                visualInput.AddToClassList(inputWarningUssClassName);
-            }
-            else
-            {
-                visualInput.RemoveFromClassList(inputWarningUssClassName);
-            }
+            var needWarning = TilePalettePrefabUtility.IsObjectPrefabInstance(GridPaintingState.scenePaintTarget);
             m_WarningIconElement.visible = needWarning;
             m_WarningIconElement.style.position = needWarning ? Position.Relative : Position.Absolute;
+        }
+
+
+        private void OnScenePaintTargetEdited(GameObject obj)
+        {
+            if (!needCreate
+                || obj != null)
+                return;
+
+            if (currentAnim?.durationMs > 4000)
+            {
+                currentAnim.KeepAlive();
+                ClearAnim(currentAnim);
+            }
+
+            var target = parent ?? this;
+            var anim = target.experimental.animation.Start(
+                new StyleValues()
+                {
+                    borderColor = Color.yellow,
+                },
+                new StyleValues()
+                {
+                    borderColor = Color.clear,
+                }, 8000).Ease(Easing.OutQuad);
+            anim.OnCompleted(() => ClearAnim(anim));
+            currentAnim = anim;
+        }
+
+        void ClearAnim(IValueAnimation anim)
+        {
+            if (currentAnim != null && currentAnim == anim)
+            {
+                currentAnim = null;
+                anim.Stop();
+                anim.Recycle();
+            }
         }
 
         private void UpdateTargets()

@@ -5,15 +5,45 @@ namespace UnityEditor.Tilemaps
 {
     internal class TilePaletteActivePaletteDropdownMenu : IGenericMenu
     {
-        private const float k_DropdownWidth = 150f;
+        private const float k_DropdownWidth = 156f;
 
         private GridPalettesDropdown m_Dropdown;
+        private TilePaletteWhiteboxPaletteDropdownMenu m_Menu;
 
         public TilePaletteActivePaletteDropdownMenu()
         {
             int index = GridPaintingState.palettes != null ? GridPaintingState.palettes.IndexOf(GridPaintingState.palette) : 0;
             var menuData = new GridPalettesDropdown.MenuItemProvider();
-            m_Dropdown = new GridPalettesDropdown(menuData, index, null, SelectPalette, k_DropdownWidth);
+            m_Dropdown = new GridPalettesDropdown(menuData, index, null, SelectPalette, HoverPalette, k_DropdownWidth);
+        }
+
+        private void HoverPalette(int index, Rect itemRect)
+        {
+            if (index <= GridPalettes.palettes.Count )
+            {
+                if (m_Menu != null)
+                {
+                    m_Menu.Close();
+                    m_Menu = null;
+                }
+                return;
+            }
+
+            if (!GridPaletteWhiteboxPalettesDropdown.IsOpen)
+            {
+                m_Menu = new TilePaletteWhiteboxPaletteDropdownMenu(OnClose);
+
+                var popupRect = itemRect;
+                popupRect.x += itemRect.width;
+                popupRect.y -= itemRect.height;
+
+                m_Menu.DropDown(popupRect);
+            }
+        }
+
+        private void OnClose()
+        {
+            m_Dropdown.editorWindow.Close();
         }
 
         public void AddItem(string itemName, bool isChecked, System.Action action)
@@ -43,10 +73,10 @@ namespace UnityEditor.Tilemaps
             {
                 GridPaintingState.palette = GridPaintingState.palettes[i];
             }
-            else
+            else if (i == GridPaintingState.palettes.Count)
             {
                 m_Dropdown.editorWindow.Close();
-                OpenAddPalettePopup(new Rect(0, 0, 0, 0));
+                OpenAddPalettePopup(new Rect());
             }
         }
 

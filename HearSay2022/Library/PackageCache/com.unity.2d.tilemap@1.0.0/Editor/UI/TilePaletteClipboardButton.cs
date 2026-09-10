@@ -27,7 +27,7 @@ namespace UnityEditor.Tilemaps
         {
             base.ToggleValue();
             if (value)
-                BoolFieldOverlayPopupWindow.ShowOverlayPopup<TilePaletteClipboardPanelPopup>(this, new Vector2(370, 280), false);
+                BoolFieldOverlayPopupWindow.ShowOverlayPopup<TilePaletteClipboardPanelPopup>(this, new Vector2(370, 300), false);
             else
                 BoolFieldOverlayPopupWindow.CloseAllWindows<TilePaletteClipboardPanelPopup>();
         }

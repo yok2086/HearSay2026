@@ -28,11 +28,8 @@ namespace UnityEditor.U2D.Sprites
 
         private static void SettingsGUI(string searchContext)
         {
-            using (new SettingsWindow.GUIScope())
-            {
-                showApplyConfirmation = EditorGUILayout.Toggle(kShowApplyConfirmationLabel, showApplyConfirmation);
-                showRevertConfirmation = EditorGUILayout.Toggle(kShowRevertConfirmationLabel, showRevertConfirmation);
-            }
+            showApplyConfirmation = EditorGUILayout.Toggle(kShowApplyConfirmationLabel, showApplyConfirmation);
+            showRevertConfirmation = EditorGUILayout.Toggle(kShowRevertConfirmationLabel, showRevertConfirmation);
         }
 
         public static bool showRevertConfirmation

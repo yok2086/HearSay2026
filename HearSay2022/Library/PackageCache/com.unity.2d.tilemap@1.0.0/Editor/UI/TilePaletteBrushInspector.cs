@@ -28,7 +28,7 @@ namespace UnityEditor.Tilemaps
                 GridPaintingState.fallbackEditor.OnInspectorGUI();
             if (EditorGUI.EndChangeCheck())
             {
-                GridPaletteBrushes.ActiveGridBrushAssetChanged();
+                GridPaintingState.ActiveGridBrushAssetChanged();
             }
 
             // Z Position Inspector
