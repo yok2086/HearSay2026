@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class SoundWaveRenderer : MonoBehaviour
 {
+    public DummyServerManager dummyServer;
+
     public RectTransform[] ripples;
 
     [Header("Ripple Movement")]
@@ -25,6 +27,8 @@ public class SoundWaveRenderer : MonoBehaviour
     public float rippleDelay = 0.25f;
 
     private bool isPlaying = false;
+    private string lastDirection = "None";
+
     private float soundTimer = 0f;
     private float rippleTimer = 0f;
 
@@ -38,48 +42,52 @@ public class SoundWaveRenderer : MonoBehaviour
 
     void Update()
     {
-        // LEFT
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        // Make sure DummyServerManager is connected
+        if (dummyServer == null)
+            return;
+
+        string currentDirection = dummyServer.soundDirection;
+
+        // Only start a new ripple when the direction changes
+        if (currentDirection != lastDirection)
         {
-            StartSound(
-                Vector2.left,
-                new Vector2(-startOffset, 0f)
-            );
+            lastDirection = currentDirection;
+
+            if (currentDirection == "Left")
+            {
+                StartSound(
+                    Vector2.left,
+                    new Vector2(-startOffset, 0f)
+                );
+            }
+            else if (currentDirection == "Right")
+            {
+                StartSound(
+                    Vector2.right,
+                    new Vector2(startOffset, 0f)
+                );
+            }
+            else if (currentDirection == "Up")
+            {
+                StartSound(
+                    Vector2.up,
+                    new Vector2(0f, startOffset)
+                );
+            }
+            else if (currentDirection == "Down")
+            {
+                StartSound(
+                    Vector2.down,
+                    new Vector2(0f, -startOffset)
+                );
+            }
+            else if (currentDirection == "None")
+            {
+                StopSound();
+            }
         }
 
-        // RIGHT
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            StartSound(
-                Vector2.right,
-                new Vector2(startOffset, 0f)
-            );
-        }
-
-        // UP
-        if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            StartSound(
-                Vector2.up,
-                new Vector2(0f, startOffset)
-            );
-        }
-
-        // DOWN
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            StartSound(
-                Vector2.down,
-                new Vector2(0f, -startOffset)
-            );
-        }
-
-        // SPACE = STOP
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            StopSound();
-        }
-
+        // Nothing to animate
         if (!isPlaying)
             return;
 
@@ -103,9 +111,10 @@ public class SoundWaveRenderer : MonoBehaviour
         {
             RectTransform ripple = ripples[i];
 
-            // Ripple 1 starts first
-            // Ripple 2 follows
-            // Ripple 3 follows
+            if (ripple == null)
+                continue;
+
+            // Each ripple starts after the previous one
             float t =
                 (rippleTimer - i * rippleDelay)
                 / duration;
@@ -126,14 +135,11 @@ public class SoundWaveRenderer : MonoBehaviour
 
             ripple.gameObject.SetActive(true);
 
-            // Smooth progress from 0 → 1
+            // Smooth animation
             float progress =
                 Mathf.SmoothStep(0f, 1f, t);
 
-            // --------------------------------
-            // POSITION
-            // --------------------------------
-
+            // Starting position for this ripple
             float startingGap =
                 i * rippleGap;
 
@@ -141,15 +147,13 @@ public class SoundWaveRenderer : MonoBehaviour
                 startPosition +
                 direction * startingGap;
 
+            // Move outward
             ripple.anchoredPosition =
                 individualStart +
                 direction *
                 (rippleDistance * progress);
 
-            // --------------------------------
-            // GROW BIGGER
-            // --------------------------------
-
+            // Grow
             float size =
                 Mathf.Lerp(
                     startSize,
@@ -167,10 +171,7 @@ public class SoundWaveRenderer : MonoBehaviour
                 size
             );
 
-            // --------------------------------
-            // FADE OUT
-            // --------------------------------
-
+            // Fade out
             Image image =
                 ripple.GetComponent<Image>();
 
@@ -189,7 +190,6 @@ public class SoundWaveRenderer : MonoBehaviour
             }
         }
     }
-
 
     void StartSound(
         Vector2 newDirection,
@@ -222,7 +222,9 @@ public class SoundWaveRenderer : MonoBehaviour
         foreach (RectTransform ripple in ripples)
         {
             if (ripple != null)
+            {
                 ripple.gameObject.SetActive(false);
+            }
         }
     }
 }

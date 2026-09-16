@@ -5,16 +5,16 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639245602080000000
-    m_Hash: 1237187694
+      ticks: 639251222330000000
+    m_Hash: 2376539829
   m_LockFileStatus:
     m_FilePath: /Users/gyurim/HearSay2022/HearSay2022/Packages/packages-lock.json
     m_PathExists: 1
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639245602080000000
-    m_Hash: 2022000638
+      ticks: 639251222330000000
+    m_Hash: 192182383
 m_EmbeddedPackageManifests:
   m_ManifestsStatus:
     /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json:
@@ -687,7 +687,7 @@ m_ResolvedPackages:
   - name: com.unity.xr.arkit
     version: 5.1.3
   - name: com.unity.xr.arcore
-    version: 5.1.3
+    version: 5.1.6
   - name: com.unity.modules.androidjni
     version: 1.0.0
   - name: com.unity.xr.interaction.toolkit
@@ -1795,6 +1795,312 @@ m_ResolvedPackages:
     hash: 
     revision: 
   upmReserved: 
+  assetStore:
+    productId: 
+- packageId: com.unity.xr.arcore@5.1.6
+  testable: 0
+  isDirectDependency: 1
+  version: 5.1.6
+  source: 1
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.xr.arcore@5.1.6
+  assetPath: Packages/com.unity.xr.arcore
+  name: com.unity.xr.arcore
+  displayName: Google ARCore XR Plugin
+  author:
+    name: 
+    email: 
+    url: 
+  category: 
+  type: 
+  description: 'Provides native Google ARCore integration for use with Unity''s multi-platform
+    XR API.
+
+    Supports the following features:
+
+    -Efficient Background Rendering
+
+    -Horizontal
+    Planes
+
+    -Depth Data
+
+    -Anchors
+
+    -Hit Testing
+
+    -Occlusion'
+  errors: []
+  versions:
+    all:
+    - 1.0.0-preview.24
+    - 2.0.2
+    - 2.1.0-preview.4
+    - 2.1.0-preview.5
+    - 2.1.0
+    - 2.1.1
+    - 2.1.2
+    - 2.1.4
+    - 2.1.8
+    - 2.1.11
+    - 2.1.12
+    - 2.1.14
+    - 2.1.16
+    - 2.1.18
+    - 2.1.19
+    - 2.2.0-preview.1
+    - 2.2.0-preview.2
+    - 2.2.0-preview.6
+    - 3.0.0-preview.1
+    - 3.0.0-preview.2
+    - 3.0.0-preview.3
+    - 3.0.0-preview.4
+    - 3.0.1
+    - 3.0.3
+    - 3.0.4
+    - 3.1.0-preview.1
+    - 3.1.0-preview.2
+    - 3.1.0-preview.4
+    - 3.1.0-preview.6
+    - 3.1.0-preview.7
+    - 3.1.0-preview.8
+    - 3.1.3
+    - 3.1.4
+    - 3.1.5
+    - 3.1.7
+    - 3.1.8
+    - 3.1.10
+    - 4.0.0-preview.1
+    - 4.0.0-preview.3
+    - 4.0.3
+    - 4.0.4
+    - 4.0.8
+    - 4.0.9
+    - 4.0.10
+    - 4.0.12
+    - 4.1.0-preview.2
+    - 4.1.0-preview.3
+    - 4.1.0-preview.5
+    - 4.1.0-preview.6
+    - 4.1.0-preview.7
+    - 4.1.0-preview.9
+    - 4.1.0-preview.10
+    - 4.1.0-preview.11
+    - 4.1.0-preview.12
+    - 4.1.0-preview.13
+    - 4.1.1
+    - 4.1.3
+    - 4.1.5
+    - 4.1.7
+    - 4.1.9
+    - 4.1.10
+    - 4.1.12
+    - 4.1.13
+    - 4.2.0-pre.2
+    - 4.2.0-pre.3
+    - 4.2.0-pre.4
+    - 4.2.0-pre.5
+    - 4.2.0-pre.7
+    - 4.2.0-pre.8
+    - 4.2.0-pre.9
+    - 4.2.0-pre.10
+    - 4.2.0-pre.12
+    - 4.2.0
+    - 4.2.1
+    - 4.2.2
+    - 4.2.3
+    - 4.2.6
+    - 4.2.7
+    - 4.2.8
+    - 4.2.9
+    - 4.2.10
+    - 5.0.0-pre.5
+    - 5.0.0-pre.6
+    - 5.0.0-pre.7
+    - 5.0.0-pre.8
+    - 5.0.0-pre.9
+    - 5.0.0-pre.12
+    - 5.0.0-pre.13
+    - 5.0.2
+    - 5.0.3
+    - 5.0.4
+    - 5.0.5
+    - 5.0.6
+    - 5.0.7
+    - 5.1.0-pre.1
+    - 5.1.0-pre.2
+    - 5.1.0-pre.3
+    - 5.1.0-pre.4
+    - 5.1.0-pre.6
+    - 5.1.0-pre.8
+    - 5.1.0-pre.9
+    - 5.1.0-pre.10
+    - 5.1.0
+    - 5.1.1
+    - 5.1.2
+    - 5.1.3
+    - 5.1.4
+    - 5.1.5
+    - 5.1.6
+    - 5.2.0
+    - 5.2.2
+    - 6.0.0-pre.3
+    - 6.0.0-pre.4
+    - 6.0.0-pre.5
+    - 6.0.0-pre.6
+    - 6.0.0-pre.7
+    - 6.0.0-pre.8
+    - 6.0.1
+    - 6.0.2
+    - 6.0.3
+    - 6.0.4
+    - 6.0.5
+    - 6.0.6
+    - 6.0.7
+    - 6.0.8
+    - 6.1.0-pre.1
+    - 6.1.0-pre.2
+    - 6.1.0-pre.3
+    - 6.1.0-pre.4
+    - 6.1.0-pre.5
+    - 6.1.0
+    - 6.1.1
+    - 6.2.0-pre.1
+    - 6.2.0-pre.2
+    - 6.2.0-pre.3
+    - 6.2.0-pre.4
+    - 6.2.0
+    - 6.2.1
+    - 6.3.0-pre.1
+    - 6.3.0-pre.2
+    - 6.3.0
+    - 6.3.1
+    - 6.3.2
+    - 6.3.3
+    - 6.3.4
+    - 6.3.5
+    - 6.4.0-pre.1
+    - 6.4.0
+    - 6.4.1
+    - 6.4.2
+    - 6.4.3
+    - 6.5.0-pre.1
+    - 6.5.0-pre.2
+    - 6.5.0-pre.3
+    - 6.5.0
+    - 6.5.1
+    - 6.6.0-pre.1
+    - 6.6.0-pre.2
+    - 6.6.0
+    - 6.6.1
+    - 6.6.2
+    compatible:
+    - 5.1.3
+    - 5.1.4
+    - 5.1.5
+    - 5.1.6
+    - 5.2.0
+    - 5.2.2
+    - 6.0.0-pre.3
+    - 6.0.0-pre.4
+    - 6.0.0-pre.5
+    recommended: 5.1.6
+    deprecated: []
+  dependencies:
+  - name: com.unity.xr.core-utils
+    version: 2.1.0
+  - name: com.unity.xr.management
+    version: 4.0.1
+  - name: com.unity.xr.arfoundation
+    version: 5.1.6
+  - name: com.unity.modules.androidjni
+    version: 1.0.0
+  - name: com.unity.modules.unitywebrequest
+    version: 1.0.0
+  resolvedDependencies:
+  - name: com.unity.xr.core-utils
+    version: 2.3.0
+  - name: com.unity.modules.xr
+    version: 1.0.0
+  - name: com.unity.modules.physics
+    version: 1.0.0
+  - name: com.unity.modules.jsonserialize
+    version: 1.0.0
+  - name: com.unity.modules.subsystems
+    version: 1.0.0
+  - name: com.unity.xr.management
+    version: 4.4.0
+  - name: com.unity.modules.vr
+    version: 1.0.0
+  - name: com.unity.xr.legacyinputhelpers
+    version: 2.1.10
+  - name: com.unity.xr.arfoundation
+    version: 5.1.6
+  - name: com.unity.ugui
+    version: 2.0.0
+  - name: com.unity.modules.ui
+    version: 1.0.0
+  - name: com.unity.modules.imgui
+    version: 1.0.0
+  - name: com.unity.inputsystem
+    version: 1.7.0
+  - name: com.unity.modules.uielements
+    version: 1.0.0
+  - name: com.unity.modules.hierarchycore
+    version: 1.0.0
+  - name: com.unity.mathematics
+    version: 1.2.6
+  - name: com.unity.editorcoroutines
+    version: 1.0.0
+  - name: com.unity.modules.particlesystem
+    version: 1.0.0
+  - name: com.unity.modules.unityanalytics
+    version: 1.0.0
+  - name: com.unity.modules.unitywebrequest
+    version: 1.0.0
+  - name: com.unity.modules.androidjni
+    version: 1.0.0
+  keywords:
+  - arcore
+  - ar
+  - augmented
+  - xr
+  - reality
+  - core
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  entitlements:
+    licensingModel: 1
+  isAssetStorePackage: 0
+  datePublishedTicks: 638750399812590000
+  documentationUrl: https://docs.unity3d.com/Packages/com.unity.xr.arcore@5.1/manual/index.html
+  hasRepository: 1
+  repository:
+    type: git
+    url: https://github.cds.internal.unity3d.com/unity/arfoundation.git
+    revision: 37df803cce57e6d6a12eb76538d244f7c5d84618
+    path: 
+  unityLifecycle:
+    version: 5.1.3
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  git:
+    hash: 
+    revision: 
+  upmReserved: '{"changelog":"### Changed\n\n- Changed the AR Foundation dependency
+    version from 5.1.5 to 5.1.6.\n\n### Fixed\n\n- Fixed the `ARCoreSessionSubsystem`
+    so that your app no longer quits unexpectedly if you call `ARSession.Reset` on
+    the same frame that you create a session. ([ARFB-461](https://issuetracker.unity3d.com/issues/xr-android-player-crashes-when-arsession-dot-reset-is-called-after-arsession-is-instantiated-on-the-device))"}'
   assetStore:
     productId: 
 - packageId: com.unity.xr.arfoundation@5.1.6
@@ -5663,312 +5969,6 @@ m_ResolvedPackages:
     version from 5.1.2 to 5.1.3"}'
   assetStore:
     productId: 
-- packageId: com.unity.xr.arcore@5.1.3
-  testable: 0
-  isDirectDependency: 0
-  version: 5.1.3
-  source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.xr.arcore@5.1.3
-  assetPath: Packages/com.unity.xr.arcore
-  name: com.unity.xr.arcore
-  displayName: Google ARCore XR Plugin
-  author:
-    name: 
-    email: 
-    url: 
-  category: 
-  type: assets
-  description: 'Provides native Google ARCore integration for use with Unity''s multi-platform
-    XR API.
-
-    Supports the following features:
-
-    -Efficient Background Rendering
-
-    -Horizontal
-    Planes
-
-    -Depth Data
-
-    -Anchors
-
-    -Hit Testing
-
-    -Occlusion'
-  errors: []
-  versions:
-    all:
-    - 1.0.0-preview.24
-    - 2.0.2
-    - 2.1.0-preview.4
-    - 2.1.0-preview.5
-    - 2.1.0
-    - 2.1.1
-    - 2.1.2
-    - 2.1.4
-    - 2.1.8
-    - 2.1.11
-    - 2.1.12
-    - 2.1.14
-    - 2.1.16
-    - 2.1.18
-    - 2.1.19
-    - 2.2.0-preview.1
-    - 2.2.0-preview.2
-    - 2.2.0-preview.6
-    - 3.0.0-preview.1
-    - 3.0.0-preview.2
-    - 3.0.0-preview.3
-    - 3.0.0-preview.4
-    - 3.0.1
-    - 3.0.3
-    - 3.0.4
-    - 3.1.0-preview.1
-    - 3.1.0-preview.2
-    - 3.1.0-preview.4
-    - 3.1.0-preview.6
-    - 3.1.0-preview.7
-    - 3.1.0-preview.8
-    - 3.1.3
-    - 3.1.4
-    - 3.1.5
-    - 3.1.7
-    - 3.1.8
-    - 3.1.10
-    - 4.0.0-preview.1
-    - 4.0.0-preview.3
-    - 4.0.3
-    - 4.0.4
-    - 4.0.8
-    - 4.0.9
-    - 4.0.10
-    - 4.0.12
-    - 4.1.0-preview.2
-    - 4.1.0-preview.3
-    - 4.1.0-preview.5
-    - 4.1.0-preview.6
-    - 4.1.0-preview.7
-    - 4.1.0-preview.9
-    - 4.1.0-preview.10
-    - 4.1.0-preview.11
-    - 4.1.0-preview.12
-    - 4.1.0-preview.13
-    - 4.1.1
-    - 4.1.3
-    - 4.1.5
-    - 4.1.7
-    - 4.1.9
-    - 4.1.10
-    - 4.1.12
-    - 4.1.13
-    - 4.2.0-pre.2
-    - 4.2.0-pre.3
-    - 4.2.0-pre.4
-    - 4.2.0-pre.5
-    - 4.2.0-pre.7
-    - 4.2.0-pre.8
-    - 4.2.0-pre.9
-    - 4.2.0-pre.10
-    - 4.2.0-pre.12
-    - 4.2.0
-    - 4.2.1
-    - 4.2.2
-    - 4.2.3
-    - 4.2.6
-    - 4.2.7
-    - 4.2.8
-    - 4.2.9
-    - 4.2.10
-    - 5.0.0-pre.5
-    - 5.0.0-pre.6
-    - 5.0.0-pre.7
-    - 5.0.0-pre.8
-    - 5.0.0-pre.9
-    - 5.0.0-pre.12
-    - 5.0.0-pre.13
-    - 5.0.2
-    - 5.0.3
-    - 5.0.4
-    - 5.0.5
-    - 5.0.6
-    - 5.0.7
-    - 5.1.0-pre.1
-    - 5.1.0-pre.2
-    - 5.1.0-pre.3
-    - 5.1.0-pre.4
-    - 5.1.0-pre.6
-    - 5.1.0-pre.8
-    - 5.1.0-pre.9
-    - 5.1.0-pre.10
-    - 5.1.0
-    - 5.1.1
-    - 5.1.2
-    - 5.1.3
-    - 5.1.4
-    - 5.1.5
-    - 5.1.6
-    - 5.2.0
-    - 5.2.2
-    - 6.0.0-pre.3
-    - 6.0.0-pre.4
-    - 6.0.0-pre.5
-    - 6.0.0-pre.6
-    - 6.0.0-pre.7
-    - 6.0.0-pre.8
-    - 6.0.1
-    - 6.0.2
-    - 6.0.3
-    - 6.0.4
-    - 6.0.5
-    - 6.0.6
-    - 6.0.7
-    - 6.0.8
-    - 6.1.0-pre.1
-    - 6.1.0-pre.2
-    - 6.1.0-pre.3
-    - 6.1.0-pre.4
-    - 6.1.0-pre.5
-    - 6.1.0
-    - 6.1.1
-    - 6.2.0-pre.1
-    - 6.2.0-pre.2
-    - 6.2.0-pre.3
-    - 6.2.0-pre.4
-    - 6.2.0
-    - 6.2.1
-    - 6.3.0-pre.1
-    - 6.3.0-pre.2
-    - 6.3.0
-    - 6.3.1
-    - 6.3.2
-    - 6.3.3
-    - 6.3.4
-    - 6.3.5
-    - 6.4.0-pre.1
-    - 6.4.0
-    - 6.4.1
-    - 6.4.2
-    - 6.4.3
-    - 6.5.0-pre.1
-    - 6.5.0-pre.2
-    - 6.5.0-pre.3
-    - 6.5.0
-    - 6.5.1
-    - 6.6.0-pre.1
-    - 6.6.0-pre.2
-    - 6.6.0
-    - 6.6.1
-    - 6.6.2
-    compatible:
-    - 5.1.3
-    - 5.1.4
-    - 5.1.5
-    - 5.1.6
-    - 5.2.0
-    - 5.2.2
-    - 6.0.0-pre.3
-    - 6.0.0-pre.4
-    - 6.0.0-pre.5
-    recommended: 5.1.6
-    deprecated: []
-  dependencies:
-  - name: com.unity.xr.core-utils
-    version: 2.1.0
-  - name: com.unity.xr.management
-    version: 4.0.1
-  - name: com.unity.xr.arfoundation
-    version: 5.1.3
-  - name: com.unity.modules.androidjni
-    version: 1.0.0
-  - name: com.unity.modules.unitywebrequest
-    version: 1.0.0
-  resolvedDependencies:
-  - name: com.unity.xr.core-utils
-    version: 2.3.0
-  - name: com.unity.modules.xr
-    version: 1.0.0
-  - name: com.unity.modules.physics
-    version: 1.0.0
-  - name: com.unity.modules.jsonserialize
-    version: 1.0.0
-  - name: com.unity.modules.subsystems
-    version: 1.0.0
-  - name: com.unity.xr.management
-    version: 4.4.0
-  - name: com.unity.modules.vr
-    version: 1.0.0
-  - name: com.unity.xr.legacyinputhelpers
-    version: 2.1.10
-  - name: com.unity.xr.arfoundation
-    version: 5.1.6
-  - name: com.unity.ugui
-    version: 2.0.0
-  - name: com.unity.modules.ui
-    version: 1.0.0
-  - name: com.unity.modules.imgui
-    version: 1.0.0
-  - name: com.unity.inputsystem
-    version: 1.7.0
-  - name: com.unity.modules.uielements
-    version: 1.0.0
-  - name: com.unity.modules.hierarchycore
-    version: 1.0.0
-  - name: com.unity.mathematics
-    version: 1.2.6
-  - name: com.unity.editorcoroutines
-    version: 1.0.0
-  - name: com.unity.modules.particlesystem
-    version: 1.0.0
-  - name: com.unity.modules.unityanalytics
-    version: 1.0.0
-  - name: com.unity.modules.unitywebrequest
-    version: 1.0.0
-  - name: com.unity.modules.androidjni
-    version: 1.0.0
-  keywords:
-  - arcore
-  - ar
-  - augmented
-  - xr
-  - reality
-  - core
-  registry:
-    id: main
-    name: 
-    url: https://packages.unity.com
-    scopes: []
-    isDefault: 1
-    capabilities: 7
-    configSource: 0
-  hideInEditor: 1
-  entitlements:
-    licensingModel: 1
-  isAssetStorePackage: 0
-  datePublishedTicks: 638470571150000000
-  documentationUrl: https://docs.unity3d.com/Packages/com.unity.xr.arcore@5.1/manual/index.html
-  hasRepository: 1
-  repository:
-    type: git
-    url: https://github.cds.internal.unity3d.com/unity/arfoundation.git
-    revision: c3f7a8160ce1b8e2200765cc03caf0e0f1e29226
-    path: 
-  unityLifecycle:
-    version: 5.1.3
-    nextVersion: 
-    recommendedVersion: 
-    isDeprecated: 0
-    deprecationMessage: 
-  isDeprecated: 0
-  deprecationMessage: 
-  git:
-    hash: 
-    revision: 
-  upmReserved: '{"changelog":"### Changed\n\n- Changed the AR Foundation dependency
-    version from 5.1.2 to 5.1.3\n\n### Fixed\n\n- Fixed issue [ARCB-21](https://issuetracker.unity3d.com/issues/google-arcore-error-isnt-fixed-when-pressing-the-fix-button-in-project-validation)
-    where ''Fix'' button on Project Validation rule requiring OpenGLES3 would not
-    fix the issue if Auto Graphics API was enabled."}'
-  assetStore:
-    productId: 
 - packageId: com.unity.xr.interaction.toolkit@2.5.4
   testable: 0
   isDirectDependency: 0
@@ -6974,12 +6974,15 @@ m_ResolvedPackages:
     email: 
     url: 
   category: 
-  type: 
+  type: asset
   description: Contains definitions for Interaction Subsystems. This package is a
     dependency of provider packages.
   errors: []
   versions:
     all:
+    - 0.0.1-preview.3
+    - 1.0.0
+    - 1.0.1
     - 2.0.0
     compatible:
     - 2.0.0
@@ -7007,9 +7010,9 @@ m_ResolvedPackages:
     configSource: 0
   hideInEditor: 1
   entitlements:
-    licensingModel: 0
+    licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 0
+  datePublishedTicks: 638064766130000000
   documentationUrl: 
   hasRepository: 1
   repository:
