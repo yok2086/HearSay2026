@@ -71,6 +71,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CaptionManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ASLManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/LegacySolutionRunner.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ARMediaPipeBridge.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/ImageSegmentationConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/HandLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/GraphRunner.cs" />

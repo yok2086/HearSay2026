@@ -7,6 +7,11 @@ public class ASLManager : MonoBehaviour
 
     public TextMeshProUGUI aslText;
 
+    [Header("Position")]
+    public RectTransform targetPerson;
+
+    public Vector2 aslOffset = new Vector2(0f, -280f);
+
     void Start()
     {
         ClearASL();
@@ -25,6 +30,8 @@ public class ASLManager : MonoBehaviour
         {
             ClearASL();
         }
+
+        UpdatePosition();
     }
 
     void ShowASL(string word)
@@ -41,5 +48,16 @@ public class ASLManager : MonoBehaviour
         {
             aslText.text = "";
         }
+    }
+
+    void UpdatePosition()
+    {
+        if (aslText == null || targetPerson == null)
+            return;
+
+        RectTransform aslRect = aslText.GetComponent<RectTransform>();
+
+        aslRect.position =
+            targetPerson.position + (Vector3)aslOffset;
     }
 }
