@@ -5,10 +5,13 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/Hand Landmark
       Detection.unity
     guid: 98d49dcfe667ea822a91d6b74f7cb2e9
+  - enabled: 1
+    path: Assets/Scenes/HearSayVisualizer.unity
+    guid: f6e7c4767991c419d94db9e4145edad4
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: e9bc6ab490aab4db8914b661f96250e3, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: e6d7fab2f76ed42ccafe09e25a550afc, type: 2}
