@@ -8,7 +8,7 @@ BROKER_HOST = "Nathans-MacBook-Pro-4.local"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/Users/NathanTan_1/mqtt/mosquitto_certs/ca.crt"
+CA_CERT_PATH = "/Users/NathanTan_1/HearSay2026/Comms/mqtt/mosquitto_certs/ca.crt"
 DEFAULT_SAMPLE_RATE_HZ = 50
 WATCHDOG_TIMEOUT_S = 20
 # ------------------------

@@ -18,7 +18,7 @@ BROKER_HOST = "localhost"   # reached via your existing -L relay tunnel
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/Users/NathanTan_1/mqtt/mosquitto_certs/ca.crt"
+CA_CERT_PATH = "/Users/NathanTan_1/HearSay2026/Comms/mqtt/mosquitto_certs/ca.crt"
 # ------------------------
 
 latest_result = {}   # device_id -> most recent result, for a simple live summary
