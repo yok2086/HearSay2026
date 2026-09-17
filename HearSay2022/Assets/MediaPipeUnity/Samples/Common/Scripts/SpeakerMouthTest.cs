@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
 using Mediapipe.Tasks.Components.Containers;
@@ -10,8 +9,16 @@ namespace HearSay
         [Header("Test Settings")]
         [SerializeField] private float speakingThreshold = 0.15f;
 
+        private int currentSpeaker = -1;
+
         public void ProcessFaceResult(FaceLandmarkerResult result)
         {
+            if (result.faceLandmarks == null)
+            {
+                Debug.Log("No face landmark data.");
+                return;
+            }
+
             if (result.faceBlendshapes == null ||
                 result.faceBlendshapes.Count == 0)
             {
@@ -19,15 +26,21 @@ namespace HearSay
                 return;
             }
 
-            for (int faceIndex = 0; faceIndex < result.faceBlendshapes.Count; faceIndex++)
+            int speakerFace = -1;
+            float highestMouthMovement = 0f;
+
+            for (int faceIndex = 0;
+                 faceIndex < result.faceBlendshapes.Count;
+                 faceIndex++)
             {
                 Classifications classifications =
                     result.faceBlendshapes[faceIndex];
 
-                var categories = classifications.categories;
+                if (classifications.categories == null)
+                    continue;
 
                 float mouthOpen = GetBlendshapeValue(
-                    categories,
+                    classifications.categories,
                     "jawOpen"
                 );
 
@@ -37,12 +50,33 @@ namespace HearSay
                     mouthOpen.ToString("F3")
                 );
 
-                if (mouthOpen > speakingThreshold)
+                if (mouthOpen > highestMouthMovement)
                 {
+                    highestMouthMovement = mouthOpen;
+                    speakerFace = faceIndex;
+                }
+            }
+
+            if (highestMouthMovement >= speakingThreshold)
+            {
+                if (currentSpeaker != speakerFace)
+                {
+                    currentSpeaker = speakerFace;
+
                     Debug.Log(
-                        ">>> FACE " + faceIndex +
-                        " IS SPEAKING <<<"
+                        ">>> CURRENT SPEAKER: FACE " +
+                        currentSpeaker +
+                        " <<<"
                     );
+                }
+            }
+            else
+            {
+                if (currentSpeaker != -1)
+                {
+                    currentSpeaker = -1;
+
+                    Debug.Log(">>> NO ONE SPEAKING <<<");
                 }
             }
         }
@@ -52,6 +86,9 @@ namespace HearSay
             string name
         )
         {
+            if (categories == null)
+                return 0f;
+
             for (int i = 0; i < categories.Count; i++)
             {
                 if (categories[i].categoryName == name)
