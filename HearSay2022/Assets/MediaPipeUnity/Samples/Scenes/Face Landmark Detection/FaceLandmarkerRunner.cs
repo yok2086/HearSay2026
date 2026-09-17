@@ -32,6 +32,8 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
 
     protected override IEnumerator Run()
     {
+      Debug.Log("=== HEARSAY RUN STARTED ===");
+      Debug.Log("=== NUMBER OF FACES = " + config.NumFaces + " ===");
       Debug.Log($"Delegate = {config.Delegate}");
       Debug.Log($"Image Read Mode = {config.ImageReadMode}");
       Debug.Log($"Running Mode = {config.RunningMode}");
@@ -43,16 +45,19 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
       Debug.Log($"OutputFacialTransformationMatrixes = {config.OutputFacialTransformationMatrixes}");
 
       yield return AssetLoader.PrepareAssetAsync(config.ModelPath);
+      Debug.Log("=== MODEL PREPARED ===");
 
       var options = config.GetFaceLandmarkerOptions(
-        config.RunningMode == Tasks.Vision.Core.RunningMode.LIVE_STREAM
-          ? OnFaceLandmarkDetectionOutput
-          : null
+          config.RunningMode == Tasks.Vision.Core.RunningMode.LIVE_STREAM
+              ? OnFaceLandmarkDetectionOutput
+              : null
       );
 
+      Debug.Log("=== MEDIAPIPE NUM FACES: " + options.numFaces + " ===");
+
       taskApi = FaceLandmarker.CreateFromOptions(
-        options,
-        GpuManager.GpuResources
+          options,
+          GpuManager.GpuResources
       );
 
       var imageSource = ImageSourceProvider.ImageSource;
