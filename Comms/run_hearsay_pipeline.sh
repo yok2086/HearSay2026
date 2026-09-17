@@ -14,7 +14,7 @@ LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
 REMOTE_PORT="8883"
 
-LOCAL_DIR="$HOME/capstone"
+LOCAL_DIR="$HOME/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
 
 TMUX_SESSION="hearsay"
