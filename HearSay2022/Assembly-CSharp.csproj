@@ -84,6 +84,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoGraph.cs" />
     <Compile Include="Assets/MediaPipeUnity/Tutorial/Hello World/HelloWorld.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/DummyServerManager.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerMouthTest.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerHighlight.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/External/FontAwesome/UnicodeInlineText.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/HolisticTrackingConfig.cs" />
