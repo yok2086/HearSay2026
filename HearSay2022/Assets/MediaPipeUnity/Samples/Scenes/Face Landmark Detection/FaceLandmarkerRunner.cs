@@ -77,12 +77,14 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
         10
       );
 
-      screen.Initialize(imageSource);
-
-      SetupAnnotationController(
-        _faceLandmarkerResultAnnotationController,
-        imageSource
-      );
+      if (_faceLandmarkerResultAnnotationController != null)
+      {
+        screen.Initialize(imageSource);
+        SetupAnnotationController(
+          _faceLandmarkerResultAnnotationController,
+          imageSource
+        );
+      }
 
       var transformationOptions =
         imageSource.GetTransformationOptions();
@@ -277,9 +279,7 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
     {
       Debug.Log("FACE DETECTED RESULT RECEIVED");
 
-      _faceLandmarkerResultAnnotationController.DrawLater(
-        result
-      );
+      _faceLandmarkerResultAnnotationController?.DrawLater(result);
 
       SendResultToSpeakerTest(result);
     }

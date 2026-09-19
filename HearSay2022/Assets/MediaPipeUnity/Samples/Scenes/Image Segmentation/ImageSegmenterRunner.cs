@@ -19,6 +19,13 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
 
     public readonly ImageSegmentationConfig config = new ImageSegmentationConfig();
 
+    private void Update()
+    {
+      _imageSegmenterResultAnnotationController.SetOverlayVisible(
+        HearSay.SpeakerActivity.IsSpeaking
+      );
+    }
+
     public override void Stop()
     {
       base.Stop();

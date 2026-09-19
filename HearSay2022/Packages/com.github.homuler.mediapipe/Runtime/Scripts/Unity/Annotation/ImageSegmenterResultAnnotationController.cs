@@ -31,6 +31,8 @@ namespace Mediapipe.Unity
 
     public void SelectMask(int maskIndex) => _maskIndex = maskIndex;
 
+    public void SetOverlayVisible(bool visible) => annotation.SetVisible(visible);
+
     public void DrawNow(ImageSegmenterResult target)
     {
       _currentTarget = target;

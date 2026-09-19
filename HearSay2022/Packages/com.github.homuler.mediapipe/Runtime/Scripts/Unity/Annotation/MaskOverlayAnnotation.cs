@@ -19,7 +19,7 @@ namespace Mediapipe.Unity
   {
     [SerializeField] private Shader _maskShader;
     [SerializeField] private Texture2D _maskTexture;
-    [SerializeField] private Color _color = Color.blue;
+    [SerializeField] private Color _color = new Color(1f, 0.92f, 0f, 0.55f);
     [SerializeField, Range(0, 1)] private float _threshold = 0.9f;
 
     private GameObject _screenObject;
@@ -48,6 +48,14 @@ namespace Mediapipe.Unity
       if (_screenObject != null)
       {
         _screenObject.SetActive(false);
+      }
+    }
+
+    public void SetVisible(bool visible)
+    {
+      if (_screenObject != null)
+      {
+        _screenObject.SetActive(visible);
       }
     }
 

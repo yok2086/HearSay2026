@@ -97,6 +97,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/DummySoundInput.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfigWindows.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkDetectionConfigWindow.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayLiveCaption.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/SolutionMenu.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/ImageSegmentationConfigWindow.cs" />
@@ -126,6 +127,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/HolisticTrackingGraph.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Landmark Detection/FaceLandmarkDetectionConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/HandLandmarkDetectionConfig.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/PoseBodyOutline.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSourceType.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/SoundWaveRenderer.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoSolution.cs" />
@@ -158,6 +160,7 @@
     <None Include="Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/holistic_opengles.txt" />
+    <None Include="Assets/MediaPipeUnity/Samples/Common/Shaders/HearSaySilhouetteOutline.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
