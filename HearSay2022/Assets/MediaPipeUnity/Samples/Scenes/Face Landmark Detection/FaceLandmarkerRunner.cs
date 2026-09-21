@@ -62,7 +62,12 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
 
       var imageSource = ImageSourceProvider.ImageSource;
 
-      yield return imageSource.Play();
+      // Image Segmentation also uses this shared camera source in the HearSay scene.
+      // Do not restart it once another runner has started the phone camera.
+      if (!imageSource.isPrepared)
+      {
+        yield return imageSource.Play();
+      }
 
       if (!imageSource.isPrepared)
       {

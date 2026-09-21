@@ -132,7 +132,19 @@ namespace Mediapipe.Unity
 
       if (availableSources != null && availableSources.Length > 0)
       {
-        webCamDevice = availableSources[0];
+        var selectedDevice = availableSources[0];
+#if UNITY_ANDROID && !UNITY_EDITOR
+        // Android devices can expose several lenses. Prefer a regular back-facing color camera.
+        for (var i = 0; i < availableSources.Length; i++)
+        {
+          if (!availableSources[i].isFrontFacing)
+          {
+            selectedDevice = availableSources[i];
+            break;
+          }
+        }
+#endif
+        webCamDevice = selectedDevice;
       }
     }
 
@@ -148,8 +160,13 @@ namespace Mediapipe.Unity
 #if UNITY_ANDROID
         if (!Permission.HasUserAuthorizedPermission(Permission.Camera))
         {
-          Permission.RequestUserPermission(Permission.Camera);
-          yield return new WaitForSeconds(0.1f);
+          var permissionRequestFinished = false;
+          var callbacks = new PermissionCallbacks();
+          callbacks.PermissionGranted += _ => permissionRequestFinished = true;
+          callbacks.PermissionDenied += _ => permissionRequestFinished = true;
+          callbacks.PermissionDeniedAndDontAskAgain += _ => permissionRequestFinished = true;
+          Permission.RequestUserPermission(Permission.Camera, callbacks);
+          yield return new WaitUntil(() => permissionRequestFinished);
         }
 #elif UNITY_IOS
         if (!Application.HasUserAuthorization(UserAuthorization.WebCam)) {

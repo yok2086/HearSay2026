@@ -47,7 +47,12 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
       taskApi = ImageSegmenter.CreateFromOptions(options, GpuManager.GpuResources);
       var imageSource = ImageSourceProvider.ImageSource;
 
-      yield return imageSource.Play();
+      // Face Landmarker shares this camera source in the HearSay scene.
+      // Reuse an active camera instead of recreating the Android camera texture.
+      if (!imageSource.isPrepared)
+      {
+        yield return imageSource.Play();
+      }
 
       if (!imageSource.isPrepared)
       {

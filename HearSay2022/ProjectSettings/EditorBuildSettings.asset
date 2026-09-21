@@ -9,9 +9,26 @@ EditorBuildSettings:
     path: Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/Hand Landmark
       Detection.unity
     guid: 98d49dcfe667ea822a91d6b74f7cb2e9
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/HearSayVisualizer.unity
     guid: f6e7c4767991c419d94db9e4145edad4
+  - enabled: 0
+    path: Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/Image Segmentation.unity
+    guid: d3c55222b68d3b6b797034638df4d179
+  - enabled: 0
+    path: Assets/Samples/5 - Streaming/5 - Streaming.unity
+    guid: 863dec49b0c6a45699439faa2930b57f
+  - enabled: 0
+    path: Assets/MediaPipeUnity/Samples/Scenes/HearSay Combined Test/HearSay Combined
+      Test.unity
+    guid: 39090ee52955a4e08999e676e3b25ccf
+  - enabled: 0
+    path: Assets/MediaPipeUnity/Samples/Scenes/Face Detection/Face Detection.unity
+    guid: 6398790df6f5f3123a3d09434706eb95
+  - enabled: 1
+    path: Assets/MediaPipeUnity/Samples/Scenes/Android Camera Test/Android Camera
+      Test.unity
+    guid: 570fe1a5041a74d0982bb4dd9a0d34d2
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: e9bc6ab490aab4db8914b661f96250e3, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: e6d7fab2f76ed42ccafe09e25a550afc, type: 2}

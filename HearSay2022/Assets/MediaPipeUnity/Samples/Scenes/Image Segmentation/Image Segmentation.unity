@@ -488,7 +488,7 @@ MonoBehaviour:
   lengthSec: 10
   updatePrompt: 1
   dropOldBuffer: 0
-  useVad: 0
+  useVad: 1
   tokensTimestamps: 0
   audioCtx: 0
 --- !u!114 &1064799466
