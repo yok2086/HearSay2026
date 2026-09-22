@@ -115,3 +115,6 @@ InitTestScene*.unity*
 
 # MQTT Certificates
 /Comms/mqtt/mosquitto_certs*
+
+# Passwords
+/Comms/secrets.h
