@@ -86,7 +86,6 @@ namespace HearSay
                 ? "Speaker detected — listening…"
                 : "Listening…";
 #if UNITY_ANDROID && !UNITY_EDITOR
-            // Match the working 5 - Streaming sample: let Android select its default phone microphone.
             microphoneRecord.SelectedMicDevice = null;
 #else
             microphoneRecord.SelectedMicDevice = Microphone.devices[0];

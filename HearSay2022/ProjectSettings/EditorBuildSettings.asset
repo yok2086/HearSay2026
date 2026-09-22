@@ -12,7 +12,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/HearSayVisualizer.unity
     guid: f6e7c4767991c419d94db9e4145edad4
-  - enabled: 0
+  - enabled: 1
     path: Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/Image Segmentation.unity
     guid: d3c55222b68d3b6b797034638df4d179
   - enabled: 0
@@ -25,10 +25,19 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/MediaPipeUnity/Samples/Scenes/Face Detection/Face Detection.unity
     guid: 6398790df6f5f3123a3d09434706eb95
-  - enabled: 1
+  - enabled: 0
     path: Assets/MediaPipeUnity/Samples/Scenes/Android Camera Test/Android Camera
       Test.unity
     guid: 570fe1a5041a74d0982bb4dd9a0d34d2
+  - enabled: 0
+    path: Assets/MediaPipeUnity/Samples/Scenes/Back Camera Only/Back Camera Only.unity
+    guid: 6f6667bc05a2d4bcc90a2ec2f66772b5
+  - enabled: 0
+    path: Assets/HearSayFaceTest.unity
+    guid: 711a2b7b6486e400e92467b5de7709e9
+  - enabled: 0
+    path: Assets/Samples/Whisper Test/Whisper Test.unity
+    guid: bc8f69bb2aad94ec7b159d0e7a3461cc
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: e9bc6ab490aab4db8914b661f96250e3, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: e6d7fab2f76ed42ccafe09e25a550afc, type: 2}

@@ -7,7 +7,7 @@
     <activity
         android:name="com.unity3d.player.UnityPlayerActivity"
         android:theme="@style/UnityThemeSelector"
-        android:screenOrientation="fullSensor"
+        android:screenOrientation="landscape"
         android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode|fontScale|locale|layoutDirection|density"
         android:enabled="true"
         android:exported="true">

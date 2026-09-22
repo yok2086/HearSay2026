@@ -11,6 +11,8 @@ namespace HearSay
     // Deliberately does not use MediaPipe. This isolates the Android camera itself.
     public class AndroidCameraTest : MonoBehaviour
     {
+        [SerializeField] private bool showStatus = true;
+
         private RawImage preview;
         private Text status;
         private WebCamTexture cameraTexture;
@@ -26,7 +28,7 @@ namespace HearSay
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (!Permission.HasUserAuthorizedPermission(Permission.Camera))
             {
-                status.text = "Requesting phone camera permission…";
+                SetStatus("Requesting phone camera permission…");
                 var requestFinished = false;
                 var callbacks = new PermissionCallbacks();
                 callbacks.PermissionGranted += _ => requestFinished = true;
@@ -38,7 +40,7 @@ namespace HearSay
 
             if (!Permission.HasUserAuthorizedPermission(Permission.Camera))
             {
-                status.text = "CAMERA PERMISSION DENIED";
+                SetStatus("CAMERA PERMISSION DENIED");
                 yield break;
             }
 #endif
@@ -46,7 +48,7 @@ namespace HearSay
             var devices = WebCamTexture.devices;
             if (devices == null || devices.Length == 0)
             {
-                status.text = "NO PHONE CAMERA FOUND";
+                SetStatus("NO PHONE CAMERA FOUND");
                 yield break;
             }
 
@@ -63,7 +65,7 @@ namespace HearSay
             cameraTexture = new WebCamTexture(selectedDevice.name, 1280, 720, 30);
             preview.texture = cameraTexture;
             cameraTexture.Play();
-            status.text = "Opening: " + selectedDevice.name;
+            SetStatus("Opening: " + selectedDevice.name);
 
             var elapsed = 0f;
             var receivedFrame = false;
@@ -74,9 +76,9 @@ namespace HearSay
                 yield return null;
             }
 
-            status.text = receivedFrame
+            SetStatus(receivedFrame
                 ? "FRAMES RECEIVED: " + selectedDevice.name
-                : "NO VIDEO FRAMES: " + selectedDevice.name;
+                : "NO VIDEO FRAMES: " + selectedDevice.name);
         }
 
         private void OnDestroy()
@@ -92,6 +94,8 @@ namespace HearSay
             var canvasObject = new GameObject("Android Camera Test UI");
             var canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            // Keep the phone camera behind the Whisper UI in mixed test scenes.
+            canvas.sortingOrder = -100;
             canvasObject.AddComponent<CanvasScaler>();
             canvasObject.AddComponent<GraphicRaycaster>();
 
@@ -104,6 +108,11 @@ namespace HearSay
             previewRect.anchorMax = Vector2.one;
             previewRect.offsetMin = Vector2.zero;
             previewRect.offsetMax = Vector2.zero;
+
+            if (!showStatus)
+            {
+                return;
+            }
 
             var statusObject = new GameObject("Camera Status");
             statusObject.transform.SetParent(canvasObject.transform, false);
@@ -119,6 +128,16 @@ namespace HearSay
             statusRect.pivot = new Vector2(0.5f, 1f);
             statusRect.anchoredPosition = new Vector2(0f, -40f);
             statusRect.sizeDelta = new Vector2(1100f, 80f);
+        }
+
+        private void SetStatus(string message)
+        {
+            if (status != null)
+            {
+                status.text = message;
+            }
+
+            Debug.Log("Android camera test: " + message);
         }
     }
 }

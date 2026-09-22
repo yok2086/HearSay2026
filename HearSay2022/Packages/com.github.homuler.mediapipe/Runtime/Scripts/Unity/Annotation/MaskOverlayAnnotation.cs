@@ -93,7 +93,9 @@ namespace Mediapipe.Unity
       _screenObject.transform.SetParent(screen.transform, false);
       _screen = _screenObject.AddComponent<RawImage>();
       _screen.rectTransform.sizeDelta = screen.rectTransform.sizeDelta;
-      _screen.color = new Color(1, 1, 1, 1);
+      // This overlay is enabled as soon as a speaker is found. Keep it invisible
+      // until a valid segmentation frame supplies the outline material.
+      _screen.color = Color.clear;
 
       _material = new Material(_maskShader)
       {
@@ -155,6 +157,8 @@ namespace Mediapipe.Unity
 
     public void Draw()
     {
+      // A real segmentation result is ready. Now the outline shader may render.
+      _screen.color = Color.white;
       ApplyMaterial(_material);
       _maskBuffer.SetData(_maskArray);
     }

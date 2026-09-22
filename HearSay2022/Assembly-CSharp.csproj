@@ -89,6 +89,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerHighlight.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/External/FontAwesome/UnicodeInlineText.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/HolisticTrackingConfig.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CreateBackCameraOnlyScene.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/VideoSource.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CreateAndroidCameraTestScene.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/RunningMode.cs" />
@@ -101,6 +102,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayLiveCaption.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/SolutionMenu.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/WhisperTestCameraBackground.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/ImageSegmentationConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/WebCamSource.cs" />
@@ -116,6 +118,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/WaitForResult.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/AppSettings.cs" />
     <Compile Include="Assets/MicPermissionTest.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CreateARBackCameraScene.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/ImageSegmenterRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/InferenceMode.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/AutoFit.cs" />

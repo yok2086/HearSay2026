@@ -35,6 +35,11 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
 
     protected override IEnumerator Run()
     {
+#if UNITY_ANDROID && !UNITY_EDITOR
+      // The GPU output callback aborts on this Android device when face landmarking
+      // is running at the same time. CPU segmentation is slower but reliable.
+      config.Delegate = Tasks.Core.BaseOptions.Delegate.CPU;
+#endif
       Debug.Log($"Delegate = {config.Delegate}");
       Debug.Log($"Image Read Mode = {config.ImageReadMode}");
       Debug.Log($"Model = {config.ModelName}");
