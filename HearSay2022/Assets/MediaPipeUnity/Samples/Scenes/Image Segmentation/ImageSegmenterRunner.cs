@@ -14,6 +14,8 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
   public class ImageSegmenterRunner : VisionTaskApiRunner<ImageSegmenter>
   {
     [SerializeField] private ImageSegmenterResultAnnotationController _imageSegmenterResultAnnotationController;
+    [Tooltip("Show the full-body segmentation mask when a speaker is selected. Disable this for a face-outline-only UI.")]
+    [SerializeField] private bool showSpeakerSegmentationOverlay = true;
 
     private Experimental.TextureFramePool _textureFramePool;
 
@@ -22,7 +24,7 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
     private void Update()
     {
       _imageSegmenterResultAnnotationController.SetOverlayVisible(
-        HearSay.SpeakerActivity.IsSpeaking
+        showSpeakerSegmentationOverlay && HearSay.SpeakerActivity.IsSpeaking
       );
     }
 

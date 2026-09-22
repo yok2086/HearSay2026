@@ -78,6 +78,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSourceProvider.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Detection/FaceDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerManager.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayDemoVisuals.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Bootstrap.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageReadMode.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfig.cs" />
@@ -135,6 +136,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/HandLandmarkDetectionConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/PoseBodyOutline.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSourceType.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayDemoCameraPreference.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/SoundWaveRenderer.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoSolution.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/TaskApiRunner.cs" />

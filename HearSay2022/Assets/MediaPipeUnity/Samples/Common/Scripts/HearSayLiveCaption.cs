@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using Whisper;
 using Whisper.Utils;
+using System.Threading;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
 using UnityEngine.Android;
@@ -18,17 +19,34 @@ namespace HearSay
         [SerializeField] private MicrophoneRecord microphoneRecord;
         [SerializeField] private bool startOnlyWhenSpeakerDetected;
         [SerializeField] private float speakerLostDelay = 1.25f;
+        [SerializeField] private bool followActiveSpeaker;
+        [SerializeField] private bool hideCaptionWhenSilent;
+        [SerializeField] private float captionHideDelaySeconds = 4f;
+        [SerializeField] private float bubbleFollowSpeed = 14f;
+        [SerializeField] private float bubbleSpeakerLostDelay = 0.75f;
+        [SerializeField] private bool showCaptionsOnlyForSpeaker;
+        [Header("Caption display")]
+        [SerializeField] private int maximumCaptionCharacters = 76;
+        [SerializeField] private Vector2 fixedBubbleSize = new Vector2(500f, 145f);
 
         private WhisperStream stream;
         private GameObject bubble;
+        private RectTransform bubbleRect;
         private Text captionText;
+        private Text bubbleTail;
         private Image microphoneStatusDot;
         private bool microphonePermissionReady;
         private bool isStartingWhisper;
         private float lastSpeakerDetectedTime;
+        private float lastCaptionUpdateTime;
+        private bool hasTranscript;
+        private float lastFaceBoundsTime;
+        private bool hasBubbleTarget;
+        private Mediapipe.Unity.Screen cameraPreviewScreen;
 
         private void Start()
         {
+            cameraPreviewScreen = FindFirstObjectByType<Mediapipe.Unity.Screen>();
             CreateSpeechBubble();
             bubble.SetActive(true);
             StartCoroutine(StartAfterMicrophonePermission());
@@ -125,6 +143,26 @@ namespace HearSay
             if (microphoneStatusDot != null && microphoneRecord != null)
             {
                 microphoneStatusDot.color = microphoneRecord.IsVoiceDetected ? Color.green : Color.red;
+                HearSayAudioActivity.SetVoiceDetected(microphoneRecord.IsVoiceDetected);
+            }
+
+            if (followActiveSpeaker && bubble != null && bubble.activeSelf && SpeakerActivity.HasMouthPosition)
+            {
+                lastFaceBoundsTime = Time.unscaledTime;
+                FollowActiveSpeaker();
+            }
+            else if (followActiveSpeaker && bubble != null && bubble.activeSelf &&
+                     Time.unscaledTime - lastFaceBoundsTime >= bubbleSpeakerLostDelay)
+            {
+                bubble.SetActive(false);
+                hasBubbleTarget = false;
+            }
+
+            if (hideCaptionWhenSilent && hasTranscript && bubble != null && bubble.activeSelf &&
+                Time.unscaledTime - lastCaptionUpdateTime >= captionHideDelaySeconds)
+            {
+                bubble.SetActive(false);
+                hasBubbleTarget = false;
             }
 
             if (!startOnlyWhenSpeakerDetected || !microphonePermissionReady || microphoneRecord == null)
@@ -152,9 +190,18 @@ namespace HearSay
         {
             if (captionText == null) return;
 
-            string cleaned = transcript.Trim();
+            string cleaned = GetNewestCaption(transcript);
+            if (showCaptionsOnlyForSpeaker && !SpeakerActivity.IsSpeaking)
+            {
+                return;
+            }
             captionText.text = cleaned;
             bubble.SetActive(cleaned.Length > 0);
+            hasTranscript = cleaned.Length > 0;
+            if (hasTranscript)
+            {
+                lastCaptionUpdateTime = Time.unscaledTime;
+            }
         }
 
         private void CreateSpeechBubble()
@@ -184,12 +231,20 @@ namespace HearSay
             Image background = bubble.AddComponent<Image>();
             background.color = new Color(0.05f, 0.05f, 0.05f, 0.82f);
 
-            RectTransform bubbleRect = bubble.GetComponent<RectTransform>();
+            bubbleRect = bubble.GetComponent<RectTransform>();
             bubbleRect.anchorMin = new Vector2(0.5f, 0f);
             bubbleRect.anchorMax = new Vector2(0.5f, 0f);
             bubbleRect.pivot = new Vector2(0.5f, 0f);
             bubbleRect.anchoredPosition = new Vector2(0f, 110f);
-            bubbleRect.sizeDelta = new Vector2(850f, 180f);
+            bubbleRect.sizeDelta = fixedBubbleSize;
+
+            GameObject tailObject = new GameObject("Speech Bubble Tail");
+            tailObject.transform.SetParent(bubble.transform, false);
+            bubbleTail = tailObject.AddComponent<Text>();
+            bubbleTail.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            bubbleTail.fontSize = 52;
+            bubbleTail.alignment = TextAnchor.MiddleCenter;
+            bubbleTail.color = background.color;
 
             GameObject textObject = new GameObject("Transcript Text");
             textObject.transform.SetParent(bubble.transform, false);
@@ -198,7 +253,7 @@ namespace HearSay
             captionText.fontSize = 34;
             captionText.alignment = TextAnchor.MiddleCenter;
             captionText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            captionText.verticalOverflow = VerticalWrapMode.Overflow;
+            captionText.verticalOverflow = VerticalWrapMode.Truncate;
             captionText.color = Color.white;
 
             RectTransform textRect = captionText.rectTransform;
@@ -208,6 +263,89 @@ namespace HearSay
             textRect.offsetMax = new Vector2(-28f, -18f);
 
             bubble.SetActive(false);
+        }
+
+        private void FollowActiveSpeaker()
+        {
+            Vector4 bounds = SpeakerActivity.CurrentFaceBounds;
+            float faceWidth = (bounds.y - bounds.x) * Screen.width;
+            Vector2 mouthScreenPosition = ToScreenPoint(SpeakerActivity.CurrentMouthPosition);
+            bool placeToRight = mouthScreenPosition.x < Screen.width * 0.55f;
+
+            bubbleRect.anchorMin = new Vector2(0.5f, 0.5f);
+            bubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
+            bubbleRect.pivot = placeToRight ? new Vector2(0f, 0.5f) : new Vector2(1f, 0.5f);
+            bubbleRect.sizeDelta = fixedBubbleSize;
+            Vector2 targetPosition = new Vector2(
+                mouthScreenPosition.x - Screen.width * 0.5f + (placeToRight ? faceWidth * 0.5f + 34f : -faceWidth * 0.5f - 34f),
+                mouthScreenPosition.y - Screen.height * 0.5f
+            );
+            if (!hasBubbleTarget)
+            {
+                bubbleRect.anchoredPosition = targetPosition;
+                hasBubbleTarget = true;
+            }
+            else
+            {
+                float smoothing = 1f - Mathf.Exp(-bubbleFollowSpeed * Time.unscaledDeltaTime);
+                bubbleRect.anchoredPosition = Vector2.Lerp(bubbleRect.anchoredPosition, targetPosition, smoothing);
+            }
+
+            bubbleTail.text = placeToRight ? "◀" : "▶";
+            RectTransform tailRect = bubbleTail.rectTransform;
+            tailRect.anchorMin = new Vector2(placeToRight ? 0f : 1f, 0.5f);
+            tailRect.anchorMax = tailRect.anchorMin;
+            tailRect.pivot = new Vector2(placeToRight ? 1f : 0f, 0.5f);
+            tailRect.anchoredPosition = Vector2.zero;
+            tailRect.sizeDelta = new Vector2(48f, 80f);
+        }
+
+        private Vector2 ToScreenPoint(Vector2 normalizedPoint)
+        {
+            if (cameraPreviewScreen == null)
+            {
+                cameraPreviewScreen = FindFirstObjectByType<Mediapipe.Unity.Screen>();
+            }
+
+            if (cameraPreviewScreen != null)
+            {
+                return cameraPreviewScreen.NormalizedLandmarkToScreenPoint(normalizedPoint);
+            }
+
+            return new Vector2(normalizedPoint.x * Screen.width, (1f - normalizedPoint.y) * Screen.height);
+        }
+
+        private string GetNewestCaption(string transcript)
+        {
+            string cleaned = transcript.Trim();
+            if (cleaned.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            // Whisper can return its accumulated transcript. Keep the newest
+            // sentence/line so earlier spoken text does not remain in the bubble.
+            int lastNewLine = cleaned.LastIndexOf('\n');
+            if (lastNewLine >= 0 && lastNewLine < cleaned.Length - 1)
+            {
+                cleaned = cleaned.Substring(lastNewLine + 1).Trim();
+            }
+            else if (cleaned.Length > 1)
+            {
+                int previousSentenceEnd = cleaned.LastIndexOfAny(
+                    new[] { '.', '!', '?' }, cleaned.Length - 2);
+                if (previousSentenceEnd >= 0)
+                {
+                    cleaned = cleaned.Substring(previousSentenceEnd + 1).Trim();
+                }
+            }
+
+            int maxLength = Mathf.Max(1, maximumCaptionCharacters);
+            if (cleaned.Length > maxLength)
+            {
+                cleaned = "…" + cleaned.Substring(cleaned.Length - maxLength + 1);
+            }
+            return cleaned;
         }
 
         private static Sprite CreateCircleSprite()
@@ -230,6 +368,35 @@ namespace HearSay
             texture.SetPixels(pixels);
             texture.Apply();
             return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
+        }
+    }
+
+    // Shared microphone activity signal for the speaker gate. Uses no Unity API so it is
+    // safe to read from the MediaPipe result callback.
+    public static class HearSayAudioActivity
+    {
+        private static int lastVoiceDetectedTick;
+        private static int isVoiceDetected;
+        public static bool IsVoiceDetected => Volatile.Read(ref isVoiceDetected) != 0;
+
+        public static void SetVoiceDetected(bool isVoiceDetected)
+        {
+            Volatile.Write(ref HearSayAudioActivity.isVoiceDetected, isVoiceDetected ? 1 : 0);
+            if (isVoiceDetected)
+            {
+                Interlocked.Exchange(ref lastVoiceDetectedTick, System.Environment.TickCount);
+            }
+        }
+
+        public static bool VoiceDetectedRecently(float holdSeconds)
+        {
+            if (IsVoiceDetected)
+            {
+                return true;
+            }
+
+            int elapsed = unchecked(System.Environment.TickCount - Volatile.Read(ref lastVoiceDetectedTick));
+            return elapsed >= 0 && elapsed <= Mathf.RoundToInt(holdSeconds * 1000f);
         }
     }
 }

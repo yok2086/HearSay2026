@@ -18,6 +18,8 @@ namespace Mediapipe.Unity
 {
   public class WebCamSource : ImageSource
   {
+    // Set by a scene-specific helper before the source is initialized.
+    public static bool PreferFrontCamera { get; set; }
     private readonly int _preferableDefaultWidth = 1280;
 
     private const string _TAG = nameof(WebCamSource);
@@ -134,13 +136,27 @@ namespace Mediapipe.Unity
       {
         var selectedDevice = availableSources[0];
 #if UNITY_ANDROID && !UNITY_EDITOR
-        // Android devices can expose several lenses. Prefer a regular back-facing color camera.
+        // Android devices can expose several lenses. The HearSay Demo requests the selfie
+        // camera; other scenes keep the default back-camera preference.
         for (var i = 0; i < availableSources.Length; i++)
         {
-          if (!availableSources[i].isFrontFacing)
+          if (availableSources[i].isFrontFacing == PreferFrontCamera)
           {
             selectedDevice = availableSources[i];
             break;
+          }
+        }
+#elif !UNITY_ANDROID
+        // Preserve the desktop default unless a scene explicitly requests the selfie camera.
+        if (PreferFrontCamera)
+        {
+          for (var i = 0; i < availableSources.Length; i++)
+          {
+            if (availableSources[i].isFrontFacing)
+            {
+              selectedDevice = availableSources[i];
+              break;
+            }
           }
         }
 #endif

@@ -12,7 +12,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/HearSayVisualizer.unity
     guid: f6e7c4767991c419d94db9e4145edad4
-  - enabled: 1
+  - enabled: 0
     path: Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/Image Segmentation.unity
     guid: d3c55222b68d3b6b797034638df4d179
   - enabled: 0
@@ -38,6 +38,9 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Samples/Whisper Test/Whisper Test.unity
     guid: bc8f69bb2aad94ec7b159d0e7a3461cc
+  - enabled: 1
+    path: Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity
+    guid: 9f092576ae9f4b43a65ae97942ff091b
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: e9bc6ab490aab4db8914b661f96250e3, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: e6d7fab2f76ed42ccafe09e25a550afc, type: 2}

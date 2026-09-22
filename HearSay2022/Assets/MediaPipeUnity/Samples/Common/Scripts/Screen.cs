@@ -21,6 +21,23 @@ namespace Mediapipe.Unity
       set => _screen.texture = value;
     }
 
+    // UI overlays that follow the phone camera should be parented here so they
+    // inherit the preview's aspect ratio and rotation.
+    public RectTransform overlayRectTransform => _screen.rectTransform;
+
+    // Converts a MediaPipe normalized landmark (top-left image origin) into the
+    // actual on-screen point of this camera preview, including its rotation and crop.
+    public Vector2 NormalizedLandmarkToScreenPoint(Vector2 normalizedLandmark)
+    {
+      var rect = _screen.rectTransform;
+      var localPoint = new Vector3(
+        (normalizedLandmark.x - 0.5f) * rect.rect.width,
+        (0.5f - normalizedLandmark.y) * rect.rect.height,
+        0f
+      );
+      return RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(localPoint));
+    }
+
     public UnityEngine.Rect uvRect
     {
       set => _screen.uvRect = value;
