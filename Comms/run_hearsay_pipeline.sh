@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ---- details ----
 JUMP_HOST="nathan@stujump.comp.nus.edu.sg"
 ULTRA_HOST="xilinx@makerslab-fpga-36.ddns.comp.nus.edu.sg"
 
@@ -20,7 +19,7 @@ PYTHON_BIN="$HOME/miniconda3/bin/python3"
 TMUX_SESSION="hearsay"
 
 SSH_MUX_OPTS=(-o ControlMaster=auto -o ControlPath=/tmp/hearsay_ssh_mux_%r@%h:%p -o ControlPersist=10m)
-# -------------------------------------------
+
 
 cleanup() {
   echo ""
@@ -84,17 +83,16 @@ sleep 1
 echo ""
 echo "=== 4. Launching coordinator.py, ble_bridge.py, dashboard.py in tmux ==="
 
-if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
-  echo "tmux session '$TMUX_SESSION' already exists - attaching to it instead of starting new processes."
-else
-  tmux new-session -d -s "$TMUX_SESSION" -n coordinator \
-    "cd $LOCAL_DIR && $PYTHON_BIN coordinator.py; read -p 'Press enter to close...'"
-  tmux new-window -t "$TMUX_SESSION" -n ble_bridge \
-    "cd $LOCAL_DIR && $PYTHON_BIN ble_bridge.py; read -p 'Press enter to close...'"
-  tmux new-window -t "$TMUX_SESSION" -n dashboard \
-    "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; read -p 'Press enter to close...'"
-  tmux select-window -t "$TMUX_SESSION:dashboard"
-fi
+tmux kill-server 2>/dev/null || true
+sleep 0.5
+
+tmux new-session -d -s "$TMUX_SESSION" -n coordinator \
+  "cd $LOCAL_DIR && $PYTHON_BIN coordinator.py; echo 'Press enter to close...'; read"
+# tmux new-window -t "$TMUX_SESSION" -n ble_bridge \
+#   "cd $LOCAL_DIR && $PYTHON_BIN ble_bridge.py; echo 'Press enter to close...'; read"
+tmux new-window -t "$TMUX_SESSION" -n dashboard \
+  "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
+tmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""
 echo "=== All set ==="
