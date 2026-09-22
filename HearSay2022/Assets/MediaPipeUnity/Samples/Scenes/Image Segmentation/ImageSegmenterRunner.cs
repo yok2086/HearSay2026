@@ -14,10 +14,19 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
   public class ImageSegmenterRunner : VisionTaskApiRunner<ImageSegmenter>
   {
     [SerializeField] private ImageSegmenterResultAnnotationController _imageSegmenterResultAnnotationController;
+    [Tooltip("Show the full-body segmentation mask when a speaker is selected. Disable this for a face-outline-only UI.")]
+    [SerializeField] private bool showSpeakerSegmentationOverlay = true;
 
     private Experimental.TextureFramePool _textureFramePool;
 
     public readonly ImageSegmentationConfig config = new ImageSegmentationConfig();
+
+    private void Update()
+    {
+      _imageSegmenterResultAnnotationController.SetOverlayVisible(
+        showSpeakerSegmentationOverlay && HearSay.SpeakerActivity.IsSpeaking
+      );
+    }
 
     public override void Stop()
     {
@@ -28,6 +37,11 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
 
     protected override IEnumerator Run()
     {
+#if UNITY_ANDROID && !UNITY_EDITOR
+      // The GPU output callback aborts on this Android device when face landmarking
+      // is running at the same time. CPU segmentation is slower but reliable.
+      config.Delegate = Tasks.Core.BaseOptions.Delegate.CPU;
+#endif
       Debug.Log($"Delegate = {config.Delegate}");
       Debug.Log($"Image Read Mode = {config.ImageReadMode}");
       Debug.Log($"Model = {config.ModelName}");
@@ -40,7 +54,12 @@ namespace Mediapipe.Unity.Sample.ImageSegmentation
       taskApi = ImageSegmenter.CreateFromOptions(options, GpuManager.GpuResources);
       var imageSource = ImageSourceProvider.ImageSource;
 
-      yield return imageSource.Play();
+      // Face Landmarker shares this camera source in the HearSay scene.
+      // Reuse an active camera instead of recreating the Android camera texture.
+      if (!imageSource.isPrepared)
+      {
+        yield return imageSource.Play();
+      }
 
       if (!imageSource.isPrepared)
       {

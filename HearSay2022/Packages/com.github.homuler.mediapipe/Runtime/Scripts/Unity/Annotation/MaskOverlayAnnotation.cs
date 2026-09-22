@@ -19,7 +19,7 @@ namespace Mediapipe.Unity
   {
     [SerializeField] private Shader _maskShader;
     [SerializeField] private Texture2D _maskTexture;
-    [SerializeField] private Color _color = Color.blue;
+    [SerializeField] private Color _color = new Color(1f, 0.92f, 0f, 0.55f);
     [SerializeField, Range(0, 1)] private float _threshold = 0.9f;
 
     private GameObject _screenObject;
@@ -48,6 +48,14 @@ namespace Mediapipe.Unity
       if (_screenObject != null)
       {
         _screenObject.SetActive(false);
+      }
+    }
+
+    public void SetVisible(bool visible)
+    {
+      if (_screenObject != null)
+      {
+        _screenObject.SetActive(visible);
       }
     }
 
@@ -85,7 +93,9 @@ namespace Mediapipe.Unity
       _screenObject.transform.SetParent(screen.transform, false);
       _screen = _screenObject.AddComponent<RawImage>();
       _screen.rectTransform.sizeDelta = screen.rectTransform.sizeDelta;
-      _screen.color = new Color(1, 1, 1, 1);
+      // This overlay is enabled as soon as a speaker is found. Keep it invisible
+      // until a valid segmentation frame supplies the outline material.
+      _screen.color = Color.clear;
 
       _material = new Material(_maskShader)
       {
@@ -147,6 +157,8 @@ namespace Mediapipe.Unity
 
     public void Draw()
     {
+      // A real segmentation result is ready. Now the outline shader may render.
+      _screen.color = Color.white;
       ApplyMaterial(_material);
       _maskBuffer.SetData(_maskArray);
     }

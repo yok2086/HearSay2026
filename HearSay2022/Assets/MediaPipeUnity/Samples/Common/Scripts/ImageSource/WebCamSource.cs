@@ -18,6 +18,8 @@ namespace Mediapipe.Unity
 {
   public class WebCamSource : ImageSource
   {
+    // Set by a scene-specific helper before the source is initialized.
+    public static bool PreferFrontCamera { get; set; }
     private readonly int _preferableDefaultWidth = 1280;
 
     private const string _TAG = nameof(WebCamSource);
@@ -132,7 +134,33 @@ namespace Mediapipe.Unity
 
       if (availableSources != null && availableSources.Length > 0)
       {
-        webCamDevice = availableSources[0];
+        var selectedDevice = availableSources[0];
+#if UNITY_ANDROID && !UNITY_EDITOR
+        // Android devices can expose several lenses. The HearSay Demo requests the selfie
+        // camera; other scenes keep the default back-camera preference.
+        for (var i = 0; i < availableSources.Length; i++)
+        {
+          if (availableSources[i].isFrontFacing == PreferFrontCamera)
+          {
+            selectedDevice = availableSources[i];
+            break;
+          }
+        }
+#elif !UNITY_ANDROID
+        // Preserve the desktop default unless a scene explicitly requests the selfie camera.
+        if (PreferFrontCamera)
+        {
+          for (var i = 0; i < availableSources.Length; i++)
+          {
+            if (availableSources[i].isFrontFacing)
+            {
+              selectedDevice = availableSources[i];
+              break;
+            }
+          }
+        }
+#endif
+        webCamDevice = selectedDevice;
       }
     }
 
@@ -148,8 +176,13 @@ namespace Mediapipe.Unity
 #if UNITY_ANDROID
         if (!Permission.HasUserAuthorizedPermission(Permission.Camera))
         {
-          Permission.RequestUserPermission(Permission.Camera);
-          yield return new WaitForSeconds(0.1f);
+          var permissionRequestFinished = false;
+          var callbacks = new PermissionCallbacks();
+          callbacks.PermissionGranted += _ => permissionRequestFinished = true;
+          callbacks.PermissionDenied += _ => permissionRequestFinished = true;
+          callbacks.PermissionDeniedAndDontAskAgain += _ => permissionRequestFinished = true;
+          Permission.RequestUserPermission(Permission.Camera, callbacks);
+          yield return new WaitUntil(() => permissionRequestFinished);
         }
 #elif UNITY_IOS
         if (!Application.HasUserAuthorization(UserAuthorization.WebCam)) {
