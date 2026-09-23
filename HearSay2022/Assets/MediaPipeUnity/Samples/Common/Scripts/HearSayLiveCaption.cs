@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
 using System;
 using System.Collections;
 using System.Text;
@@ -116,6 +117,7 @@ namespace HearSay
             try
             {
                 stream = await whisper.CreateStream(microphoneRecord);
+                if (this == null || microphoneRecord == null) return;
                 stream.OnResultUpdated += ShowTranscript;
 
                 stream.StartStream();
@@ -139,6 +141,9 @@ namespace HearSay
             {
                 stream.OnResultUpdated -= ShowTranscript;
             }
+            if (microphoneRecord != null && microphoneRecord.IsRecording)
+                microphoneRecord.StopRecord();
+            HearSayAudioActivity.SetVoiceDetected(false);
         }
 
         private void Update()
@@ -161,7 +166,6 @@ namespace HearSay
             if (followActiveSpeaker && bubble != null && bubble.activeSelf && SpeakerActivity.HasMouthPosition)
             {
                 lastFaceBoundsTime = Time.unscaledTime;
-                FollowActiveSpeaker();
             }
             else if (followActiveSpeaker && bubble != null && bubble.activeSelf &&
                      Time.unscaledTime - lastFaceBoundsTime >= bubbleSpeakerLostDelay)
@@ -249,7 +253,10 @@ namespace HearSay
             bubble = new GameObject("Live Speech Bubble");
             bubble.transform.SetParent(canvasObject.transform, false);
             Image background = bubble.AddComponent<Image>();
-            background.color = new Color(0.05f, 0.05f, 0.05f, 0.82f);
+            background.color = HearSayTheme.Panel;
+            background.sprite = HearSayTheme.RoundedSprite;
+            background.type = Image.Type.Sliced;
+            background.raycastTarget = false;
 
             bubbleRect = bubble.GetComponent<RectTransform>();
             bubbleRect.anchorMin = new Vector2(0.5f, 0f);
@@ -271,7 +278,7 @@ namespace HearSay
             captionText = textObject.AddComponent<Text>();
             captionText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             captionText.fontSize = 34;
-            captionText.alignment = TextAnchor.MiddleCenter;
+            captionText.alignment = TextAnchor.MiddleLeft;
             captionText.horizontalOverflow = HorizontalWrapMode.Wrap;
             captionText.verticalOverflow = VerticalWrapMode.Truncate;
             captionText.color = Color.white;
@@ -287,8 +294,6 @@ namespace HearSay
 
         private void FollowActiveSpeaker()
         {
-            Vector4 bounds = SpeakerActivity.CurrentFaceBounds;
-            float faceWidth = (bounds.y - bounds.x) * Screen.width;
             Vector2 mouthScreenPosition = ToScreenPoint(SpeakerActivity.CurrentMouthPosition);
             bool placeToRight = mouthScreenPosition.x < Screen.width * 0.55f;
 
@@ -296,20 +301,11 @@ namespace HearSay
             bubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
             bubbleRect.pivot = placeToRight ? new Vector2(0f, 0.5f) : new Vector2(1f, 0.5f);
             bubbleRect.sizeDelta = fixedBubbleSize;
-            Vector2 targetPosition = new Vector2(
-                mouthScreenPosition.x - Screen.width * 0.5f + (placeToRight ? faceWidth * 0.5f + 34f : -faceWidth * 0.5f - 34f),
-                mouthScreenPosition.y - Screen.height * 0.5f
-            );
-            if (!hasBubbleTarget)
-            {
-                bubbleRect.anchoredPosition = targetPosition;
-                hasBubbleTarget = true;
-            }
-            else
-            {
-                float smoothing = 1f - Mathf.Exp(-bubbleFollowSpeed * Time.unscaledDeltaTime);
-                bubbleRect.anchoredPosition = Vector2.Lerp(bubbleRect.anchoredPosition, targetPosition, smoothing);
-            }
+            var parent = (RectTransform)bubbleRect.parent;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, mouthScreenPosition, null, out var mouthLocal);
+            // Keep the bubble at lip height with a small gap for its tail.
+            bubbleRect.anchoredPosition = mouthLocal + new Vector2(placeToRight ? 48f : -48f, 0f);
+            hasBubbleTarget = true;
 
             bubbleTail.text = placeToRight ? "◀" : "▶";
             RectTransform tailRect = bubbleTail.rectTransform;
@@ -318,6 +314,13 @@ namespace HearSay
             tailRect.pivot = new Vector2(placeToRight ? 1f : 0f, 0.5f);
             tailRect.anchoredPosition = Vector2.zero;
             tailRect.sizeDelta = new Vector2(48f, 80f);
+        }
+
+        private void LateUpdate()
+        {
+            // Read the landmarks after SpeakerMouthTest.Update has published them.
+            if (followActiveSpeaker && bubble != null && bubble.activeSelf && SpeakerActivity.HasMouthPosition)
+                FollowActiveSpeaker();
         }
 
         private Vector2 ToScreenPoint(Vector2 normalizedPoint)

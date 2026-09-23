@@ -31,6 +31,7 @@ last_real_update = 0.0
 # Terminal mode is the default: no visual data appears until the presenter types a command.
 manual_mode = True
 state_lock = threading.Lock()
+last_speaker_detected = None
 REAL_DATA_TIMEOUT_SECONDS = 10.0
 
 
@@ -80,6 +81,9 @@ def set_terminal_state(**changes):
     global state, manual_mode
     with state_lock:
         state = {**terminal_state(), **changes, "source": "terminal"}
+        if changes.get("soundActive"):
+            # A new command, even with the same direction, triggers a fresh pulse.
+            state["soundEventId"] = str(time.time_ns())
         manual_mode = True
     print("Unity display:", json.dumps(state))
 
@@ -188,6 +192,27 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Receive teammate input, or print Unity's local Whisper captions."""
         global state, last_real_update, manual_mode
+        global last_speaker_detected
+        if self.path == "/speaker":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= 1024:
+                    raise ValueError("Invalid speaker payload size")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                if not isinstance(payload, dict) or type(payload.get("detected")) is not bool:
+                    raise ValueError("detected must be true or false")
+                detected = payload["detected"]
+            except (ValueError, TypeError, UnicodeError) as error:
+                self.send_error(400, str(error))
+                return
+            with state_lock:
+                if detected != last_speaker_detected:
+                    print("\nPHONE: " + ("SPEAKER DETECTED" if detected else "NO SPEAKER DETECTED"), flush=True)
+                    last_speaker_detected = detected
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if self.path == "/caption":
             try:
                 length = int(self.headers.get("Content-Length", "0"))

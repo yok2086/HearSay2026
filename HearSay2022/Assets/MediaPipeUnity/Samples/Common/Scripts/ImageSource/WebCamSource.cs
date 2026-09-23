@@ -254,11 +254,13 @@ namespace Mediapipe.Unity
 
     public override void Stop()
     {
-      if (webCamTexture != null)
+      var textureToRelease = webCamTexture;
+      if (textureToRelease != null)
       {
-        webCamTexture.Stop();
+        textureToRelease.Stop();
       }
       webCamTexture = null;
+      if (textureToRelease != null) UnityEngine.Object.Destroy(textureToRelease);
     }
 
     public override Texture GetCurrentTexture() => webCamTexture;

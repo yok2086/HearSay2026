@@ -13,21 +13,30 @@ namespace HearSay
         [SerializeField] private string serverUrl = "http://192.168.1.2:8080/status";
         [SerializeField] private float pollIntervalSeconds = 0.25f;
         [SerializeField] private bool useRandomFallback = false;
+        [SerializeField, Range(1f, 2f)] private float soundCueDuration = 1.5f;
+        private float soundCueUntil;
+        private bool previousSoundActive;
+        private string previousSoundDirection;
+        private string previousSoundEventId;
 
         private Text soundDirectionText;
-        private Image soundPanel;
+        private HearSaySoundWaves soundWaves;
+        private GameObject uiRoot;
         private Text aslText;
         private Image aslPanel;
         private Text calibrationText;
+        private bool showDiagnostics;
         private DemoStatus status = new DemoStatus();
         private float nextRandomStateAt;
         private bool serverHasResponded;
+        private string serverStatus = "SERVER: CONNECTING";
 
         [System.Serializable]
         private class DemoStatus
         {
             public bool soundActive;
             public string soundDirection;
+            public string soundEventId;
             public bool aslDetected;
             public string aslWord;
             public float aslConfidence;
@@ -35,9 +44,36 @@ namespace HearSay
 
         private void Start()
         {
+            if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
+                serverUrl = HearSayRoles.SessionServerUrl;
             ActiveServerUrl = serverUrl;
             CreateUi();
             StartCoroutine(PollServer());
+            StartCoroutine(ReportSpeakerStatus());
+        }
+
+        private IEnumerator ReportSpeakerStatus()
+        {
+            var endpoint = new System.Uri(new System.Uri(serverUrl), "/speaker").AbsoluteUri;
+            while (true)
+            {
+                // A short heartbeat also restores the state after a server restart.
+                // The server prints only transitions, not every heartbeat.
+                var json = SpeakerActivity.IsSpeaking
+                    ? "{\"detected\":true}" : "{\"detected\":false}";
+                using (var request = new UnityWebRequest(endpoint, "POST"))
+                {
+                    request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
+                    request.downloadHandler = new DownloadHandlerBuffer();
+                    request.SetRequestHeader("Content-Type", "application/json");
+                    request.timeout = 2;
+                    UnityWebRequestAsyncOperation operation = null;
+                    try { operation = request.SendWebRequest(); }
+                    catch (System.Exception exception) { Debug.LogWarning("Speaker report: " + exception.Message); }
+                    if (operation != null) yield return operation;
+                }
+                yield return new WaitForSecondsRealtime(0.5f);
+            }
         }
 
         private void Update()
@@ -50,9 +86,30 @@ namespace HearSay
 
             // The sound cue guides the user only until the existing speaker detector locks on.
             var speakerDetected = SpeakerActivity.IsSpeaking;
-            SetSoundCueVisible(status.soundActive && !speakerDetected);
-            SetAslVisible(status.aslDetected);
+            string direction = (status.soundDirection ?? "").Trim().ToLowerInvariant();
+            bool newSound = status.soundActive &&
+                (!previousSoundActive || direction != previousSoundDirection ||
+                 status.soundEventId != previousSoundEventId);
+            if (newSound) soundCueUntil = Time.unscaledTime + soundCueDuration;
+            previousSoundActive = status.soundActive;
+            previousSoundDirection = direction;
+            previousSoundEventId = status.soundEventId;
+            // Consume the cue when a speaker is found; don't replay it on losing the face.
+            if (speakerDetected || !status.soundActive) soundCueUntil = 0f;
+            SetSoundCueVisible(status.soundActive && !speakerDetected && Time.unscaledTime < soundCueUntil);
+            SetAslVisible(status.aslDetected && !HearSayRoles.DeafRole);
             UpdateCalibrationReadout();
+        }
+
+        private void OnGUI()
+        {
+            if (HearSayRoles.HomeButton()) HearSayRoles.ReturnToSelector();
+            float scale = Mathf.Clamp(UnityEngine.Screen.height / 650f, 0.75f, 2.5f);
+            Rect safe = UnityEngine.Screen.safeArea;
+            if (HearSayTheme.Action(new Rect(safe.xMin + 16f * scale,
+                UnityEngine.Screen.height - safe.yMin - 60f * scale, 110f * scale, 44f * scale),
+                showDiagnostics ? "Hide debug" : "Debug", Mathf.RoundToInt(16f * scale)))
+                showDiagnostics = !showDiagnostics;
         }
 
         private IEnumerator PollServer()
@@ -62,16 +119,40 @@ namespace HearSay
                 using (var request = UnityWebRequest.Get(serverUrl))
                 {
                     request.timeout = 2;
-                    yield return request.SendWebRequest();
-
-                    if (request.result == UnityWebRequest.Result.Success)
+                    UnityWebRequestAsyncOperation operation = null;
+                    try
                     {
-                        var response = JsonUtility.FromJson<DemoStatus>(request.downloadHandler.text);
+                        operation = request.SendWebRequest();
+                    }
+                    catch (System.Exception exception)
+                    {
+                        serverStatus = "SERVER: " + exception.Message;
+                        Debug.LogWarning(serverStatus);
+                    }
+                    if (operation != null) yield return operation;
+
+                    if (operation != null && request.result == UnityWebRequest.Result.Success)
+                    {
+                        DemoStatus response = null;
+                        try
+                        {
+                            response = JsonUtility.FromJson<DemoStatus>(request.downloadHandler.text);
+                        }
+                        catch (System.Exception exception)
+                        {
+                            serverStatus = "SERVER: INVALID DATA";
+                            Debug.LogWarning(exception.Message);
+                        }
                         if (response != null)
                         {
                             status = response;
                             serverHasResponded = true;
+                            serverStatus = "SERVER: CONNECTED";
                         }
+                    }
+                    else if (operation != null)
+                    {
+                        serverStatus = "SERVER: " + request.error;
                     }
                 }
 
@@ -87,7 +168,7 @@ namespace HearSay
                 "want", "what", "again_repeat", "eat_food", "more", "go_to", "bathroom", "fine",
                 "like", "learn", "sign", "finish_done"
             };
-            var directions = new[] { "left", "right", "front", "back" };
+            var directions = new[] { "left", "right" };
             status.soundActive = Random.value > 0.2f;
             status.soundDirection = directions[Random.Range(0, directions.Length)];
             status.aslDetected = Random.value > 0.35f;
@@ -98,6 +179,7 @@ namespace HearSay
         private void CreateUi()
         {
             var canvasObject = new GameObject("HearSay Demo UI");
+            uiRoot = canvasObject;
             var canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 200;
@@ -105,17 +187,17 @@ namespace HearSay
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
 
-            soundPanel = CreatePanel(canvasObject.transform, "Sound Direction Panel", new Color(0.02f, 0.26f, 0.42f, 0.72f));
-            var soundRect = soundPanel.rectTransform;
-            soundRect.anchorMin = new Vector2(0f, 0.25f);
-            soundRect.anchorMax = new Vector2(0f, 0.75f);
-            soundRect.pivot = new Vector2(0f, 0.5f);
-            soundRect.sizeDelta = new Vector2(390f, 0f);
-            soundRect.anchoredPosition = Vector2.zero;
-            soundDirectionText = CreateText(soundPanel.transform, "Sound Direction", 64, TextAnchor.MiddleCenter);
-            Stretch(soundDirectionText.rectTransform, 24f);
+            var wavePrefab = Resources.Load<HearSaySoundWaves>("HearSaySoundWaves");
+            if (wavePrefab != null)
+                soundWaves = Instantiate(wavePrefab, canvasObject.transform, false);
+            else
+                Debug.LogError("HearSaySoundWaves prefab missing from Resources.");
+            soundDirectionText = CreateText(canvasObject.transform, "Sound Direction", 28, TextAnchor.MiddleCenter);
+            soundDirectionText.raycastTarget = false;
+            soundDirectionText.rectTransform.sizeDelta = new Vector2(230f, 60f);
+            SetSoundCueVisible(false);
 
-            aslPanel = CreatePanel(canvasObject.transform, "ASL Panel", new Color(0.08f, 0.08f, 0.08f, 0.78f));
+            aslPanel = CreatePanel(canvasObject.transform, "ASL Panel", HearSayTheme.Panel);
             var aslRect = aslPanel.rectTransform;
             aslRect.anchorMin = new Vector2(0.5f, 0f);
             aslRect.anchorMax = new Vector2(0.5f, 0f);
@@ -133,41 +215,35 @@ namespace HearSay
             calibrationRect.anchoredPosition = new Vector2(28f, -28f);
             calibrationRect.sizeDelta = new Vector2(430f, 135f);
 
-            CreateRandomStatus();
+            // Start empty; only explicit server data (or enabled fallback) drives the UI.
             nextRandomStateAt = Time.unscaledTime + 4f;
         }
 
         private void SetSoundCueVisible(bool visible)
         {
-            soundPanel.gameObject.SetActive(visible);
-            if (!visible)
+            string direction = (status.soundDirection ?? "").Trim().ToLowerInvariant();
+            visible &= direction == "left" || direction == "right";
+            bool right = direction == "right";
+            if (soundWaves != null)
             {
-                return;
+                // Keep cues clear of the phone's cutout/navigation area.
+                Rect safe = UnityEngine.Screen.safeArea;
+                float width = Mathf.Max(1, UnityEngine.Screen.width);
+                float height = Mathf.Max(1, UnityEngine.Screen.height);
+                soundWaves.rectTransform.anchorMin = new Vector2(safe.xMin / width, safe.yMin / height);
+                soundWaves.rectTransform.anchorMax = new Vector2(safe.xMax / width, safe.yMax / height);
+                soundWaves.Show(visible, right);
             }
-
-            var direction = (status.soundDirection ?? "front").ToLowerInvariant();
-            switch (direction)
-            {
-                case "right":
-                    MoveSoundPanel(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f));
-                    soundDirectionText.text = "SOUND\n(((  >>>\nRIGHT";
-                    break;
-                case "front":
-                    MoveSoundPanel(new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
-                    soundDirectionText.text = "SOUND AHEAD\n^^^\n((( )))";
-                    break;
-                case "back":
-                    MoveSoundPanel(new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
-                    soundDirectionText.text = "SOUND BEHIND\n((( )))\nvvv";
-                    break;
-                default:
-                    MoveSoundPanel(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f));
-                    soundDirectionText.text = "SOUND\n<<<  (((\nLEFT";
-                    break;
-            }
-
-            var pulse = 0.82f + Mathf.PingPong(Time.unscaledTime * 2.4f, 0.18f);
-            soundPanel.color = new Color(0.02f, 0.26f, 0.42f, pulse);
+            soundDirectionText.gameObject.SetActive(visible);
+            if (!visible) return;
+            soundDirectionText.text = right ? "SOUND RIGHT" : "SOUND LEFT";
+            var rect = soundDirectionText.rectTransform;
+            var edge = soundWaves != null
+                ? (right ? soundWaves.rectTransform.anchorMax.x : soundWaves.rectTransform.anchorMin.x)
+                : (right ? 1f : 0f);
+            rect.anchorMin = rect.anchorMax = new Vector2(edge, 0.5f);
+            rect.pivot = new Vector2(right ? 1f : 0f, 0.5f);
+            rect.anchoredPosition = new Vector2(right ? -20f : 20f, -240f);
         }
 
         private void SetAslVisible(bool visible)
@@ -186,27 +262,16 @@ namespace HearSay
                 return;
             }
 
-            calibrationText.text = "SPEAKER CALIBRATION\n" +
+            calibrationText.gameObject.SetActive(showDiagnostics);
+            calibrationText.text = serverStatus + "\n" +
                 "Mouth: " + SpeakerActivity.CurrentMouthMovement.ToString("F3") + " / 0.070\n" +
                 "Mic voice: " + (HearSayAudioActivity.IsVoiceDetected ? "YES" : "NO") + "\n" +
                 "Speaker: " + (SpeakerActivity.IsSpeaking ? "CONFIRMED" : "NO SPEAKER DETECTED");
         }
 
-        private void MoveSoundPanel(Vector2 anchor, Vector2 pivot)
+        private void OnDestroy()
         {
-            var rect = soundPanel.rectTransform;
-            rect.anchorMin = anchor;
-            rect.anchorMax = anchor;
-            rect.pivot = pivot;
-            rect.anchoredPosition = Vector2.zero;
-            if (anchor.y == 0.5f)
-            {
-                rect.sizeDelta = new Vector2(390f, 540f);
-            }
-            else
-            {
-                rect.sizeDelta = new Vector2(680f, 230f);
-            }
+            if (uiRoot != null) Destroy(uiRoot);
         }
 
         private static Image CreatePanel(Transform parent, string name, Color color)
@@ -214,6 +279,9 @@ namespace HearSay
             var panel = new GameObject(name).AddComponent<Image>();
             panel.transform.SetParent(parent, false);
             panel.color = color;
+            panel.sprite = HearSayTheme.RoundedSprite;
+            panel.type = Image.Type.Sliced;
+            panel.raycastTarget = false;
             return panel;
         }
 
