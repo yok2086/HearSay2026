@@ -15,8 +15,10 @@ namespace HearSay
         private string connection = "Waiting to connect";
         private string translation = "Waiting for a sign…";
         private bool partner;
+        private bool connectionExpanded;
         private Coroutine polling;
         private HearSayPartnerCamera partnerCamera;
+        private HearSayPartnerHands partnerHands;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void SetLandscape()
@@ -46,6 +48,7 @@ namespace HearSay
                 (uri.Scheme != "http" && uri.Scheme != "https"))
             {
                 connection = "Enter the full http:// address printed in Terminal.";
+                connectionExpanded = true;
                 return false;
             }
             SessionServerUrl = new Uri(uri, "/status").AbsoluteUri;
@@ -93,27 +96,43 @@ namespace HearSay
                 {
                     partner = true;
                     partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
+                    var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
+                    if (handPrefab != null)
+                    {
+                        partnerHands = Instantiate(handPrefab, transform);
+                        partnerHands.Initialize(partnerCamera);
+                    }
+                    else Debug.LogError("Partner hand tracking prefab is missing.");
                     polling = StartCoroutine(PollSigns());
                 }
-                GUI.Label(new Rect(60, 447, 880, 30), "CONNECTION  /  Use the same server on both phones",
-                    HearSayTheme.Label(17, HearSayTheme.Muted));
-                address = GUI.TextField(new Rect(60, 485, 880, 52), address,
-                    new GUIStyle(GUI.skin.textField) { fontSize = 23, padding = new RectOffset(16, 16, 12, 12) });
-                GUI.Label(new Rect(60, 549, 880, 65), connection, HearSayTheme.Label(18, HearSayTheme.Muted));
+                if (HearSayTheme.Action(new Rect(60, 448, 880, 48),
+                    connectionExpanded ? "Connection settings   −" : "Connection settings   +", 19))
+                    connectionExpanded = !connectionExpanded;
+                if (connectionExpanded)
+                {
+                    GUI.Label(new Rect(60, 505, 880, 26), "SERVER ADDRESS  /  Same on both phones", HearSayTheme.Label(15, HearSayTheme.Muted));
+                    address = GUI.TextField(new Rect(60, 539, 880, 46), address,
+                        new GUIStyle(GUI.skin.textField) { fontSize = 22, padding = new RectOffset(16, 16, 10, 10) });
+                    GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
+                }
+                else
+                    GUI.Label(new Rect(60, 520, 880, 45), "Your connection is saved on this device.",
+                        HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
             else
             {
                 HearSayTheme.Card(new Rect(40, 30, 390, 65), HearSayTheme.Panel);
                 GUI.Label(new Rect(60, 38, 350, 48), "HearSay  /  Conversation partner", HearSayTheme.Label(21, Color.white));
-                HearSayTheme.Card(new Rect(160, 345, 680, 225), HearSayTheme.Panel);
-                GUI.Label(new Rect(185, 357, 630, 32), "SIGN LANGUAGE", HearSayTheme.Label(16, HearSayTheme.Accent));
-                GUI.Label(new Rect(185, 395, 630, 115), translation,
+                HearSayTheme.Card(new Rect(160, 375, 680, 195), HearSayTheme.Panel);
+                GUI.Label(new Rect(185, 387, 630, 32), "ASL  /  LIVE TRANSLATION", HearSayTheme.Label(16, HearSayTheme.Accent));
+                GUI.Label(new Rect(185, 427, 630, 80), translation.Replace("ASL DETECTED\n", ""),
                     HearSayTheme.Label(36, Color.white, TextAnchor.MiddleCenter));
-                GUI.Label(new Rect(185, 523, 630, 30), connection,
+                GUI.Label(new Rect(185, 528, 630, 26), connection == "SERVER: CONNECTED" ? "Connected" : connection,
                     HearSayTheme.Label(16, HearSayTheme.Muted, TextAnchor.MiddleCenter));
                 if (HearSayTheme.Action(new Rect(350, 585, 300, 48), "Change role / connection", 19))
                 {
                     if (polling != null) StopCoroutine(polling);
+                    if (partnerHands != null) Destroy(partnerHands.gameObject);
                     if (partnerCamera != null) Destroy(partnerCamera);
                     partner = false;
                     translation = "Waiting for a sign…";
@@ -155,17 +174,25 @@ namespace HearSay
                         {
                             var sign = JsonUtility.FromJson<SignStatus>(request.downloadHandler.text);
                             if (sign == null) throw new FormatException("Empty server data");
+                            if (partnerHands != null)
+                                partnerHands.Word = sign.aslDetected ? (sign.aslWord ?? "").Replace('_', ' ') : null;
                             connection = "SERVER: CONNECTED";
                             translation = sign.aslDetected && !string.IsNullOrEmpty(sign.aslWord)
                                 ? "ASL DETECTED\n" + sign.aslWord.Replace('_', ' ')
                                 : "Waiting for a sign…";
                         }
-                        catch (Exception) { connection = "SERVER: INVALID DATA"; translation = "Waiting for a sign…"; }
+                        catch (Exception)
+                        {
+                            connection = "SERVER: INVALID DATA";
+                            translation = "Waiting for a sign…";
+                            if (partnerHands != null) partnerHands.Word = null;
+                        }
                     }
                     else
                     {
                         connection = "SERVER: " + request.error;
                         translation = "Waiting for connection…";
+                        if (partnerHands != null) partnerHands.Word = null;
                     }
                 }
                 yield return new WaitForSecondsRealtime(0.25f);

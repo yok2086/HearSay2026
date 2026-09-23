@@ -69,8 +69,9 @@ namespace HearSay
             if (speakerStatusText != null)
             {
                 speakerStatusText.text = SpeakerActivity.IsSpeaking
-                    ? "SPEAKER DETECTED"
-                    : "NO SPEAKER DETECTED";
+                    ? "Speaker detected"
+                    : "No speaker detected";
+                speakerStatusText.color = SpeakerActivity.IsSpeaking ? new Color(1f, 0.87f, 0.3f) : HearSayTheme.Muted;
             }
 
             bool shouldShow;
@@ -298,20 +299,32 @@ namespace HearSay
             canvasObject.AddComponent<GraphicRaycaster>();
 
             GameObject labelObject = new GameObject("Speaker Detected Label");
-            labelObject.transform.SetParent(canvasObject.transform, false);
+            var badge = new GameObject("Speaker Status Badge", typeof(RectTransform), typeof(Image));
+            badge.transform.SetParent(canvasObject.transform, false);
+            var badgeImage = badge.GetComponent<Image>();
+            badgeImage.sprite = HearSayTheme.RoundedSprite;
+            badgeImage.type = Image.Type.Sliced;
+            badgeImage.color = HearSayTheme.Panel;
+            badgeImage.raycastTarget = false;
+            var badgeRect = badge.GetComponent<RectTransform>();
+            badgeRect.anchorMin = badgeRect.anchorMax = new Vector2(0.5f, 1f);
+            badgeRect.pivot = new Vector2(0.5f, 1f);
+            badgeRect.anchoredPosition = new Vector2(0f, -28f);
+            badgeRect.sizeDelta = new Vector2(360f, 64f);
+            labelObject.transform.SetParent(badge.transform, false);
             speakerStatusText = labelObject.AddComponent<Text>();
             speakerStatusText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            speakerStatusText.fontSize = 34;
+            speakerStatusText.fontSize = 27;
             speakerStatusText.fontStyle = FontStyle.Bold;
-            speakerStatusText.alignment = TextAnchor.UpperCenter;
+            speakerStatusText.alignment = TextAnchor.MiddleCenter;
+            speakerStatusText.raycastTarget = false;
             speakerStatusText.color = Color.yellow;
 
             RectTransform labelRect = speakerStatusText.rectTransform;
-            labelRect.anchorMin = new Vector2(0.5f, 1f);
-            labelRect.anchorMax = new Vector2(0.5f, 1f);
-            labelRect.pivot = new Vector2(0.5f, 1f);
-            labelRect.anchoredPosition = new Vector2(0f, -80f);
-            labelRect.sizeDelta = new Vector2(700f, 80f);
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(16f, 8f);
+            labelRect.offsetMax = new Vector2(-16f, -8f);
         }
 
         private void QueueSpeakerBox(NormalizedLandmarks face)
