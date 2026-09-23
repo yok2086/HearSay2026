@@ -1043,9 +1043,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d29eb705f9d47a289a4c5cc1324d007, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverUrl: http://192.168.1.2:8080/status
+  serverUrl: http://192.168.1.60:8080/status
   pollIntervalSeconds: 0.25
-  useRandomFallback: 1
+  useRandomFallback: 0
 --- !u!114 &2091000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
