@@ -3,7 +3,8 @@
   <!-- Required for MediaPipe camera frames and local Whisper captions. -->
   <uses-permission android:name="android.permission.CAMERA" />
   <uses-permission android:name="android.permission.RECORD_AUDIO" />
-  <application>
+  <uses-permission android:name="android.permission.INTERNET" />
+  <application android:usesCleartextTraffic="true">
     <activity
         android:name="com.unity3d.player.UnityPlayerActivity"
         android:theme="@style/UnityThemeSelector"

@@ -31,11 +31,20 @@ namespace Mediapipe.Unity
     {
       var rect = _screen.rectTransform;
       var localPoint = new Vector3(
-        (normalizedLandmark.x - 0.5f) * rect.rect.width,
-        (0.5f - normalizedLandmark.y) * rect.rect.height,
+        rect.rect.xMin + normalizedLandmark.x * rect.rect.width,
+        rect.rect.yMax - normalizedLandmark.y * rect.rect.height,
         0f
       );
-      return RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(localPoint));
+      // The preview uses a camera-space canvas, while captions use an overlay
+      // canvas. Null is valid only for an overlay, not for the preview's world point.
+      var canvas = _screen.canvas;
+      var root = canvas != null ? canvas.rootCanvas : null;
+      Camera renderCamera = null;
+      if (root != null && root.renderMode != RenderMode.ScreenSpaceOverlay)
+      {
+        renderCamera = root.worldCamera != null ? root.worldCamera : Camera.main;
+      }
+      return RectTransformUtility.WorldToScreenPoint(renderCamera, rect.TransformPoint(localPoint));
     }
 
     public UnityEngine.Rect uvRect

@@ -282,7 +282,6 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
       Image image,
       long timestamp)
     {
-      Debug.Log("FACE DETECTED RESULT RECEIVED");
 
       _faceLandmarkerResultAnnotationController?.DrawLater(result);
 

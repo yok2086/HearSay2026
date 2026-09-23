@@ -66,12 +66,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/ModalContents.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSaySoundWaves.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/AssetLoader.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/HolisticTrackingSolution.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CaptionManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ASLManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/LegacySolutionRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ARMediaPipeBridge.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayPartnerCamera.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/ImageSegmentationConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Hand Landmark Detection/HandLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/GraphRunner.cs" />
@@ -87,6 +89,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/DummyServerManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerMouthTest.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/AndroidCameraTest.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayRoles.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerHighlight.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/External/FontAwesome/UnicodeInlineText.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/HolisticTrackingConfig.cs" />
@@ -123,6 +126,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Image Segmentation/ImageSegmenterRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/InferenceMode.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/AutoFit.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayTheme.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CreateHearSayCombinedTestScene.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/ImageSourceConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/RippleEffect.cs" />

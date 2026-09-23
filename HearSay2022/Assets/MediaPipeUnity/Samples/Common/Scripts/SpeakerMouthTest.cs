@@ -27,6 +27,12 @@ namespace HearSay
         private Vector2 currentSpeakerCenter;
         private int candidateSpeaker = -1;
         private int candidateFrames;
+        [SerializeField] private float speakerPauseBeforeSwitch = 0.6f;
+        [SerializeField] private float challengerConfirmationSeconds = 0.35f;
+        private double lastSelectedMouthActivity;
+        private double candidateStartedAt;
+        private Vector2 candidateCenter;
+        private static double TrackingSeconds => (double)System.Diagnostics.Stopwatch.GetTimestamp() / System.Diagnostics.Stopwatch.Frequency;
         private int missingLockedSpeakerFrames;
         private RectTransform[] faceOutlineSegments;
         private Text speakerStatusText;
@@ -38,6 +44,7 @@ namespace HearSay
         private Vector4 pendingFaceBounds;
         private Vector2[] pendingFaceContour;
         private Vector2 pendingMouthPosition;
+        private bool contourVisible;
 
         // MediaPipe's standard face-oval contour, ordered clockwise around the face.
         private static readonly int[] FaceOvalLandmarkIndices =
@@ -73,12 +80,11 @@ namespace HearSay
 
             lock (overlayLock)
             {
-                if (!overlayStateDirty) return;
-                overlayStateDirty = false;
-                shouldShow = pendingOverlayVisible;
+                shouldShow = overlayStateDirty ? pendingOverlayVisible : contourVisible;
                 faceBounds = pendingFaceBounds;
                 faceContour = pendingFaceContour;
                 mouthPosition = pendingMouthPosition;
+                overlayStateDirty = false;
             }
 
             if (shouldShow && SpeakerActivity.IsSpeaking)
@@ -87,12 +93,15 @@ namespace HearSay
                 SpeakerActivity.HasFaceBounds = true;
                 SpeakerActivity.CurrentMouthPosition = mouthPosition;
                 SpeakerActivity.HasMouthPosition = true;
+                contourVisible = true;
+                // Display the newest measured landmarks without interpolation delay.
                 if (showFaceBox) ApplyFaceOutline(faceContour);
             }
             else
             {
                 SpeakerActivity.HasFaceBounds = false;
                 SpeakerActivity.HasMouthPosition = false;
+                contourVisible = false;
                 if (showFaceBox) HideFaceOutline();
             }
         }
@@ -101,7 +110,6 @@ namespace HearSay
         {
             if (result.faceLandmarks == null || result.faceLandmarks.Count == 0)
             {
-                Debug.Log("No face landmark data.");
                 MarkLockedSpeakerMissing();
                 return;
             }
@@ -109,7 +117,6 @@ namespace HearSay
             if (result.faceBlendshapes == null ||
                 result.faceBlendshapes.Count == 0)
             {
-                Debug.Log("No face blendshape data.");
                 MarkLockedSpeakerMissing();
                 return;
             }
@@ -145,11 +152,6 @@ namespace HearSay
                     "jawOpen"
                 );
 
-                Debug.Log(
-                    "Face " + faceIndex +
-                    " | Mouth movement: " +
-                    mouthOpen.ToString("F3")
-                );
 
                 if (mouthOpen > highestMouthMovement)
                 {
@@ -159,24 +161,33 @@ namespace HearSay
             }
 
             SpeakerActivity.CurrentMouthMovement = highestMouthMovement;
+            double now = TrackingSeconds;
+            if (currentSpeaker >= 0 && currentSpeaker < result.faceBlendshapes.Count)
+            {
+                float selectedOpen = GetBlendshapeValue(result.faceBlendshapes[currentSpeaker].categories, "jawOpen");
+                if (selectedOpen >= speakingThreshold)
+                    lastSelectedMouthActivity = now;
+            }
 
-            if (highestMouthMovement >= speakingThreshold)
+            if (speakerFace >= 0 && highestMouthMovement >= speakingThreshold)
             {
                 Vector2 movingFaceCenter = GetFaceCenter(result.faceLandmarks[speakerFace]);
-                bool differentFromLockedSpeaker = currentSpeaker >= 0 &&
-                    Vector2.Distance(movingFaceCenter, currentSpeakerCenter) >= newSpeakerMinimumDistance;
+                // RefreshLockedSpeakerOutline already associates the selected face
+                // with this frame. Nearby people must still count as different faces.
+                bool differentFromLockedSpeaker = currentSpeaker >= 0 && speakerFace != currentSpeaker;
 
                 // Initial lock: mouth movement alone. Switching: another face must
                 // move its mouth and the microphone must have recent voice activity.
-                if (differentFromLockedSpeaker && requireRecentVoiceActivity &&
-                    !HearSayAudioActivity.VoiceDetectedRecently(voiceActivityHoldSeconds))
+                if (differentFromLockedSpeaker &&
+                    (now - lastSelectedMouthActivity < speakerPauseBeforeSwitch ||
+                     !HearSayAudioActivity.VoiceDetectedRecently(voiceActivityHoldSeconds)))
                 {
                     ClearSpeakerCandidate();
                     HideOverlayOnlyWhenNoSpeakerIsLocked();
                     return;
                 }
 
-                if (candidateSpeaker == speakerFace)
+                if (candidateSpeaker >= 0 && Vector2.Distance(movingFaceCenter, candidateCenter) < 0.10f)
                 {
                     candidateFrames++;
                 }
@@ -184,9 +195,12 @@ namespace HearSay
                 {
                     candidateSpeaker = speakerFace;
                     candidateFrames = 1;
+                    candidateStartedAt = now;
                 }
+                candidateCenter = movingFaceCenter;
 
-                if (candidateFrames < framesToConfirmSpeaker)
+                if (candidateFrames < Mathf.Max(2, framesToConfirmSpeaker) ||
+                    (differentFromLockedSpeaker && now - candidateStartedAt < challengerConfirmationSeconds))
                 {
                     SpeakerActivity.IsSpeakerCurrentlyActive = false;
                     // Keep displaying the previously confirmed speaker while a
@@ -207,6 +221,7 @@ namespace HearSay
                 }
                 currentSpeaker = speakerFace;
                 currentSpeakerCenter = movingFaceCenter;
+                lastSelectedMouthActivity = now;
 
                 QueueSpeakerBox(result.faceLandmarks[speakerFace]);
             }

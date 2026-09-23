@@ -43,10 +43,28 @@ namespace Mediapipe.Unity.Sample
     public override void Stop()
     {
       base.Stop();
-      StopCoroutine(_coroutine);
-      ImageSourceProvider.ImageSource.Stop();
-      taskApi?.Close();
+      if (_coroutine != null)
+      {
+        StopCoroutine(_coroutine);
+        _coroutine = null;
+      }
+      var closingTask = taskApi;
       taskApi = null;
+      try
+      {
+        closingTask?.Close();
+      }
+      finally
+      {
+        ImageSourceProvider.ImageSource?.Stop();
+      }
+    }
+
+    protected virtual void OnDestroy()
+    {
+      // Bootstrap and its source persist across scenes. Explicitly release the
+      // native task/camera, including derived runners' texture-frame pools.
+      Stop();
     }
 
     protected abstract IEnumerator Run();
