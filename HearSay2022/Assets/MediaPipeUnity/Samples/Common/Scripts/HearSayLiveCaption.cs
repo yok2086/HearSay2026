@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections;
+using System.Text;
 using Whisper;
 using Whisper.Utils;
 using System.Threading;
@@ -43,6 +44,8 @@ namespace HearSay
         private float lastFaceBoundsTime;
         private bool hasBubbleTarget;
         private Mediapipe.Unity.Screen cameraPreviewScreen;
+        private string pendingCaptionForTerminal;
+        private string lastCaptionSentToTerminal;
 
         private void Start()
         {
@@ -146,6 +149,15 @@ namespace HearSay
                 HearSayAudioActivity.SetVoiceDetected(microphoneRecord.IsVoiceDetected);
             }
 
+            // Make the bubble visible at the selected person's mouth before
+            // Whisper has completed its first transcription segment.
+            if (bubble != null && !bubble.activeSelf && SpeakerActivity.IsSpeaking && SpeakerActivity.HasMouthPosition)
+            {
+                captionText.text = "Listening…";
+                bubble.SetActive(true);
+                hasBubbleTarget = false;
+            }
+
             if (followActiveSpeaker && bubble != null && bubble.activeSelf && SpeakerActivity.HasMouthPosition)
             {
                 lastFaceBoundsTime = Time.unscaledTime;
@@ -163,6 +175,13 @@ namespace HearSay
             {
                 bubble.SetActive(false);
                 hasBubbleTarget = false;
+            }
+
+            if (!string.IsNullOrEmpty(pendingCaptionForTerminal) &&
+                pendingCaptionForTerminal != lastCaptionSentToTerminal)
+            {
+                lastCaptionSentToTerminal = pendingCaptionForTerminal;
+                StartCoroutine(SendCaptionToTerminal(pendingCaptionForTerminal));
             }
 
             if (!startOnlyWhenSpeakerDetected || !microphonePermissionReady || microphoneRecord == null)
@@ -196,6 +215,7 @@ namespace HearSay
                 return;
             }
             captionText.text = cleaned;
+            pendingCaptionForTerminal = cleaned;
             bubble.SetActive(cleaned.Length > 0);
             hasTranscript = cleaned.Length > 0;
             if (hasTranscript)
@@ -346,6 +366,35 @@ namespace HearSay
                 cleaned = "…" + cleaned.Substring(cleaned.Length - maxLength + 1);
             }
             return cleaned;
+        }
+
+        private IEnumerator SendCaptionToTerminal(string caption)
+        {
+            string statusUrl = HearSayDemoVisuals.ActiveServerUrl;
+            if (string.IsNullOrEmpty(statusUrl))
+            {
+                yield break;
+            }
+
+            string captionUrl = statusUrl.Replace("/status", "/caption");
+            byte[] body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(new CaptionPayload { caption = caption }));
+            using (var request = new UnityWebRequest(captionUrl, UnityWebRequest.kHttpVerbPOST))
+            {
+                request.uploadHandler = new UploadHandlerRaw(body);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                yield return request.SendWebRequest();
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning("HearSay caption debug server unavailable: " + request.error);
+                }
+            }
+        }
+
+        [Serializable]
+        private class CaptionPayload
+        {
+            public string caption;
         }
 
         private static Sprite CreateCircleSprite()

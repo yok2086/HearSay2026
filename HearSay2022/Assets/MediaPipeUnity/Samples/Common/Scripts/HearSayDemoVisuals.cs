@@ -8,10 +8,11 @@ namespace HearSay
     // Visual-only demo layer. It does not modify the speaker, segmentation, or Whisper code.
     public class HearSayDemoVisuals : MonoBehaviour
     {
+        public static string ActiveServerUrl { get; private set; }
         [Header("Dummy server")]
         [SerializeField] private string serverUrl = "http://192.168.1.2:8080/status";
         [SerializeField] private float pollIntervalSeconds = 0.25f;
-        [SerializeField] private bool useRandomFallback = true;
+        [SerializeField] private bool useRandomFallback = false;
 
         private Text soundDirectionText;
         private Image soundPanel;
@@ -34,6 +35,7 @@ namespace HearSay
 
         private void Start()
         {
+            ActiveServerUrl = serverUrl;
             CreateUi();
             StartCoroutine(PollServer());
         }
