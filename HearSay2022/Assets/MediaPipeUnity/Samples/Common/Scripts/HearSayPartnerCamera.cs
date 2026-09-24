@@ -11,6 +11,7 @@ namespace HearSay
     {
         public string Status { get; private set; } = "Starting camera…";
         private WebCamTexture cameraTexture;
+        public WebCamTexture CurrentTexture => cameraTexture;
         private GameObject canvasObject;
         private RawImage preview;
 

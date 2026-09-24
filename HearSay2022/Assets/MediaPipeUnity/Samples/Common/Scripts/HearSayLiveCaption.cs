@@ -44,6 +44,7 @@ namespace HearSay
         private bool hasTranscript;
         private float lastFaceBoundsTime;
         private bool hasBubbleTarget;
+        private bool bubbleOnRight;
         private Mediapipe.Unity.Screen cameraPreviewScreen;
         private string pendingCaptionForTerminal;
         private string lastCaptionSentToTerminal;
@@ -295,7 +296,13 @@ namespace HearSay
         private void FollowActiveSpeaker()
         {
             Vector2 mouthScreenPosition = ToScreenPoint(SpeakerActivity.CurrentMouthPosition);
-            bool placeToRight = mouthScreenPosition.x < Screen.width * 0.55f;
+            // Hysteresis prevents the bubble flipping sides near the screen centre.
+            bool placeToRight = !hasBubbleTarget
+                ? mouthScreenPosition.x < Screen.width * 0.5f
+                : (bubbleOnRight ? mouthScreenPosition.x < Screen.width * 0.62f
+                                 : mouthScreenPosition.x < Screen.width * 0.38f);
+            bool sideChanged = hasBubbleTarget && placeToRight != bubbleOnRight;
+            bubbleOnRight = placeToRight;
 
             bubbleRect.anchorMin = new Vector2(0.5f, 0.5f);
             bubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -304,7 +311,24 @@ namespace HearSay
             var parent = (RectTransform)bubbleRect.parent;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, mouthScreenPosition, null, out var mouthLocal);
             // Keep the bubble at lip height with a small gap for its tail.
-            bubbleRect.anchoredPosition = mouthLocal + new Vector2(placeToRight ? 48f : -48f, 0f);
+            Vector2 target = mouthLocal + new Vector2(placeToRight ? 48f : -48f, 0f);
+            Rect safe = Screen.safeArea;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, safe.min, null, out var safeMin);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, safe.max, null, out var safeMax);
+            Vector2 size = new Vector2(Mathf.Min(fixedBubbleSize.x, safeMax.x - safeMin.x - 32f),
+                Mathf.Min(fixedBubbleSize.y, safeMax.y - safeMin.y - 32f));
+            bubbleRect.sizeDelta = size;
+            target.x = Mathf.Clamp(target.x, safeMin.x + 16f + size.x * bubbleRect.pivot.x,
+                safeMax.x - 16f - size.x * (1f - bubbleRect.pivot.x));
+            target.y = Mathf.Clamp(target.y, safeMin.y + 16f + size.y * 0.5f,
+                safeMax.y - 16f - size.y * 0.5f);
+            // Smooth only small tracking noise; snap after a large jump or a side switch.
+            float distance = Vector2.Distance(bubbleRect.anchoredPosition, target);
+            float blend = 1f - Mathf.Exp(-Mathf.Max(18f, bubbleFollowSpeed) * Time.unscaledDeltaTime);
+            if (!hasBubbleTarget || sideChanged || distance > 180f)
+                bubbleRect.anchoredPosition = target;
+            else if (distance > 2f)
+                bubbleRect.anchoredPosition = Vector2.Lerp(bubbleRect.anchoredPosition, target, blend);
             hasBubbleTarget = true;
 
             bubbleTail.text = placeToRight ? "◀" : "▶";
@@ -321,6 +345,8 @@ namespace HearSay
             // Read the landmarks after SpeakerMouthTest.Update has published them.
             if (followActiveSpeaker && bubble != null && bubble.activeSelf && SpeakerActivity.HasMouthPosition)
                 FollowActiveSpeaker();
+            else
+                hasBubbleTarget = false;
         }
 
         private Vector2 ToScreenPoint(Vector2 normalizedPoint)
