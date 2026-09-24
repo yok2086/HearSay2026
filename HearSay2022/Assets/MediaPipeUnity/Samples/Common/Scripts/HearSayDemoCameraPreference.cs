@@ -8,7 +8,8 @@ namespace HearSay
     {
         private void Awake()
         {
-            WebCamSource.PreferFrontCamera = true;
+            // The deaf user looks outward at the speaker through the rear camera.
+            WebCamSource.PreferFrontCamera = false;
         }
 
         private void OnDestroy()

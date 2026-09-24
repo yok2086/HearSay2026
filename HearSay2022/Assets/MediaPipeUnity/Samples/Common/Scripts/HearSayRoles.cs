@@ -15,14 +15,18 @@ namespace HearSay
         private string connection = "Waiting to connect";
         private string translation = "Waiting for a sign…";
         private bool partner;
+        private HearSayDataMonitor dataMonitor;
         private bool connectionExpanded;
         private Coroutine polling;
         private HearSayPartnerCamera partnerCamera;
         private HearSayPartnerHands partnerHands;
+        private static string resetServerUrl;
+        private bool resetInProgress;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void SetLandscape()
         {
+            resetServerUrl = null;
             Screen.autorotateToPortrait = false;
             Screen.autorotateToPortraitUpsideDown = false;
             Screen.orientation = ScreenOrientation.LandscapeLeft;
@@ -52,13 +56,54 @@ namespace HearSay
                 return false;
             }
             SessionServerUrl = new Uri(uri, "/status").AbsoluteUri;
+            if (resetInProgress) return false;
+            if (resetServerUrl != SessionServerUrl)
+            {
+                StartCoroutine(ResetServer(SessionServerUrl));
+                return false;
+            }
             PlayerPrefs.SetString("HearSay.Server", SessionServerUrl);
             PlayerPrefs.Save();
             return true;
         }
 
+        private void Start()
+        {
+            if (resetServerUrl != null) return;
+            if (Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) &&
+                (uri.Scheme == "http" || uri.Scheme == "https"))
+                StartCoroutine(ResetServer(new Uri(uri, "/status").AbsoluteUri));
+        }
+
+        private IEnumerator ResetServer(string statusUrl)
+        {
+            resetInProgress = true;
+            connection = "Clearing previous sound and ASL commands…";
+            using (var request = new UnityWebRequest(new Uri(new Uri(statusUrl), "/reset").AbsoluteUri, "POST"))
+            {
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.timeout = 3;
+                UnityWebRequestAsyncOperation operation = null;
+                try { operation = request.SendWebRequest(); }
+                catch (Exception e) { connection = "Could not clear server: " + e.Message; }
+                if (operation != null) yield return operation;
+                if (operation != null && request.result == UnityWebRequest.Result.Success)
+                {
+                    resetServerUrl = statusUrl;
+                    connection = "Sound and ASL cleared. Choose your role.";
+                }
+                else
+                {
+                    connection = "Reset failed. Check the server address and restart the updated Python server, then select your role to retry.";
+                    connectionExpanded = true;
+                }
+            }
+            resetInProgress = false;
+        }
+
         private void OnGUI()
         {
+            if (dataMonitor != null) return;
             var oldMatrix = GUI.matrix;
             if (!partner)
             {
@@ -105,7 +150,12 @@ namespace HearSay
                     else Debug.LogError("Partner hand tracking prefab is missing.");
                     polling = StartCoroutine(PollSigns());
                 }
-                if (HearSayTheme.Action(new Rect(60, 448, 880, 48),
+                if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
+                {
+                    dataMonitor = gameObject.AddComponent<HearSayDataMonitor>();
+                    dataMonitor.Initialize(SessionServerUrl);
+                }
+                if (HearSayTheme.Action(new Rect(390, 448, 550, 48),
                     connectionExpanded ? "Connection settings   −" : "Connection settings   +", 19))
                     connectionExpanded = !connectionExpanded;
                 if (connectionExpanded)
@@ -116,7 +166,8 @@ namespace HearSay
                     GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
                 }
                 else
-                    GUI.Label(new Rect(60, 520, 880, 45), "Your connection is saved on this device.",
+                    GUI.Label(new Rect(60, 520, 880, 45), resetInProgress ? "Clearing previous commands…" :
+                        (resetServerUrl != null ? "Ready. Waiting for new terminal commands." : connection),
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
             else

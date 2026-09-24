@@ -17,10 +17,10 @@ WORDS = [
     "want", "what", "again_repeat", "eat_food", "more", "go_to", "bathroom", "fine",
     "like", "learn", "sign", "finish_done",
 ]
-DIRECTIONS = ["left", "right", "front", "back"]
+DIRECTIONS = ["left", "right"]
 state = {
     "soundActive": False,
-    "soundDirection": "front",
+    "soundDirection": "left",
     "aslDetected": False,
     "aslWord": "hello",
     "aslConfidence": 0.95,
@@ -45,13 +45,21 @@ def local_ip():
 
 
 def current_state():
-    """Return recent teammate data, or random fallback data for the demo."""
+    """Return terminal/real data; random values require the explicit random command."""
     global state, next_change
     with state_lock:
         if manual_mode:
             return state.copy()
 
-        using_real_data = time.monotonic() - last_real_update < REAL_DATA_TIMEOUT_SECONDS
+        if state.get("source") == "teammate":
+            result = state.copy()
+            result["ageSeconds"] = round(time.monotonic() - last_real_update, 2)
+            result["stale"] = result["ageSeconds"] >= REAL_DATA_TIMEOUT_SECONDS
+            if result["stale"]:
+                result["soundActive"] = False
+                result["aslDetected"] = False
+            return result
+        using_real_data = False
         if not using_real_data and time.monotonic() >= next_change:
             state = {
                 "soundActive": random.random() > 0.2,
@@ -69,7 +77,7 @@ def terminal_state():
     """The current state, with safe defaults before the first random update."""
     return state.copy() if state else {
         "soundActive": False,
-        "soundDirection": "front",
+        "soundDirection": "left",
         "aslDetected": False,
         "aslWord": "hello",
         "aslConfidence": 0.95,
@@ -94,9 +102,13 @@ def normalize_word(word):
 
 def print_terminal_help():
     print("\nTerminal controls (Unity updates within a second):")
-    print("  sound left | right | front | back   (up means front; down means back)")
-    print("  sound off")
-    print("  asl hello                         (also accepts: asl thank you)")
+    print("  sound left | sound right | sound off")
+    print("\nASL commands:")
+    labels = ["hello", "see you later", "I/me", "yes", "no", "help", "please",
+              "thank you", "want", "what", "again/repeat", "eat food", "more",
+              "go to", "bathroom", "fine", "like", "learn", "sign", "finish/done"]
+    for label in labels:
+        print("  asl " + label)
     print("  asl off")
     print("  both left hello")
     print("  clear                             (hide sound and ASL UI)")
@@ -107,7 +119,6 @@ def print_terminal_help():
 def terminal_input_loop():
     """Lets the presenter manually drive the Unity UI from this Terminal."""
     print_terminal_help()
-    direction_aliases = {"up": "front", "down": "back"}
     while True:
         try:
             command = input("HearSay > ").strip()
@@ -128,19 +139,19 @@ def terminal_input_loop():
             global manual_mode, next_change
             with state_lock:
                 manual_mode = False
+                state["source"] = "dummy"
                 next_change = 0.0
             print("Random demo data restored.")
         elif action == "clear":
             set_terminal_state(soundActive=False, aslDetected=False)
         elif action == "sound" and len(parts) == 2 and parts[1].lower() == "off":
             set_terminal_state(soundActive=False)
-        elif action in {"sound", "left", "right", "front", "back", "up", "down"}:
-            direction = parts[1].lower() if action == "sound" and len(parts) == 2 else action
-            direction = direction_aliases.get(direction, direction)
+        elif action == "sound":
+            direction = parts[1].lower() if len(parts) == 2 else ""
             if direction in DIRECTIONS:
                 set_terminal_state(soundActive=True, soundDirection=direction)
             else:
-                print("Use: sound left, sound right, sound front, sound back, or sound off")
+                print("Use: sound left, sound right, or sound off")
         elif action == "asl" and len(parts) == 2 and parts[1].lower() == "off":
             set_terminal_state(aslDetected=False)
         elif action == "asl" and len(parts) >= 2:
@@ -150,7 +161,7 @@ def terminal_input_loop():
             else:
                 print("Not in word bank. Type `help` for the supported command format.")
         elif action == "both" and len(parts) >= 3:
-            direction = direction_aliases.get(parts[1].lower(), parts[1].lower())
+            direction = parts[1].lower()
             word = normalize_word(" ".join(parts[2:]))
             if direction in DIRECTIONS and word in WORDS:
                 set_terminal_state(soundActive=True, soundDirection=direction,
@@ -193,6 +204,20 @@ class Handler(BaseHTTPRequestHandler):
         """Receive teammate input, or print Unity's local Whisper captions."""
         global state, last_real_update, manual_mode
         global last_speaker_detected
+        if self.path == "/reset":
+            with state_lock:
+                state = {
+                    "soundActive": False, "soundDirection": "",
+                    "soundEventId": "", "aslDetected": False,
+                    "aslWord": "", "aslConfidence": 0.0, "source": "terminal",
+                }
+                manual_mode = True
+                last_real_update = 0.0
+            print("\nAPP START: Sound and ASL cleared. Waiting for terminal commands.", flush=True)
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if self.path == "/speaker":
             try:
                 length = int(self.headers.get("Content-Length", "0"))

@@ -122,6 +122,7 @@
     <Compile Include="Assets/Samples/5 - Streaming/StreamingSampleMic.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSource.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/WaitForResult.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayDataMonitor.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/AppSettings.cs" />
     <Compile Include="Assets/MicPermissionTest.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CreateARBackCameraScene.cs" />

@@ -1,23 +1,22 @@
-"""Template for teammates sending sensor / ASL-model data to the HearSay demo.
+"""HearSay sensor and ASL sender.
 
-1. Set SERVER_URL to the /update URL printed by HearSayDummyServer.py.
-2. Replace the example values in build_payload() with real sensor/model output.
-3. Call send_update() whenever the values change (for example, 5–10 times per second).
+Uses test values for the sound direction and recognised sign.
+Both values are sent together to the laptop server at /update.
 """
 
 import json
 from urllib.request import Request, urlopen
 
 
-SERVER_URL = "http://192.168.1.2:8080/update"  # Replace with the laptop IP shown by the server.
+SERVER_URL = "http://192.168.1.2:8080/update"  # Laptop server address; depends on the Wi-Fi network.
 
 
 def build_payload():
     return {
         "soundActive": True,
-        "soundDirection": "left",  # left, right, front, or back
+        "soundDirection": "left",  # left or right; soundActive=False means off
         "aslDetected": True,
-        "aslWord": "hello",        # Must be a HearSay word-bank value, e.g. "thank_you"
+        "aslWord": "hello",        # Word-bank label, e.g. "thank_you"
         "aslConfidence": 0.91,       # 0.0 to 1.0
     }
 
