@@ -117,5 +117,5 @@ InitTestScene*.unity*
 /Comms/mqtt/mosquitto_certs*
 
 # Passwords
-/Comms/secrets.h
+/Comms/Secrets.h
 /Comms/firebeetle_dummy/Secrets.h
