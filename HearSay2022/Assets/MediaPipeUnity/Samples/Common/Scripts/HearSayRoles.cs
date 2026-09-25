@@ -43,7 +43,17 @@ namespace HearSay
         private void Awake()
         {
             DeafRole = false;
-            address = PlayerPrefs.GetString("HearSay.Server", "http://192.168.1.60:8080/status");
+            const string currentDefault = "http://172.25.96.216:8080/status";
+            address = PlayerPrefs.GetString("HearSay.Server", currentDefault);
+            // One-time migration of the previous network's default; preserve custom addresses.
+            if (!PlayerPrefs.HasKey("HearSay.ServerAddressMigrationV2"))
+            {
+                if (address.Trim().TrimEnd('/') == "http://192.168.1.60:8080/status")
+                    address = currentDefault;
+                PlayerPrefs.SetString("HearSay.Server", address);
+                PlayerPrefs.SetInt("HearSay.ServerAddressMigrationV2", 1);
+                PlayerPrefs.Save();
+            }
         }
 
         private bool SaveAddress()
@@ -56,14 +66,16 @@ namespace HearSay
                 return false;
             }
             SessionServerUrl = new Uri(uri, "/status").AbsoluteUri;
+            // Persist BEFORE the request: network/reset errors must not restore the old IP.
+            address = SessionServerUrl;
+            PlayerPrefs.SetString("HearSay.Server", SessionServerUrl);
+            PlayerPrefs.Save();
             if (resetInProgress) return false;
             if (resetServerUrl != SessionServerUrl)
             {
                 StartCoroutine(ResetServer(SessionServerUrl));
                 return false;
             }
-            PlayerPrefs.SetString("HearSay.Server", SessionServerUrl);
-            PlayerPrefs.Save();
             return true;
         }
 
@@ -94,7 +106,8 @@ namespace HearSay
                 }
                 else
                 {
-                    connection = "Reset failed. Check the server address and restart the updated Python server, then select your role to retry.";
+                    connection = "Reset failed: " + (request.error ?? connection) +
+                        " (HTTP " + request.responseCode + ") at " + statusUrl;
                     connectionExpanded = true;
                 }
             }
