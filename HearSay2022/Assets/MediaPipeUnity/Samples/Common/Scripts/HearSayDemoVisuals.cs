@@ -14,6 +14,12 @@ namespace HearSay
         [SerializeField] private float pollIntervalSeconds = 0.25f;
         [SerializeField] private bool useRandomFallback = false;
         [SerializeField, Range(1f, 2f)] private float soundCueDuration = 1.5f;
+
+        [Header("Real data (MQTT via SSH tunnel)")]
+        [Tooltip("If set, data comes from this instead of HTTP polling. Attach a HearSaySshMqttManager to a GameObject and drag it here.")]
+        [SerializeField] private HearSaySshMqttManager sshMqttManager;
+        [Tooltip("When true and sshMqttManager is set, skips HTTP polling entirely and reads live values from sshMqttManager every frame instead.")]
+        [SerializeField] private bool useMqttInsteadOfHttp = true;
         private float soundCueUntil;
         private bool previousSoundActive;
         private string previousSoundDirection;
@@ -48,7 +54,21 @@ namespace HearSay
                 serverUrl = HearSayRoles.SessionServerUrl;
             ActiveServerUrl = serverUrl;
             CreateUi();
-            StartCoroutine(PollServer());
+
+            if (useMqttInsteadOfHttp && sshMqttManager != null)
+            {
+                // Real data path: sshMqttManager already runs its own SSH+MQTT
+                // connection independently (see HearSaySshMqttManager.Start()).
+                // We just read its public fields every frame in Update() below -
+                // no coroutine/network call needed here at all.
+                serverHasResponded = true;
+                serverStatus = "SERVER: CONNECTING (MQTT)";
+            }
+            else
+            {
+                StartCoroutine(PollServer());
+            }
+
             StartCoroutine(ReportSpeakerStatus());
         }
 
@@ -78,7 +98,11 @@ namespace HearSay
 
         private void Update()
         {
-            if (useRandomFallback && !serverHasResponded && Time.unscaledTime >= nextRandomStateAt)
+            if (useMqttInsteadOfHttp && sshMqttManager != null)
+            {
+                SyncFromMqttManager();
+            }
+            else if (useRandomFallback && !serverHasResponded && Time.unscaledTime >= nextRandomStateAt)
             {
                 CreateRandomStatus();
                 nextRandomStateAt = Time.unscaledTime + Random.Range(3.5f, 6f);
@@ -158,6 +182,19 @@ namespace HearSay
 
                 yield return new WaitForSecondsRealtime(pollIntervalSeconds);
             }
+        }
+
+        private void SyncFromMqttManager()
+        {
+            status.soundActive = sshMqttManager.soundActive;
+            status.soundDirection = sshMqttManager.soundDirection;
+            status.soundEventId = sshMqttManager.lastResultEventId;
+            status.aslDetected = sshMqttManager.aslDetected;
+            status.aslWord = sshMqttManager.aslWord;
+            status.aslConfidence = sshMqttManager.aslConfidence;
+
+            serverHasResponded = true;
+            serverStatus = "SERVER: " + sshMqttManager.ConnectionStatus;
         }
 
         private void CreateRandomStatus()

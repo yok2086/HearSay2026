@@ -119,3 +119,4 @@ InitTestScene*.unity*
 # Passwords
 /Comms/Secrets.h
 /Comms/firebeetle_dummy/Secrets.h
+/HearSay2022/Assets/MediaPipeUnity/Samples/Common/Scripts/Secrets.cs
