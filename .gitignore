@@ -118,4 +118,4 @@ InitTestScene*.unity*
 
 # Passwords
 /Comms/secrets.h
-/Comms/firebeetle_ssh_mqtt/Secrets.h
+/Comms/firebeetle_dummy/Secrets.h
