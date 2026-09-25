@@ -136,7 +136,7 @@ void publishTelemetry() {
     case REGIME_OPEN_HAND:   flexMin = 350; flexMax = 450; gyroRange = 15; break;
     case REGIME_CLOSED_FIST: flexMin = 620; flexMax = 750; gyroRange = 15; break;
     case REGIME_SHAKING:     flexMin = 480; flexMax = 580; gyroRange = 60; break;
-    default:                 flexMin = 500; flexMax = 580; gyroRange = 10; break; // IDLE
+    default:                 flexMin = 500; flexMax = 580; gyroRange = 10; break;
   }
 
   imu["ax"] = random(-50, 50) / 100.0;

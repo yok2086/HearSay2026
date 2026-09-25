@@ -6,7 +6,13 @@ ULTRA_HOST="xilinx@makerslab-fpga-36.ddns.comp.nus.edu.sg"
 
 REMOTE_CONF="/tmp/mosquitto.conf"
 REMOTE_BROKER_LOG="/tmp/mosquitto.log"
-REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
+
+# Dummy Inference
+REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
+
+# Sensor Inference
+# REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
+
 REMOTE_INFERENCE_LOG="/tmp/ultra96_inference.log"
 
 LOCAL_BIND="0.0.0.0"
