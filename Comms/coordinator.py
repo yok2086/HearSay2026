@@ -1,10 +1,11 @@
 import json
 import time
 import threading
+import queue
 import paho.mqtt.client as mqtt
 
 # ---- Fill these in ----
-BROKER_HOST = "Nathans-MacBook-Pro-4.local" 
+BROKER_HOST = "Nathans-MacBook-Pro-4.local"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
@@ -13,8 +14,13 @@ DEFAULT_SAMPLE_RATE_HZ = 50
 WATCHDOG_TIMEOUT_S = 20
 # ------------------------
 
+# Shared device registry (each device's worker thread, plus the watchdog thread)
 devices = {}
 devices_lock = threading.Lock()
+
+# device_id -> Queue of (msg_type, payload) tuples waiting to be processed
+device_queues = {}
+device_queues_lock = threading.Lock()
 
 
 def now_ms():
@@ -33,7 +39,7 @@ def handle_hello(client, device_id, msg):
             "last_seen": time.time(),
             "session_id": session_id,
         }
-    print(f"[registry] {device_id} said HELLO (capabilities={msg.get('payload', {}).get('capabilities')})")
+    print(f"[{device_id}] said HELLO (capabilities={msg.get('payload', {}).get('capabilities')})")
 
     config_msg = {
         "type": "CONFIG",
@@ -44,7 +50,7 @@ def handle_hello(client, device_id, msg):
         "payload": {"sample_rate_hz": DEFAULT_SAMPLE_RATE_HZ},
     }
     publish_json(client, f"cmd/{device_id}/set", config_msg, qos=1)
-    print(f"[registry] Sent CONFIG to {device_id}")
+    print(f"[{device_id}] Sent CONFIG")
 
 
 def handle_config_ack(device_id, msg):
@@ -52,7 +58,7 @@ def handle_config_ack(device_id, msg):
         if device_id in devices:
             devices[device_id]["state"] = "RUNNING"
             devices[device_id]["last_seen"] = time.time()
-    print(f"[registry] {device_id} is now RUNNING")
+    print(f"[{device_id}] is now RUNNING")
 
 
 def handle_telemetry(device_id, msg):
@@ -61,7 +67,7 @@ def handle_telemetry(device_id, msg):
             devices[device_id]["last_seen"] = time.time()
     payload = msg.get("payload", {})
     seq = msg.get("seq")
-    print(f"[telemetry] {device_id} seq={seq} payload={payload}")
+    print(f"[{device_id}] telemetry seq={seq} payload={payload}")
 
 
 def handle_status(device_id, msg):
@@ -70,7 +76,41 @@ def handle_status(device_id, msg):
         with devices_lock:
             if device_id in devices:
                 devices[device_id]["state"] = "OFFLINE"
-        print(f"[registry] {device_id} went OFFLINE (via LWT)")
+        print(f"[{device_id}] went OFFLINE (via LWT)")
+
+
+def device_worker(client, device_id, q):
+    """
+    One of these runs per device, each on its own dedicated thread.
+    """
+    print(f"[{device_id}] worker thread started")
+    while True:
+        msg_type, payload = q.get()
+
+        if msg_type == "HELLO":
+            handle_hello(client, device_id, payload)
+        elif msg_type == "CONFIG_ACK":
+            handle_config_ack(device_id, payload)
+        elif msg_type == "TELEMETRY":
+            handle_telemetry(device_id, payload)
+        elif msg_type == "STATUS":
+            handle_status(device_id, payload)
+        elif msg_type == "RESULT":
+            print(f"[{device_id}] result: {payload.get('payload')}")
+
+
+def get_or_create_device_queue(client, device_id):
+    """
+    Spawns a new worker thread + queue the first time we see a given device_id
+    """
+    with device_queues_lock:
+        if device_id not in device_queues:
+            q = queue.Queue()
+            device_queues[device_id] = q
+            t = threading.Thread(target=device_worker, args=(client, device_id, q), daemon=True)
+            t.start()
+            print(f"[registry] Spawned worker thread for new device: {device_id}")
+        return device_queues[device_id]
 
 
 def on_connect(client, userdata, flags, rc):
@@ -92,16 +132,8 @@ def on_message(client, userdata, msg):
     device_id = topic_parts[1] if len(topic_parts) > 1 else "unknown"
     msg_type = payload.get("type")
 
-    if msg_type == "HELLO":
-        handle_hello(client, device_id, payload)
-    elif msg_type == "CONFIG_ACK":
-        handle_config_ack(device_id, payload)
-    elif msg_type == "TELEMETRY":
-        handle_telemetry(device_id, payload)
-    elif msg_type == "STATUS":
-        handle_status(device_id, payload)
-    elif msg_type == "RESULT":
-        print(f"[result] {device_id}: {payload.get('payload')}")
+    q = get_or_create_device_queue(client, device_id)
+    q.put((msg_type, payload))
 
 
 def watchdog_loop():
@@ -128,7 +160,7 @@ def main():
     watchdog_thread = threading.Thread(target=watchdog_loop, daemon=True)
     watchdog_thread.start()
 
-    print("Coordinator running. Ctrl+C to stop.")
+    print("Coordinator running (multi-device, one worker thread per ESP32). Ctrl+C to stop.")
     client.loop_forever()
 
 

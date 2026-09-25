@@ -5,7 +5,7 @@
 #include "esp_wpa2.h"   
 #include "ssh_client.h"      
 
-// ---- MQTT-level settings (separate from the SSH credentials in secrets.h) ----
+// ---- MQTT-level settings ----
 const char* DEVICE_ID  = "glove_01";
 const char* MQTT_USER  = "nathan";
 const char* MQTT_PASS  = "mqtt";
