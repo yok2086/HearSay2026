@@ -114,9 +114,9 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
 # MQTT Certificates
-/Comms/mqtt/mosquitto_certs*
+**/mosquitto_certs/
 
 # Passwords
-/Comms/Secrets.h
-/Comms/firebeetle_dummy/Secrets.h
-/HearSay2022/Assets/MediaPipeUnity/Samples/Common/Scripts/Secrets.cs
+**/secrets.h
+**/Secrets.h
+**/UnitySecrets.cs

@@ -16,15 +16,23 @@ namespace CG4002.Comms
     [Serializable]
     public sealed class ConnectionSecrets
     {
-        // Provisioning reference only: Android Wi-Fi settings manage eduroam login.
-        public string wifiSsid = "eduroam", wifiUsername, wifiPassword;
+        public string wifiSsid = "eduroam";
+        public string wifiUsername = UnitySecrets.WifiUsername;
+        public string wifiPassword = UnitySecrets.WifiPassword;
+
         public string jumpHost = "stujump.comp.nus.edu.sg";
         public int jumpPort = 22;
-        public string socUsername, socPassword;
+        public string socUsername = UnitySecrets.SocUsername;
+        public string socPassword = UnitySecrets.SocPassword;
+
         public string ultra96Host = "makerslab-fpga-36.ddns.comp.nus.edu.sg";
         public int ultra96Port = 22;
         public string ultra96Username = "xilinx", ultra96Password = "xilinx";
-        public string mqttUsername, mqttPassword, sshPrivateKey, sshKeyPassphrase = "";
+
+        public string mqttUsername = UnitySecrets.MqttUsername;
+        public string mqttPassword = UnitySecrets.MqttPassword;
+        public string sshPrivateKey = UnitySecrets.SshPrivateKey;
+        public string sshKeyPassphrase = UnitySecrets.SshKeyPassphrase;
 
         public void Validate()
         {
