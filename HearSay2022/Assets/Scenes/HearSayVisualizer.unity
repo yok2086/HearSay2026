@@ -1675,11 +1675,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef4e7547435054b68810e4420a86fb21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  soundDirection: None
-  speakerId: -1
-  isSpeaking: 0
-  transcript: 
-  aslWord: 
+  soundDirection: Left
+  speakerId: 1
+  isSpeaking: 1
+  transcript: Hello, How are you?
+  aslWord: HELLO
 --- !u!1 &1790521841
 GameObject:
   m_ObjectHideFlags: 0

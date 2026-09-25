@@ -14,6 +14,7 @@ namespace Mediapipe.Unity.Sample.PoseLandmarkDetection
   public class PoseLandmarkerRunner : VisionTaskApiRunner<PoseLandmarker>
   {
     [SerializeField] private PoseLandmarkerResultAnnotationController _poseLandmarkerResultAnnotationController;
+    [SerializeField] private HearSay.PoseBodyOutline _bodyOutline;
 
     private Experimental.TextureFramePool _textureFramePool;
 
@@ -162,6 +163,7 @@ namespace Mediapipe.Unity.Sample.PoseLandmarkDetection
     private void OnPoseLandmarkDetectionOutput(PoseLandmarkerResult result, Image image, long timestamp)
     {
       _poseLandmarkerResultAnnotationController.DrawLater(result);
+      _bodyOutline?.ProcessPoseResult(result);
       DisposeAllMasks(result);
     }
 

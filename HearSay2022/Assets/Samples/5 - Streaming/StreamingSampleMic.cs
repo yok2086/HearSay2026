@@ -1,6 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 using Whisper.Utils;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+using UnityEngine.Android;
+#endif
 
 namespace Whisper.Samples
 {
@@ -19,9 +24,45 @@ namespace Whisper.Samples
         public ScrollRect scroll;
         private WhisperStream _stream;
 
-        private async void Start()
+        private void Start()
         {
-            _stream = await whisper.CreateStream(microphoneRecord);
+            StartCoroutine(Initialize());
+        }
+
+        private IEnumerator Initialize()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            {
+                text.text = "Microphone permission needed…";
+                var requestFinished = false;
+                var callbacks = new PermissionCallbacks();
+                callbacks.PermissionGranted += _ => requestFinished = true;
+                callbacks.PermissionDenied += _ => requestFinished = true;
+                callbacks.PermissionDeniedAndDontAskAgain += _ => requestFinished = true;
+                Permission.RequestUserPermission(Permission.Microphone, callbacks);
+                yield return new WaitUntil(() => requestFinished);
+            }
+
+            if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+            {
+                text.text = "Microphone permission denied.";
+                Debug.LogError("Whisper streaming: Android microphone permission was denied.");
+                yield break;
+            }
+#endif
+
+            var streamTask = whisper.CreateStream(microphoneRecord);
+            yield return new WaitUntil(() => streamTask.IsCompleted);
+
+            if (streamTask.IsFaulted)
+            {
+                text.text = "Could not start Whisper. Check Console.";
+                Debug.LogException(streamTask.Exception);
+                yield break;
+            }
+
+            _stream = streamTask.Result;
             _stream.OnResultUpdated += OnResult;
             _stream.OnSegmentUpdated += OnSegmentUpdated;
             _stream.OnSegmentFinished += OnSegmentFinished;
