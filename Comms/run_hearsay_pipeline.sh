@@ -57,8 +57,14 @@ fi
 
 echo ""
 echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
+
+# Inference using sensor data
+# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#   "pgrep -f '[u]ltra96_inference.py' || true")
+
+# Inference using dummy data
 INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-  "pgrep -f '[u]ltra96_inference.py' || true")
+  "pgrep -f '[d]ummy_inference.py' || true")
 
 if [ -n "$INFERENCE_RUNNING" ]; then
   echo "Inference script already running (pid $INFERENCE_RUNNING) - skipping start, going straight to local scripts."
@@ -81,15 +87,13 @@ echo "Tunnel opened in background."
 sleep 1
 
 echo ""
-echo "=== 4. Launching coordinator.py, ble_bridge.py, dashboard.py in tmux ==="
+echo "=== 4. Launching coordinator.py & dashboard.py in tmux ==="
 
 tmux kill-server 2>/dev/null || true
 sleep 0.5
 
 tmux new-session -d -s "$TMUX_SESSION" -n coordinator \
   "cd $LOCAL_DIR && $PYTHON_BIN coordinator.py; echo 'Press enter to close...'; read"
-# tmux new-window -t "$TMUX_SESSION" -n ble_bridge \
-#   "cd $LOCAL_DIR && $PYTHON_BIN ble_bridge.py; echo 'Press enter to close...'; read"
 tmux new-window -t "$TMUX_SESSION" -n dashboard \
   "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
 tmux select-window -t "$TMUX_SESSION:dashboard"
