@@ -5,16 +5,16 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639256810490000000
-    m_Hash: 3837373078
+      ticks: 639261680410000000
+    m_Hash: 1415688259
   m_LockFileStatus:
     m_FilePath: /Users/gyurim/HearSay2022/HearSay2022/Packages/packages-lock.json
     m_PathExists: 1
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639256810490000000
-    m_Hash: 3572059048
+      ticks: 639261680980000000
+    m_Hash: 2596912594
 m_EmbeddedPackageManifests:
   m_ManifestsStatus:
     /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json:
@@ -30,6 +30,101 @@ m_LocalPackages:
 m_ProjectPath: /Users/gyurim/HearSay2022/HearSay2022/Packages
 m_EditorVersion: 2023.2.22f1 (6b19bf4f8115)
 m_ResolvedPackages:
+- packageId: com.google.xr.cardboard@https://github.com/googlevr/cardboard-xr-plugin.git#v1.24.0
+  testable: 0
+  isDirectDependency: 1
+  version: 1.24.0
+  source: 5
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.google.xr.cardboard@3e21f7f7a4
+  assetPath: Packages/com.google.xr.cardboard
+  name: com.google.xr.cardboard
+  displayName: Google Cardboard XR Plugin for Unity
+  author:
+    name: 
+    email: 
+    url: 
+  category: 
+  type: 
+  description: Provides rendering and input support for Google Cardboard.
+  errors: []
+  versions:
+    all: []
+    compatible: []
+    recommended: 
+    deprecated: []
+  dependencies:
+  - name: com.unity.inputsystem
+    version: 1.7.0
+  - name: com.unity.xr.management
+    version: 3.2.9
+  - name: com.unity.xr.legacyinputhelpers
+    version: 2.1.4
+  resolvedDependencies:
+  - name: com.unity.inputsystem
+    version: 1.7.0
+  - name: com.unity.modules.uielements
+    version: 1.0.0
+  - name: com.unity.modules.ui
+    version: 1.0.0
+  - name: com.unity.modules.imgui
+    version: 1.0.0
+  - name: com.unity.modules.jsonserialize
+    version: 1.0.0
+  - name: com.unity.modules.hierarchycore
+    version: 1.0.0
+  - name: com.unity.xr.management
+    version: 4.4.0
+  - name: com.unity.modules.vr
+    version: 1.0.0
+  - name: com.unity.modules.physics
+    version: 1.0.0
+  - name: com.unity.modules.xr
+    version: 1.0.0
+  - name: com.unity.modules.subsystems
+    version: 1.0.0
+  - name: com.unity.xr.legacyinputhelpers
+    version: 2.1.10
+  keywords:
+  - google
+  - cardboard
+  - vr
+  - xr
+  - reality
+  - xreditorsubsystem
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  entitlements:
+    licensingModel: 0
+  isAssetStorePackage: 0
+  datePublishedTicks: 0
+  documentationUrl: 
+  hasRepository: 0
+  repository:
+    type: 
+    url: 
+    revision: 
+    path: 
+  unityLifecycle:
+    version: 
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  git:
+    hash: 3e21f7f7a43a6c9ce9690248028f94d44cde3988
+    revision: v1.24.0
+  upmReserved: 
+  assetStore:
+    productId: 
 - packageId: com.srcnalt.openai-unity@https://github.com/srcnalt/OpenAI-Unity.git
   testable: 0
   isDirectDependency: 1
@@ -430,6 +525,7 @@ m_ResolvedPackages:
     - 2.0.12
     - 2.0.13
     - 2.0.14
+    - 2.0.15
     compatible:
     - 2.0.0
     - 2.0.3
@@ -1858,6 +1954,7 @@ m_ResolvedPackages:
     - 6.6.0
     - 6.6.1
     - 6.6.2
+    - 6.7.0-pre.1
     compatible:
     - 5.1.3
     - 5.1.4
@@ -2160,6 +2257,7 @@ m_ResolvedPackages:
     - 6.6.0
     - 6.6.1
     - 6.6.2
+    - 6.7.0-pre.1
     compatible:
     - 5.1.3
     - 5.1.4

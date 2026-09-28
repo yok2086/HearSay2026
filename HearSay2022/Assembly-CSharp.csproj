@@ -83,7 +83,9 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayDemoVisuals.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Bootstrap.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageReadMode.cs" />
+    <Compile Include="Assets/HearSayVR/HearSayVrSetup.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfig.cs" />
+    <Compile Include="Assets/HearSayVR/HearSayVrDisplay.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoGraph.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayPartnerHands.cs" />
     <Compile Include="Assets/MediaPipeUnity/Tutorial/Hello World/HelloWorld.cs" />
@@ -176,6 +178,7 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/holistic_opengles.txt" />
     <None Include="Assets/MediaPipeUnity/Samples/Common/Shaders/HearSaySilhouetteOutline.shader" />
+    <None Include="Assets/HearSayVR/HearSayVrDisplay.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
@@ -1268,6 +1271,10 @@
       <HintPath>Library/ScriptAssemblies/UnityEngine.Purchasing.SecurityStub.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Google.XR.Cardboard">
+      <HintPath>Library/ScriptAssemblies/Google.XR.Cardboard.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.SpatialTracking">
       <HintPath>Library/ScriptAssemblies/UnityEngine.SpatialTracking.dll</HintPath>
       <Private>False</Private>
@@ -1306,6 +1313,10 @@
     </Reference>
     <Reference Include="Unity.EditorCoroutines.Editor">
       <HintPath>Library/ScriptAssemblies/Unity.EditorCoroutines.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Google.XR.Cardboard.Editor">
+      <HintPath>Library/ScriptAssemblies/Google.XR.Cardboard.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.AI.Navigation.Editor">
