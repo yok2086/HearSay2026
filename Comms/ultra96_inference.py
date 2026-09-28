@@ -1,75 +1,85 @@
-"""
-Ultra96 DPU inference
-
-Buffers incoming TELEMETRY into fixed-size windows per device, runs
-inference on each full window, and publishes a RESULT message back to
-the broker.
-"""
-
 import json
 import time
 import collections
 
 import paho.mqtt.client as mqtt
 
-# ---- Details ----
+# ---- Fill these in ----
 BROKER_HOST = "localhost" 
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/tmp/mosquitto_certs/ca.crt"  
-WINDOW_SIZE = 50    # number of TELEMETRY samples per inference window
+CA_CERT_PATH = "/tmp/mosquitto_certs/ca.crt"   # path on the Ultra96, not the laptop
+WINDOW_SIZE = 50                 # number of TELEMETRY samples per inference window
 
-# ---- Classification thresholds (PLACEHOLDER) ----
-# Flex sensors: raw 12-bit ADC (0-4095) 
-FLEX_THRESHOLD_HIGH = 2800   # avg flex above this -> fingers curled tight
-FLEX_THRESHOLD_LOW = 1200    # avg flex below this -> fingers extended
 
-# Gyro: now in real deg/s
+# A finger counts as bent for the whole window if it was bent in at least this
+# fraction of the window's samples
+FLEX_BENT_FRACTION = 0.5
+
+# The window's five-finger pattern must show up (all five fingers exactly) in
+# at least this fraction of samples to count as a confident match. Below that
+# the hand was probably mid-transition, so fall through to the motion/idle checks.
+MIN_PATTERN_MATCH = 0.6
+
+FINGER_PATTERNS = {
+    (1, 1, 1, 1, 1): "BYE",     # closed fist
+    (0, 0, 0, 0, 0): "HELLO",   # open hand
+}
+
+# Gyro: real deg/s. Resting noise is typically a few deg/s; deliberate motion
+# is often tens to low-hundreds deg/s. 40 is a starting guess, NOT a calibrated value.
 GYRO_THRESHOLD_DEG_S = 40.0
 # ------------------------------------------------------------------------
-
 
 # device_id -> list of recent payload dicts (sliding window)
 windows = collections.defaultdict(list)
 
 
 def run_inference(window):
-    n = len(window)
-    if n == 0:
+    samples = []
+    for sample in window:
+        flex = sample.get("flex", [])
+        if len(flex) == 5 and all(v in (0, 1) for v in flex):
+            samples.append(sample)
+
+    # Don't decide from a handful of samples if most of the window was unusable
+    if not samples or len(samples) < len(window) / 2:
+        print(f"[inference] only {len(samples)}/{len(window)} usable samples: flex must be "
+              "five 0/1 values (is the glove still running the old raw-ADC firmware?)")
         return {"event": "NONE", "confidence": 0.0}
 
-    # Average flex reading across all 5 fingers and all samples in the window
-    avg_flex = sum(
-        sum(sample.get("flex", [0])) / max(len(sample.get("flex", [])), 1)
-        for sample in window
-    ) / n
+    n = len(samples)
 
-    # Average gyro magnitude in deg/s
+    # Per finger: fraction of samples in which it was bent, then a majority vote
+    bent_fraction = [sum(s["flex"][i] for s in samples) / n for i in range(5)]
+    pattern = tuple(1 if f >= FLEX_BENT_FRACTION else 0 for f in bent_fraction)
+
+    # Fraction of samples that showed exactly this five-finger pattern
+    match_fraction = sum(1 for s in samples if tuple(s["flex"]) == pattern) / n
+
+    # Average |gyro| magnitude in deg/s, as a rough "how much rotation happened" signal
     avg_gyro_mag = sum(
-        abs(sample.get("imu", {}).get("gx", 0))
-        + abs(sample.get("imu", {}).get("gy", 0))
-        + abs(sample.get("imu", {}).get("gz", 0))
-        for sample in window
+        abs(s.get("imu", {}).get("gx", 0))
+        + abs(s.get("imu", {}).get("gy", 0))
+        + abs(s.get("imu", {}).get("gz", 0))
+        for s in samples
     ) / n
 
-    print(f"[calibration] avg_flex={avg_flex:.1f}  avg_gyro_mag={avg_gyro_mag:.2f} deg/s")
+    print(f"[calibration] pattern={pattern} match={match_fraction:.2f} "
+          f"bent_fraction={[round(f, 2) for f in bent_fraction]} "
+          f"avg_gyro_mag={avg_gyro_mag:.2f} deg/s ({n}/{len(window)} samples usable)")
 
-    if avg_flex > FLEX_THRESHOLD_HIGH:
-        # High flex reading = fingers curled tight 
-        event = "A"
-        confidence = min(0.99, 0.5 + (avg_flex - FLEX_THRESHOLD_HIGH) / 800)
-    elif avg_flex < FLEX_THRESHOLD_LOW:
-        # Low flex reading = fingers extended/open
-        event = "B"
-        confidence = min(0.99, 0.5 + (FLEX_THRESHOLD_LOW - avg_flex) / 800)
+    if pattern in FINGER_PATTERNS and match_fraction >= MIN_PATTERN_MATCH:
+        event = FINGER_PATTERNS[pattern]
+        confidence = min(0.99, match_fraction)
     elif avg_gyro_mag > GYRO_THRESHOLD_DEG_S:
         # Larger-than-usual rotation across the window
-        event = "C"
+        event = "THANK YOU"
         confidence = min(0.99, 0.5 + (avg_gyro_mag - GYRO_THRESHOLD_DEG_S) / 60)
     else:
-        # Nothing crossed a threshold - default classification
-        event = "D"
+        # No recognised finger pattern and no strong motion - default/idle
+        event = "WELCOME"
         confidence = 0.6
 
     return {"event": event, "confidence": round(confidence, 2)}
@@ -110,7 +120,7 @@ def on_message(client, userdata, msg):
 
     if len(windows[device_id]) >= WINDOW_SIZE:
         window = windows[device_id][:WINDOW_SIZE]
-        windows[device_id] = windows[device_id][WINDOW_SIZE:]
+        windows[device_id] = windows[device_id][WINDOW_SIZE:]   # slide, non-overlapping
 
         result = run_inference(window)
         publish_result(client, device_id, session_id, result)

@@ -8,10 +8,10 @@ REMOTE_CONF="/tmp/mosquitto.conf"
 REMOTE_BROKER_LOG="/tmp/mosquitto.log"
 
 # Dummy Inference
-REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
+# REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
 
 # Sensor Inference
-# REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
+REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
 
 REMOTE_INFERENCE_LOG="/tmp/ultra96_inference.log"
 
@@ -65,12 +65,12 @@ echo ""
 echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
 
 # Inference using sensor data
-# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-#   "pgrep -f '[u]ltra96_inference.py' || true")
+INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+  "pgrep -f '[u]ltra96_inference.py' || true")
 
 # Inference using dummy data
-INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-  "pgrep -f '[d]ummy_inference.py' || true")
+# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#   "pgrep -f '[d]ummy_inference.py' || true")
 
 if [ -n "$INFERENCE_RUNNING" ]; then
   echo "Inference script already running (pid $INFERENCE_RUNNING) - skipping start, going straight to local scripts."
