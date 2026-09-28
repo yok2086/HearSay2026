@@ -79,6 +79,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/GraphRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSourceProvider.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Detection/FaceDetectionConfigWindow.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Secrets.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SpeakerManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayDemoVisuals.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Bootstrap.cs" />
@@ -116,6 +117,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/WebCamSource.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkDetectionConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectorRunner.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSaySshMqttManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/EnumExtension.cs" />
     <Compile Include="Assets/MediaPipeUnity/Tutorial/Tasks/FaceLandmarkerRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Screen.cs" />
@@ -135,6 +137,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/CreateHearSayCombinedTestScene.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/ImageSourceConfig.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/RippleEffect.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/SshMqttClient.cs" />
     <Compile Include="Assets/MediaPipeUnity/Tutorial/Custom Graph/FaceMeshLegacy.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Landmark Detection/FaceLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkerRunner.cs" />
@@ -641,6 +644,22 @@
     </Reference>
     <Reference Include="Unity.Analytics.StandardEvents">
       <HintPath>Library/PackageCache/com.unity.analytics@3.8.1/AnalyticsStandardEvents/Unity.Analytics.StandardEvents.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MQTTnet">
+      <HintPath>Assets/Plugins/HearSayComms/MQTTnet.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BouncyCastle.Cryptography">
+      <HintPath>Assets/Plugins/HearSayComms/BouncyCastle.Cryptography.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Formats.Asn1">
+      <HintPath>Assets/Plugins/HearSayComms/System.Formats.Asn1.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Renci.SshNet">
+      <HintPath>Assets/Plugins/HearSayComms/Renci.SshNet.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Android.Types">
