@@ -36,6 +36,8 @@ namespace Mediapipe.Unity
     private static bool _IsPermitted = false;
 
     private WebCamTexture _webCamTexture;
+    private bool _isStarting;
+    private bool _hasFrame;
     private WebCamTexture webCamTexture
     {
       get => _webCamTexture;
@@ -105,7 +107,10 @@ namespace Mediapipe.Unity
       {
 #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
         if (webCamDevice is WebCamDevice valueOfWebCamDevice) {
-          return valueOfWebCamDevice.availableResolutions.Select(resolution => new ResolutionStruct(resolution)).ToArray();
+          var supported = valueOfWebCamDevice.availableResolutions;
+          if (supported != null && supported.Length > 0)
+            return supported.Select(resolution => new ResolutionStruct(resolution)).ToArray();
+          return _defaultAvailableResolutions;
         }
 #endif
         return webCamDevice == null ? null : _defaultAvailableResolutions;
@@ -113,7 +118,7 @@ namespace Mediapipe.Unity
     }
 #pragma warning restore IDE0025
 
-    public override bool isPrepared => webCamTexture != null;
+    public override bool isPrepared => webCamTexture != null && _hasFrame;
     public override bool isPlaying => webCamTexture != null && webCamTexture.isPlaying;
 
     private IEnumerator Initialize()
@@ -220,15 +225,31 @@ namespace Mediapipe.Unity
 
     public override IEnumerator Play()
     {
-      yield return Initialize();
-      if (!_IsPermitted)
+      // Face landmarking and segmentation request this same source concurrently.
+      // Only one caller owns startup; the other waits for actual camera frames.
+      if (_isStarting)
       {
-        throw new InvalidOperationException("Not permitted to access cameras");
+        yield return new WaitUntil(() => !_isStarting);
+        if (!isPrepared) throw new InvalidOperationException("Shared camera startup failed; see the first camera error.");
+        yield break;
       }
+      if (isPrepared && isPlaying) yield break;
 
-      InitializeWebCamTexture();
-      webCamTexture.Play();
-      yield return WaitForWebCamTexture();
+      _isStarting = true;
+      try
+      {
+        yield return Initialize();
+        if (!_IsPermitted)
+          throw new InvalidOperationException("Not permitted to access cameras");
+        InitializeWebCamTexture();
+        Debug.Log($"HearSay camera: starting {sourceName}");
+        webCamTexture.Play();
+        yield return WaitForWebCamTexture();
+      }
+      finally
+      {
+        _isStarting = false;
+      }
     }
 
     public override IEnumerator Resume()
@@ -254,6 +275,7 @@ namespace Mediapipe.Unity
 
     public override void Stop()
     {
+      _hasFrame = false;
       var textureToRelease = webCamTexture;
       if (textureToRelease != null)
       {
@@ -276,7 +298,13 @@ namespace Mediapipe.Unity
       Stop();
       if (webCamDevice is WebCamDevice valueOfWebCamDevice)
       {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        // Match the working Conversation Partner capture request. Android chooses
+        // the nearest supported size; downstream code uses the actual frame size.
+        webCamTexture = new WebCamTexture(valueOfWebCamDevice.name, 1280, 720, 30);
+#else
         webCamTexture = new WebCamTexture(valueOfWebCamDevice.name, resolution.width, resolution.height, (int)resolution.frameRate);
+#endif
         return;
       }
       throw new InvalidOperationException("Cannot initialize WebCamTexture because WebCamDevice is not selected");
@@ -284,15 +312,19 @@ namespace Mediapipe.Unity
 
     private IEnumerator WaitForWebCamTexture()
     {
-      const int timeoutFrame = 2000;
-      var count = 0;
-      Debug.Log("Waiting for WebCamTexture to start");
-      yield return new WaitUntil(() => count++ > timeoutFrame || webCamTexture.width > 16);
-
-      if (webCamTexture.width <= 16)
+      float deadline = Time.realtimeSinceStartup + 15f;
+      while (webCamTexture != null && Time.realtimeSinceStartup < deadline)
       {
-        throw new TimeoutException("Failed to start WebCam");
+        if (webCamTexture.width > 16 && webCamTexture.height > 16 && webCamTexture.didUpdateThisFrame)
+        {
+          _hasFrame = true;
+          Debug.Log($"HearSay camera ready: {sourceName}, {webCamTexture.width}x{webCamTexture.height}, rotation={webCamTexture.videoRotationAngle}");
+          yield break;
+        }
+        yield return null;
       }
+      Stop();
+      throw new TimeoutException($"HearSay camera {sourceName} did not deliver frames within 15 seconds. Check camera access and other camera users.");
     }
 
     private class ResolutionStructComparer : IComparer<ResolutionStruct>
