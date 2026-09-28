@@ -73,6 +73,13 @@ ExportedObj/
 *.mdb.meta
 
 # Unity3D generated file on crash reports
+# Nested HearSay project caches and local credentials
+/HearSay2022/Library/
+/HearSay2022/Temp/
+/HearSay2022/Logs/
+/HearSay2022/obj/
+/HearSay2022/Assets/MediaPipeUnity/Samples/Common/Scripts/Secrets.cs
+/HearSay2022/Assets/MediaPipeUnity/Samples/Common/Scripts/Secrets.cs.meta
 sysinfo.txt
 
 # Mono auto generated files
