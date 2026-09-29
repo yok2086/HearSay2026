@@ -1,11 +1,3 @@
-"""
-Dummy Ultra96 DPU inference
-
-Buffers incoming TELEMETRY into fixed-size windows per device, runs
-inference on each full window, and publishes a RESULT message back to
-the broker.
-"""
-
 import json
 import time
 import collections
@@ -43,19 +35,17 @@ def run_inference(window):
         for sample in window
     ) / n
  
-    # Thresholds tuned to the dummy data's ranges from firebeetle_ble.ino:
-    # flex ~400-700, gyro axes each roughly -0.20..0.20 (so |gx|+|gy|+|gz| usually < ~0.3)
-    if avg_flex > 600:
+    if avg_flex > 0.6:
         event = "HELLO"
-        confidence = min(0.99, 0.5 + (avg_flex - 600) / 200)
-    elif avg_flex < 450:
-        event = "BYE"
-        confidence = min(0.99, 0.5 + (450 - avg_flex) / 150)
-    elif avg_gyro_mag > 0.35:
-        event = "THANK YOU"
-        confidence = min(0.99, 0.5 + (avg_gyro_mag - 0.35) / 0.3)
+        confidence = min(0.99, 0.5 + (avg_flex - 0.6) / 0.4)
+    elif avg_flex < 0.4:
+        event = "YES"
+        confidence = min(0.99, 0.5 + (0.4 - avg_flex) / 0.4)
+    elif avg_gyro_mag > 40.0:
+        event = "THANK_YOU"
+        confidence = min(0.99, 0.5 + (avg_gyro_mag - 40.0) / 60.0)
     else:
-        event = "WELCOME"
+        event = "PLEASE"
         confidence = 0.6
  
     return {"event": event, "confidence": round(confidence, 2)}
