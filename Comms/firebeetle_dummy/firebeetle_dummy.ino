@@ -131,24 +131,32 @@ void publishTelemetry() {
   JsonObject payload = doc.createNestedObject("payload");
   JsonObject imu = payload.createNestedObject("imu");
 
-  int flexMin, flexMax, gyroRange;
+  int gyroRange;
+
+  static const int REGIME_FLEX[4][5] = {
+    {0, 0, 0, 0, 0},   // REGIME_OPEN_HAND   - avg 0.0 -> YES
+    {1, 1, 1, 1, 1},   // REGIME_CLOSED_FIST - avg 1.0 -> HELLO
+    {1, 1, 1, 0, 0},   // REGIME_SHAKING     - avg 0.6, falls through to gyro -> THANK_YOU
+    {1, 0, 1, 0, 0},   // REGIME_IDLE        - avg 0.4, falls through to gyro -> PLEASE
+  };
+
   switch (currentRegime) {
-    case REGIME_OPEN_HAND:   flexMin = 350; flexMax = 450; gyroRange = 15; break;
-    case REGIME_CLOSED_FIST: flexMin = 620; flexMax = 750; gyroRange = 15; break;
-    case REGIME_SHAKING:     flexMin = 480; flexMax = 580; gyroRange = 60; break;
-    default:                 flexMin = 500; flexMax = 580; gyroRange = 10; break;
+    case REGIME_OPEN_HAND:   gyroRange = 10; break;
+    case REGIME_CLOSED_FIST: gyroRange = 10; break;
+    case REGIME_SHAKING:     gyroRange = 100; break;
+    default:                 gyroRange = 5;  break;
   }
 
   imu["ax"] = random(-50, 50) / 100.0;
   imu["ay"] = random(-50, 50) / 100.0;
   imu["az"] = 9.81 + random(-30, 30) / 100.0;
-  imu["gx"] = random(-gyroRange, gyroRange) / 100.0;
-  imu["gy"] = random(-gyroRange, gyroRange) / 100.0;
-  imu["gz"] = random(-gyroRange, gyroRange) / 100.0;
+  imu["gx"] = random(-gyroRange, gyroRange);
+  imu["gy"] = random(-gyroRange, gyroRange);
+  imu["gz"] = random(-gyroRange, gyroRange);
 
   JsonArray flex = payload.createNestedArray("flex");
   for (int i = 0; i < 5; i++) {
-    flex.add(random(flexMin, flexMax));
+    flex.add(REGIME_FLEX[currentRegime][i]);
   }
 
   char buf[320];
