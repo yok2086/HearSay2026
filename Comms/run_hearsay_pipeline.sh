@@ -8,10 +8,10 @@ REMOTE_CONF="/tmp/mosquitto.conf"
 REMOTE_BROKER_LOG="/tmp/mosquitto.log"
 
 # Dummy Inference
-REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
+# REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
 
 # Dummy Phone sender
-# REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_phone_sender.py"
+REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_phone_sender.py"
 
 # Sensor Inference
 # REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
@@ -36,7 +36,10 @@ cleanup() {
 
   echo "Killing broker + inference script on the Ultra96..."
   ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-    "pkill -f '[m]osquitto -c $REMOTE_CONF' || true; pkill -f '[u]ltra96_inference.py' || true" \
+    "pkill -f '[m]osquitto -c $REMOTE_CONF' || true; \
+     pkill -f '[u]ltra96_inference.py' || true; \
+     pkill -f '[d]ummy_inference.py' || true; \
+     pkill -f '[d]ummy_phone_sender.py' || true" \
     2>/dev/null || true
 
   echo "Closing local relay tunnel..."
@@ -72,12 +75,12 @@ echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
 #   "pgrep -f '[u]ltra96_inference.py' || true")
 
 # Inference using dummy data
-INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-    "pgrep -f '[d]ummy_inference.py' || true")
+# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#     "pgrep -f '[d]ummy_inference.py' || true")
 
 # Dummy phone sender data
-# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-#   "pgrep -f '[d]ummy_phone_sender.py' || true")
+INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+  "pgrep -f '[d]ummy_phone_sender.py' || true")
 
 if [ -n "$INFERENCE_RUNNING" ]; then
   echo "Inference script already running (pid $INFERENCE_RUNNING) - skipping start, going straight to local scripts."

@@ -112,7 +112,9 @@ namespace CG4002.Comms
         string status = "Idle";
         long rejected, dropped;
         int running;
+        string lastError;
         public string Status { get { lock (gate) return status; } }
+        public string LastError { get { lock (gate) return lastError; } }
         public long RejectedMessages { get { lock (gate) return rejected; } }
         public long DroppedMessages { get { lock (gate) return dropped; } }
         public SshMqttClient(ConnectionSecrets settings) { settings.Validate(); secrets = settings; }
@@ -158,7 +160,9 @@ namespace CG4002.Comms
                         using (var jump = CreateSsh(secrets.jumpHost, secrets.jumpPort,
                             secrets.socUsername, secrets.socPassword, key))
                         {
-                            await jump.ConnectAsync(cancellation).ConfigureAwait(false);
+                            // Blocking Connect on a worker thread: on Android (IL2CPP) ConnectAsync
+                            // timed out in ReceiveAsync waiting for the server banner.
+                            await Task.Run(() => jump.Connect(), cancellation).ConfigureAwait(false);
                             using (var sshPort = new ForwardedPortLocal("127.0.0.1", 0,
                                 secrets.ultra96Host, (uint)secrets.ultra96Port))
                             {
@@ -167,7 +171,7 @@ namespace CG4002.Comms
                                 using (var ultra = CreateSsh("127.0.0.1", (int)sshPort.BoundPort,
                                     secrets.ultra96Username, secrets.ultra96Password, key))
                                 {
-                                    await ultra.ConnectAsync(cancellation).ConfigureAwait(false);
+                                    await Task.Run(() => ultra.Connect(), cancellation).ConfigureAwait(false);
                                     using (var brokerPort = new ForwardedPortLocal("127.0.0.1", 0, "127.0.0.1", 1883))
                                     {
                                         ultra.AddForwardedPort(brokerPort); brokerPort.Start();
@@ -181,7 +185,11 @@ namespace CG4002.Comms
                     catch (SshAuthenticationException)
                     { SetStatus("SSH authentication failed. Correct settings and retry."); return; }
                     catch (Exception error)
-                    { SetStatus("Disconnected: " + error.Message + " (retrying)"); }
+                    {
+                        var root = error.GetBaseException();
+                        lock (gate) lastError = error.ToString();
+                        SetStatus("Disconnected: " + root.GetType().Name + ": " + root.Message + " (retrying)");
+                    }
                     try { await Task.Delay(3000, cancellation).ConfigureAwait(false); }
                     catch (OperationCanceledException) { break; }
                 }
