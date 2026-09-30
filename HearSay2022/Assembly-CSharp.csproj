@@ -102,6 +102,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Landmark Detection/FaceLandmarkerRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Sound/DummySoundInput.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayHandGraphic.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ServerTunnel.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfigWindows.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Pose Landmark Detection/PoseLandmarkDetectionConfigWindow.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayLiveCaption.cs" />

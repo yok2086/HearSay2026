@@ -53,6 +53,7 @@ namespace HearSay
             if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
                 serverUrl = HearSayRoles.SessionServerUrl;
             ActiveServerUrl = serverUrl;
+            HearSayRoles.EnsureTunnel(serverUrl);
             CreateUi();
 
             if (useMqttInsteadOfHttp && sshMqttManager != null)

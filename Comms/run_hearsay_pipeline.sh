@@ -8,10 +8,10 @@ REMOTE_CONF="/tmp/mosquitto.conf"
 REMOTE_BROKER_LOG="/tmp/mosquitto.log"
 
 # Dummy Inference
-# REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
+REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
 
 # Dummy Phone sender
-REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_phone_sender.py"
+# REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_phone_sender.py"
 
 # Sensor Inference
 # REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
@@ -21,6 +21,10 @@ REMOTE_INFERENCE_LOG="/tmp/ultra96_inference.log"
 LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
 REMOTE_PORT="8883"
+
+# Reverse forward so the phone reaches HearSayDummyServer.py through its own
+# stujump -> ultra96 tunnel instead of connecting to the Mac directly.
+DEMO_SERVER_PORT="8080"
 
 LOCAL_DIR="$HOME/HearSay2026/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
@@ -75,12 +79,12 @@ echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
 #   "pgrep -f '[u]ltra96_inference.py' || true")
 
 # Inference using dummy data
-# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-#     "pgrep -f '[d]ummy_inference.py' || true")
+INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+    "pgrep -f '[d]ummy_inference.py' || true")
 
 # Dummy phone sender data
-INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-  "pgrep -f '[d]ummy_phone_sender.py' || true")
+# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#   "pgrep -f '[d]ummy_phone_sender.py' || true")
 
 if [ -n "$INFERENCE_RUNNING" ]; then
   echo "Inference script already running (pid $INFERENCE_RUNNING) - skipping start, going straight to local scripts."
@@ -98,8 +102,9 @@ lsof -ti :"$LOCAL_PORT" | xargs -r kill 2>/dev/null || true
 sleep 1
 
 ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" -f -N \
-  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" "$ULTRA_HOST"
-echo "Tunnel opened in background."
+  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" \
+  -R "${DEMO_SERVER_PORT}:127.0.0.1:${DEMO_SERVER_PORT}" "$ULTRA_HOST"
+echo "Tunnel opened in background (Ultra96 localhost:${DEMO_SERVER_PORT} -> Mac HearSayDummyServer)."
 sleep 1
 
 echo ""
