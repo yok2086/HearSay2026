@@ -18,7 +18,6 @@ WATCHDOG_TIMEOUT_S = 20
 devices = {}
 devices_lock = threading.Lock()
 
-# device_id -> Queue of (msg_type, payload) tuples waiting to be processed
 device_queues = {}
 device_queues_lock = threading.Lock()
 
@@ -80,9 +79,6 @@ def handle_status(device_id, msg):
 
 
 def device_worker(client, device_id, q):
-    """
-    One of these runs per device, each on its own dedicated thread.
-    """
     print(f"[{device_id}] worker thread started")
     while True:
         msg_type, payload = q.get()
@@ -100,9 +96,6 @@ def device_worker(client, device_id, q):
 
 
 def get_or_create_device_queue(client, device_id):
-    """
-    Spawns a new worker thread + queue the first time we see a given device_id
-    """
     with device_queues_lock:
         if device_id not in device_queues:
             q = queue.Queue()
@@ -137,7 +130,6 @@ def on_message(client, userdata, msg):
 
 
 def watchdog_loop():
-    """Periodically checks for devices that have gone silent without a clean LWT."""
     while True:
         time.sleep(5)
         now = time.time()
