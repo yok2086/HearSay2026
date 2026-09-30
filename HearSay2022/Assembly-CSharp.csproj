@@ -85,6 +85,7 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Bootstrap.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageReadMode.cs" />
     <Compile Include="Assets/HearSayVR/HearSayVrSetup.cs" />
+    <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSayLocalMqtt.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Object Detection/ObjectDetectionConfig.cs" />
     <Compile Include="Assets/HearSayVR/HearSayVrDisplay.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/MediaPipe Video/MediaPipeVideoGraph.cs" />
@@ -186,6 +187,7 @@
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt" />
     <None Include="Assets/MediaPipeUnity/Samples/Scenes/Legacy/Holistic/holistic_gpu.txt" />
+    <None Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Secrets.cs.example.txt" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader" />
     <None Include="Assets/TextMesh Pro/Shaders/TMP_Sprite.shader" />
   </ItemGroup>

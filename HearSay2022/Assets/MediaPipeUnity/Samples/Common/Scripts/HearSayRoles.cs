@@ -58,6 +58,22 @@ namespace HearSay
 
         private bool SaveAddress()
         {
+            if (HearSayLocalMqtt.IsMqtt(address.Trim()))
+            {
+                if (!HearSayLocalMqtt.Valid(address.Trim()))
+                {
+                    connection = "Use mqtt://HOST:1883/hearsay/demo/status";
+                    return false;
+                }
+                if (resetInProgress) { StopAllCoroutines(); resetInProgress = false; }
+                SessionServerUrl = address.Trim();
+                HearSayLocalMqtt.For(SessionServerUrl);
+                PlayerPrefs.SetString("HearSay.Server", SessionServerUrl);
+                PlayerPrefs.Save();
+                connection = "MQTT selected. Start the terminal publisher; type clear to clear inputs.";
+                return true;
+            }
+            HearSayLocalMqtt.Stop();
             if (!Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) ||
                 (uri.Scheme != "http" && uri.Scheme != "https"))
             {
@@ -173,7 +189,17 @@ namespace HearSay
                     connectionExpanded = !connectionExpanded;
                 if (connectionExpanded)
                 {
-                    GUI.Label(new Rect(60, 505, 880, 26), "SERVER ADDRESS  /  Same on both phones", HearSayTheme.Label(15, HearSayTheme.Muted));
+                    if (HearSayTheme.Action(new Rect(60, 503, 165, 30), "HTTP", 16))
+                    {
+                        address = "http://127.0.0.1:8080/status";
+                        HearSayLocalMqtt.Stop();
+                    }
+                    if (HearSayTheme.Action(new Rect(240, 503, 165, 30), "MQTT demo", 16))
+                    {
+                        if (resetInProgress) { StopAllCoroutines(); resetInProgress = false; }
+                        address = "mqtt://127.0.0.1:1883/hearsay/demo/status";
+                        connection = "Local MQTT demo; no HTTP reset required.";
+                    }
                     address = GUI.TextField(new Rect(60, 539, 880, 46), address,
                         new GUIStyle(GUI.skin.textField) { fontSize = 22, padding = new RectOffset(16, 16, 10, 10) });
                     GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
@@ -228,7 +254,7 @@ namespace HearSay
         {
             while (true)
             {
-                using (var request = UnityWebRequest.Get(SessionServerUrl))
+                using (var request = HearSayStatusRequest.Get(SessionServerUrl))
                 {
                     request.timeout = 2;
                     yield return request.SendWebRequest();
@@ -240,7 +266,7 @@ namespace HearSay
                             if (sign == null) throw new FormatException("Empty server data");
                             if (partnerHands != null)
                                 partnerHands.Word = sign.aslDetected ? (sign.aslWord ?? "").Replace('_', ' ') : null;
-                            connection = "SERVER: CONNECTED";
+                            connection = request.error ?? "SERVER: CONNECTED";
                             translation = sign.aslDetected && !string.IsNullOrEmpty(sign.aslWord)
                                 ? "ASL DETECTED\n" + sign.aslWord.Replace('_', ' ')
                                 : "Waiting for a sign…";
