@@ -12,6 +12,7 @@ MQTT_PASS = "mqtt"
 CA_CERT_PATH = "/Users/NathanTan_1/HearSay2026/Comms/mqtt/mosquitto_certs/ca.crt"
 DEFAULT_SAMPLE_RATE_HZ = 50
 WATCHDOG_TIMEOUT_S = 20
+PRINT_EACH_TELEMETRY = True     # set False to quieten this window (stats.py shows the speed)
 # ------------------------
 
 # Shared device registry (each device's worker thread, plus the watchdog thread)
@@ -66,7 +67,8 @@ def handle_telemetry(device_id, msg):
             devices[device_id]["last_seen"] = time.time()
     payload = msg.get("payload", {})
     seq = msg.get("seq")
-    print(f"[{device_id}] telemetry seq={seq} payload={payload}")
+    if PRINT_EACH_TELEMETRY:
+        print(f"[{device_id}] telemetry seq={seq} payload={payload}")
 
 
 def handle_status(device_id, msg):

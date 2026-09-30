@@ -20,6 +20,12 @@ bool isRunning = false;
 unsigned long sampleRateHz = 50;
 unsigned long lastSampleMs = 0;
 
+// ---- Transmission statistics (telemetry JSON payload bytes, excluding MQTT/SSH overhead) ----
+const unsigned long STATS_INTERVAL_MS = 5000;
+uint32_t statsBytes = 0, statsMsgs = 0, statsFailed = 0;
+uint32_t totalBytes = 0, totalMsgs = 0;
+unsigned long statsStartMs = 0, runningSinceMs = 0;
+
 // ---- Dummy-data regime cycling (no real sensors attached yet) ----
 enum GestureRegime { REGIME_OPEN_HAND, REGIME_CLOSED_FIST, REGIME_SHAKING, REGIME_IDLE };
 GestureRegime currentRegime = REGIME_IDLE;
@@ -30,6 +36,8 @@ String topicStatus() { return String("sys/") + DEVICE_ID + "/status"; }
 String topicRaw()    { return String("tele/") + DEVICE_ID + "/raw"; }
 String topicCmdSet() { return String("cmd/") + DEVICE_ID + "/set"; }
 String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
+String topicPing()   { return String("cmd/") + DEVICE_ID + "/ping"; }
+String topicPong()   { return String("tele/") + DEVICE_ID + "/pong"; }
 
 void connectWiFi() {
   WiFi.disconnect(true);
@@ -104,6 +112,8 @@ void publishConfigAck() {
   mqtt.publish(topicCmdAck().c_str(), buf);
   Serial.println("Published CONFIG_ACK -> now RUNNING");
   isRunning = true;
+  statsBytes = statsMsgs = statsFailed = totalBytes = totalMsgs = 0;
+  statsStartMs = runningSinceMs = millis();
 }
 
 void maybeSwitchRegime() {
@@ -160,11 +170,45 @@ void publishTelemetry() {
   }
 
   char buf[320];
-  serializeJson(doc, buf);
-  mqtt.publish(topicRaw().c_str(), buf);
+  size_t len = serializeJson(doc, buf);
+  if (mqtt.publish(topicRaw().c_str(), buf)) {
+    statsBytes += len;
+    statsMsgs++;
+  } else {
+    statsFailed++;   // e.g. message larger than PubSubClient's buffer, or link down
+  }
+}
+
+void maybeReportStats() {
+  unsigned long now = millis();
+  if (now - statsStartMs < STATS_INTERVAL_MS) return;
+
+  float secs = (now - statsStartMs) / 1000.0;
+  totalBytes += statsBytes;
+  totalMsgs += statsMsgs;
+  float totalSecs = (now - runningSinceMs) / 1000.0;
+
+  Serial.printf("[stats] %s last %.1fs: %.2f kbps, %.1f msg/s, %u B, %u failed | avg %.2f kbps, %u msgs, %.1f KiB\n",
+                DEVICE_ID, secs, statsBytes * 8 / 1000.0 / secs, statsMsgs / secs,
+                (unsigned)statsBytes, (unsigned)statsFailed, totalBytes * 8 / 1000.0 / totalSecs,
+                (unsigned)totalMsgs, totalBytes / 1024.0);
+
+  statsBytes = statsMsgs = statsFailed = 0;
+  statsStartMs = now;
 }
 
 void onMessage(char* topic, byte* payload, unsigned int length) {
+  // Latency probe from Comms/stats.py: echo straight back, before any JSON
+  // parsing. Copy first - payload points into PubSubClient's buffer, which
+  // publish() reuses.
+  if (topicPing() == topic) {
+    uint8_t echo[32];
+    unsigned int n = length < sizeof(echo) ? length : sizeof(echo);
+    memcpy(echo, payload, n);
+    mqtt.publish(topicPong().c_str(), echo, n, false);
+    return;
+  }
+
   StaticJsonDocument<256> doc;
   DeserializationError err = deserializeJson(doc, payload, length);
   if (err) {
@@ -198,6 +242,7 @@ void connectMQTT() {
     if (ok) {
       Serial.println(" connected");
       mqtt.subscribe(topicCmdSet().c_str());
+      mqtt.subscribe(topicPing().c_str());
       publishHello();
     } else {
       Serial.print(" failed, rc=");
@@ -223,6 +268,7 @@ void mqttTask(void* param) {
         lastSampleMs = millis();
         publishTelemetry();
       }
+      maybeReportStats();
     }
     vTaskDelay(pdMS_TO_TICKS(10));
   }

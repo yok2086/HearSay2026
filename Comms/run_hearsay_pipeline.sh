@@ -117,13 +117,15 @@ tmux new-session -d -s "$TMUX_SESSION" -n coordinator \
   "cd $LOCAL_DIR && $PYTHON_BIN coordinator.py; echo 'Press enter to close...'; read"
 tmux new-window -t "$TMUX_SESSION" -n dashboard \
   "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
+tmux new-window -t "$TMUX_SESSION" -n stats \
+  "cd $LOCAL_DIR && $PYTHON_BIN stats.py; echo 'Press enter to close...'; read"
 tmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""
 echo "=== All set ==="
 echo "Broker + inference: running on the Ultra96"
 echo "Tunnel: running in the background on your Mac"
-echo "coordinator / ble_bridge / dashboard: running inside tmux session '$TMUX_SESSION'"
+echo "coordinator / ble_bridge / dashboard / stats (speed + latency): running inside tmux session '$TMUX_SESSION'"
 echo ""
 echo "Now power on the FireBeetle."
 echo ""
