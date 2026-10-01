@@ -1,19 +1,3 @@
-"""
-Dummy RESULT sender - runs ON the Ultra96.
-
-Publishes fake RESULT messages straight to the broker on a timer, with no
-glove, no coordinator handshake, and no telemetry involved at all. This lets
-you test the phone's SSH-tunneled MQTT connection and its ASL panel display
-independently of whether the physical glove can currently reach stujump.
-
-Since this runs ON the Ultra96, it talks to the broker over localhost - same
-as ultra96_inference.py / dummy_inference.py - no SSH tunnel needed here.
-The phone's own SshMqttClient does the tunneling on its end.
-
-Usage:
-    python3 dummy_phone_sender.py
-"""
-
 import json
 import time
 import random
@@ -21,24 +5,17 @@ import random
 import paho.mqtt.client as mqtt
 
 # ---- Fill these in ----
-BROKER_HOST = "localhost"        # same machine as the broker - no tunnel needed
+BROKER_HOST = "localhost"       
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/tmp/mosquitto_certs/ca.crt"   # path on the Ultra96, not the laptop
+CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt"
 
-DEVICE_ID = "glove_01"           # matches the real glove's device_id, so this
-                                  # looks identical to a real result from the
-                                  # phone's point of view
+DEVICE_ID = "glove_01"
 
-SEND_INTERVAL_S = 4              # how often to publish a new result
+SEND_INTERVAL_S = 4
 
-# Cycles through these in order so every word gets tested, rather than
-# picking randomly and possibly never hitting one of them. These match the
-# keys in HearSaySshMqttManager.cs's EventToAslWord - keep both in sync if
-# you change one.
 EVENTS = ["HELLO", "YES", "THANK_YOU", "PLEASE"]
-# ------------------------
 
 
 def build_result_message(seq, event, confidence):

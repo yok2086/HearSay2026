@@ -11,22 +11,17 @@ BROKER_HOST = "localhost"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/tmp/mosquitto_certs/ca.crt"
+CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt"
 WINDOW_SIZE = 10  # number of TELEMETRY samples per inference window
 # ------------------------
 
 # device_id -> list of recent payload dicts (per-device telemetry buffer)
 windows = collections.defaultdict(list)
 
-# Single shared queue: (device_id, session_id, window) tuples, oldest first.
-# Every glove's completed windows land here in arrival order
 inference_queue = queue.Queue()
 
 
 def run_inference(window):
-    # Only classify from samples whose flex reading is exactly five 0/1
-    # values - guards against a glove still sending raw ADC counts instead
-    # of the thresholded binary output (each finger already bent/straight).
     samples = [
         sample for sample in window
         if len(sample.get("flex", [])) == 5 and all(v in (0, 1) for v in sample["flex"])
@@ -99,10 +94,6 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
-    # Stays fast and non-blocking no matter how long inference itself takes -
-    # it only ever buffers telemetry and, once a window is full, hands it off
-    # to the shared queue. The actual (potentially slow) inference work
-    # happens on inference_worker's own thread, not here.
     try:
         payload = json.loads(msg.payload.decode())
     except (json.JSONDecodeError, UnicodeDecodeError):

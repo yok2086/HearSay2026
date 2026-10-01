@@ -9,7 +9,7 @@ BROKER_HOST = "localhost"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/tmp/mosquitto_certs/ca.crt"   # path on the Ultra96, not the laptop
+CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt"   # path on the Ultra96, not the laptop
 WINDOW_SIZE = 50                 # number of TELEMETRY samples per inference window
 
 

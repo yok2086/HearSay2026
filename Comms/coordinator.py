@@ -12,7 +12,7 @@ MQTT_PASS = "mqtt"
 CA_CERT_PATH = "/Users/NathanTan_1/HearSay2026/Comms/mqtt/mosquitto_certs/ca.crt"
 DEFAULT_SAMPLE_RATE_HZ = 50
 WATCHDOG_TIMEOUT_S = 20
-PRINT_EACH_TELEMETRY = True     # set False to quieten this window (stats.py shows the speed)
+PRINT_EACH_TELEMETRY = True  
 # ------------------------
 
 # Shared device registry (each device's worker thread, plus the watchdog thread)

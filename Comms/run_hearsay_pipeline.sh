@@ -4,7 +4,8 @@ set -euo pipefail
 JUMP_HOST="nathan@stujump.comp.nus.edu.sg"
 ULTRA_HOST="xilinx@makerslab-fpga-36.ddns.comp.nus.edu.sg"
 
-REMOTE_CONF="/tmp/mosquitto.conf"
+REMOTE_MQTT_DIR="/home/xilinx/mqtt"
+REMOTE_CONF="$REMOTE_MQTT_DIR/mosquitto.conf"
 REMOTE_BROKER_LOG="/tmp/mosquitto.log"
 
 # Dummy Inference
@@ -15,6 +16,9 @@ REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
 
 # Sensor Inference
 # REMOTE_INFERENCE_SCRIPT="/home/xilinx/ultra96_inference.py"
+
+# Keyboard pipeline test
+# REMOTE_INFERENCE_SCRIPT="/home/xilinx/keyboard_ultra96.py"
 
 REMOTE_INFERENCE_LOG="/tmp/ultra96_inference.log"
 
@@ -43,7 +47,8 @@ cleanup() {
     "pkill -f '[m]osquitto -c $REMOTE_CONF' || true; \
      pkill -f '[u]ltra96_inference.py' || true; \
      pkill -f '[d]ummy_inference.py' || true; \
-     pkill -f '[d]ummy_phone_sender.py' || true" \
+     pkill -f '[d]ummy_phone_sender.py' || true; \
+     pkill -f '[k]eyboard_ultra96.py' || true" \
     2>/dev/null || true
 
   echo "Closing local relay tunnel..."
@@ -86,6 +91,10 @@ INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
 # INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
 #   "pgrep -f '[d]ummy_phone_sender.py' || true")
 
+# Keyboard pipeline test
+# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#   "pgrep -f '[k]eyboard_ultra96.py' || true")
+
 if [ -n "$INFERENCE_RUNNING" ]; then
   echo "Inference script already running (pid $INFERENCE_RUNNING) - skipping start, going straight to local scripts."
 else
@@ -119,6 +128,9 @@ tmux new-window -t "$TMUX_SESSION" -n dashboard \
   "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
 tmux new-window -t "$TMUX_SESSION" -n stats \
   "cd $LOCAL_DIR && $PYTHON_BIN stats.py; echo 'Press enter to close...'; read"
+# Keyboard pipeline test: relay window (press keys here)
+# tmux new-window -t "$TMUX_SESSION" -n keyboard \
+#   "cd $LOCAL_DIR && $PYTHON_BIN keyboard_relay.py; echo 'Press enter to close...'; read"
 tmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""

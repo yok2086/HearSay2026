@@ -1,27 +1,3 @@
-"""
-Keyboard pipeline test - Relay laptop side.
-
-Every keystroke sends a random dummy packet to each online FireBeetle. The
-FireBeetle modifies it and sends it back; this script checks the modification
-and relays the packet on to the Ultra96. The Ultra96 (keyboard_ultra96.py)
-answers with a random AI event, which the phone displays and acks.
-
-    keystroke -> laptop  --cmd/<id>/dummy-->   FireBeetle   (values -> v*2+1, adds sum)
-    FireBeetle           --tele/<id>/dummy-->  laptop       (verified here)
-    laptop               --relay/<id>/dummy--> Ultra96      (random AI event)
-    Ultra96              --tele/<id>/result--> phone        (word displayed)
-    phone                --phone/<client>/ack-> laptop      (end of the loop)
-
-Flash the FireBeetles with Comms/firebeetle_keyboard/firebeetle_keyboard.ino.
-They are discovered from their retained HELLO on sys/<id>/status, or given
-explicitly with --device.
-
-Usage:
-    python3 keyboard_relay.py                     # all online FireBeetles
-    python3 keyboard_relay.py --device glove_02
-Press any key to send; Esc or Ctrl+C to quit.
-"""
-
 import argparse
 import json
 import random
@@ -130,7 +106,7 @@ def handle_firebeetle_reply(client, device_id, data):
 def handle_result(topic, data):
     source_seq = data.get("payload", {}).get("source_seq")
     if source_seq is None:
-        return   # a result that did not come from a keystroke
+        return
     with lock:
         result_to_seq[(topic, data.get("seq"))] = source_seq
         rtt = elapsed_ms(source_seq)
@@ -177,7 +153,7 @@ def main():
     client.on_message = on_message
     client.connect(BROKER_HOST, BROKER_PORT, keepalive=15)
     client.loop_start()
-    time.sleep(1)   # collect retained HELLOs
+    time.sleep(1)
 
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)

@@ -1,33 +1,6 @@
 #ifndef SSH_FORWARD_CLIENT_H
 #define SSH_FORWARD_CLIENT_H
 
-// ==========================================================
-// Two-hop SSH forwarding client.
-//
-// stujump's sshd only permits a direct-tcpip channel to
-// ultra96:22 (that's what `ssh -J` uses under the hood).
-// It will not open a channel straight to ultra96:1883.
-//
-// Topology:
-//
-//   ESP32 --session1(SSH)--> stujump --channel1(direct-tcpip)--> ultra96:22
-//                                                                    |
-//                                          (channel1 bytes are the transport
-//                                           for a second SSH handshake, via
-//                                           a local loopback socket pair)
-//                                                                    |
-//   ESP32 --session2(SSH, over the bridge)------------------------> ultra96
-//                                          --channel2(direct-tcpip)--> ultra96:1883 (localhost)
-//
-// session1/channel1 are created here, then handed off to a
-// dedicated task that owns them exclusively for the rest of
-// their life (no cross-task access to a single ssh_session).
-// That task also owns the bridge's server-side socket.
-//
-// session2/channel2 are owned by this class and are what
-// PubSubClient actually reads/writes through.
-// ==========================================================
-
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Client.h>
@@ -84,10 +57,6 @@ private:
 
     bool is_connected = false;
 
-    // ----------------------------------------------------------------
-    // Public-key auth first, password fallback. Same pattern as before,
-    // parameterized so it works for both stujump and ultra96.
-    // ----------------------------------------------------------------
     bool authenticate(ssh_session s, const char *user, const char *password) {
         ssh_key private_key = nullptr;
 

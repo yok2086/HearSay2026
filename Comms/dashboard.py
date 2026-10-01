@@ -1,10 +1,3 @@
-"""
-HearSay dashboard
-
-Subscribes to inference results and shows them live in the terminal
-One dedicated worker thread per connected ESP32
-"""
-
 import json
 import threading
 import queue
@@ -26,8 +19,6 @@ latest_result_lock = threading.Lock()
 device_queues = {}
 device_queues_lock = threading.Lock()
 
-# Multiple device threads now print concurrently - without this lock, two
-# threads' print() calls could interleave mid-line and garble the terminal.
 print_lock = threading.Lock()
 
 
@@ -53,6 +44,9 @@ def device_worker(device_id, q):
         elif msg_type == "STATUS":
             state = payload.get("payload", {}).get("state")
             safe_print(f"[{device_id}] connection status: {state}")
+
+        elif msg_type == "HELLO":
+            safe_print(f"[{device_id}] online (HELLO), waiting for inference results...")
 
 
 def get_or_create_device_queue(device_id):

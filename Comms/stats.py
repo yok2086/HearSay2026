@@ -127,7 +127,6 @@ def stats_loop():
                 return None
             return max(0.0, (mean(rtts) - mac_rtt) / 2)
 
-        # Per phone: word-ack RTT when words arrived this interval, else the ping estimate.
         phone_lines = []
         phone_legs = {}
         phones = sorted({k[1] for k in samples if k[0] in ("phone", "ack")})
