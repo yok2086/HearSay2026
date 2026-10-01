@@ -6,7 +6,7 @@
 #include "ssh_client.h"      
 
 // ---- MQTT-level settings ----
-const char* DEVICE_ID  = "glove_02";
+const char* DEVICE_ID  = "glove_03";
 const char* MQTT_USER  = "nathan";
 const char* MQTT_PASS  = "mqtt";
 // --------------------------------------------------------------------------
