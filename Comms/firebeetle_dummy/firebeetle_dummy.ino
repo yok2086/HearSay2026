@@ -27,7 +27,7 @@ uint32_t totalBytes = 0, totalMsgs = 0;
 unsigned long statsStartMs = 0, runningSinceMs = 0;
 
 // ---- Dummy-data regime cycling (no real sensors attached yet) ----
-enum GestureRegime { REGIME_OPEN_HAND, REGIME_CLOSED_FIST, REGIME_SHAKING, REGIME_IDLE };
+enum GestureRegime { REGIME_SHAKING, REGIME_IDLE, REGIME_OPEN_HAND, REGIME_CLOSED_FIST};
 GestureRegime currentRegime = REGIME_IDLE;
 unsigned long regimeStartMs = 0;
 unsigned long regimeDurationMs = 3000;
