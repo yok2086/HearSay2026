@@ -1,6 +1,139 @@
 #include <Arduino.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include "driver/i2s.h"
 #include <math.h>
+#include "esp_eap_client.h"
+#include "esp_wpa2.h"
+#include "ssh_client.h"
+
+// ==================================================
+// MQTT / DEVICE SETTINGS
+// ==================================================
+
+const char* DEVICE_ID = "mic_01";
+const char* MQTT_USER = "nathan";
+const char* MQTT_PASS = "mqtt";
+
+SSHForwardClient sshClient;
+PubSubClient mqtt(sshClient);
+
+String sessionId = "sess_001";
+uint32_t seq = 0;
+bool isRunning = false;
+
+void publishSpeechTelemetry();
+void mqttTask(void* param);
+
+String topicStatus() { return String("sys/") + DEVICE_ID + "/status"; }
+String topicRaw()    { return String("tele/") + DEVICE_ID + "/raw"; }
+String topicCmdSet() { return String("cmd/") + DEVICE_ID + "/set"; }
+String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
+String topicPing()   { return String("cmd/") + DEVICE_ID + "/ping"; }
+String topicPong()   { return String("tele/") + DEVICE_ID + "/pong"; }
+
+void connectWiFi() {
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+  delay(100);
+
+  esp_eap_client_set_identity((uint8_t*)EAP_IDENTITY, strlen(EAP_IDENTITY));
+  esp_eap_client_set_username((uint8_t*)EAP_USERNAME, strlen(EAP_USERNAME));
+  esp_eap_client_set_password((uint8_t*)EAP_PASSWORD, strlen(EAP_PASSWORD));
+  esp_wifi_sta_enterprise_enable();
+
+  WiFi.begin(WIFI_SSID);
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println(" connected");
+  Serial.println(WiFi.localIP());
+}
+
+void publishHello() {
+  StaticJsonDocument<256> doc;
+  doc["type"] = "HELLO";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+  JsonArray caps = doc.createNestedObject("payload").createNestedArray("capabilities");
+  caps.add("MIC");
+  caps.add("SPEECH_DETECTION");
+  caps.add("TDOA");
+
+  char buf[256];
+  serializeJson(doc, buf);
+  mqtt.publish(topicStatus().c_str(), buf, true);
+  Serial.println("Published HELLO");
+}
+
+void publishConfigAck() {
+  StaticJsonDocument<192> doc;
+  doc["type"] = "CONFIG_ACK";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+  doc["payload"]["status"] = "OK";
+
+  char buf[192];
+  serializeJson(doc, buf);
+  mqtt.publish(topicCmdAck().c_str(), buf);
+  isRunning = true;
+  Serial.println("Published CONFIG_ACK -> now RUNNING");
+}
+
+void onMessage(char* topic, byte* payload, unsigned int length) {
+  if (topicPing() == topic) {
+    uint8_t echo[32];
+    unsigned int n = length < sizeof(echo) ? length : sizeof(echo);
+    memcpy(echo, payload, n);
+    mqtt.publish(topicPong().c_str(), echo, n, false);
+    return;
+  }
+
+  StaticJsonDocument<256> doc;
+  if (deserializeJson(doc, payload, length)) {
+    Serial.println("Failed to parse incoming MQTT message");
+    return;
+  }
+
+  if (doc["type"] == "CONFIG") {
+    publishConfigAck();
+  }
+}
+
+void connectMQTT() {
+  mqtt.setServer("ultra96", 1883);
+  mqtt.setCallback(onMessage);
+
+  while (!mqtt.connected()) {
+    Serial.print("Connecting to MQTT broker via SSH tunnel...");
+    String willMsg = "{\"type\":\"STATUS\",\"device_id\":\"" +
+                     String(DEVICE_ID) +
+                     "\",\"payload\":{\"state\":\"offline\"}}";
+
+    bool ok = mqtt.connect(DEVICE_ID, MQTT_USER, MQTT_PASS,
+                           topicStatus().c_str(), 1, true, willMsg.c_str());
+    if (ok) {
+      Serial.println(" connected");
+      mqtt.subscribe(topicCmdSet().c_str());
+      mqtt.subscribe(topicPing().c_str());
+      publishHello();
+    } else {
+      Serial.print(" failed, rc=");
+      Serial.print(mqtt.state());
+      Serial.println(" retrying in 3s");
+      delay(3000);
+    }
+  }
+}
 
 // ==================================================
 // I2S PORTS
@@ -802,6 +935,54 @@ void resetSoundEvent() {
 }
 
 
+void publishSpeechTelemetry() {
+  if (!isRunning || !mqtt.connected()) {
+    return;
+  }
+
+  const char* direction = "UNCERTAIN";
+  if (validTDOAFrames >= MIN_TDOA_VOTES) {
+    if (leftTDOAVotes > rightTDOAVotes && leftTDOAVotes > centreTDOAVotes) {
+      direction = "LEFT";
+    } else if (rightTDOAVotes > leftTDOAVotes && rightTDOAVotes > centreTDOAVotes) {
+      direction = "RIGHT";
+    } else if (centreTDOAVotes > leftTDOAVotes && centreTDOAVotes > rightTDOAVotes) {
+      direction = "FRONT";
+    }
+  }
+
+  StaticJsonDocument<512> doc;
+  doc["type"] = "TELEMETRY";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+
+  JsonObject payload = doc.createNestedObject("payload");
+  payload["event"] = "SPEECH";
+  payload["direction"] = direction;
+  payload["speech_frames"] = speechFrames;
+  payload["event_frames"] = eventFrames;
+  payload["valid_tdoa_frames"] = validTDOAFrames;
+  payload["left_votes"] = leftTDOAVotes;
+  payload["front_votes"] = centreTDOAVotes;
+  payload["right_votes"] = rightTDOAVotes;
+  payload["best_lag"] = bestLag;
+  payload["best_correlation"] = bestCorrelation;
+  payload["peak_left"] = peakLeft;
+  payload["peak_centre"] = peakCentre;
+  payload["peak_right"] = peakRight;
+
+  char buf[512];
+  size_t len = serializeJson(doc, buf);
+  if (mqtt.publish(topicRaw().c_str(), (const uint8_t*)buf, len, false)) {
+    Serial.println("Published SPEECH telemetry");
+  } else {
+    Serial.println("Failed to publish SPEECH telemetry");
+  }
+}
+
+
 // ==================================================
 // PROCESS COMPLETED EVENT
 // ==================================================
@@ -859,6 +1040,8 @@ void processSoundEvent() {
   Serial.println(
     ">>> SPEECH EVENT DETECTED <<<"
   );
+
+  publishSpeechTelemetry();
 
 
   Serial.print(
@@ -1091,6 +1274,10 @@ void setup() {
 
   Serial.println();
 
+  connectWiFi();
+
+  xTaskCreate(mqttTask, "MqttSshTask", 24576, NULL, 5, NULL);
+
   delay(1000);
 }
 
@@ -1099,7 +1286,7 @@ void setup() {
 // LOOP
 // ==================================================
 
-void loop() {
+void processMicrophone() {
 
   float leftRMS;
   float rightRMS;
@@ -1486,4 +1673,27 @@ void loop() {
 
 
   delay(20);
+}
+
+
+void mqttTask(void* param) {
+  mqtt.setBufferSize(768);
+  connectMQTT();
+
+  for (;;) {
+    if (!mqtt.connected()) {
+      isRunning = false;
+      connectMQTT();
+    }
+
+    mqtt.loop();
+    processMicrophone();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
+
+
+void loop() {
+  // Microphone processing and MQTT are handled by mqttTask.
+  vTaskDelay(pdMS_TO_TICKS(1000));
 }
