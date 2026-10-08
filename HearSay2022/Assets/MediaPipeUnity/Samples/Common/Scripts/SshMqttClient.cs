@@ -205,8 +205,6 @@ namespace CG4002.Comms
             using (var connection = new MqttFactory().CreateMqttClient())
             {
                 connection.ApplicationMessageReceivedAsync += args => {
-                    // Latency probe from Comms/stats.py: echo straight back so the Mac
-                    // can time the broker <-> phone leg on its own clock.
                     if (args.ApplicationMessage.Topic == LatencyPingTopic)
                         return EchoLatencyPingAsync(connection, args.ApplicationMessage.PayloadSegment);
                     var ack = IsResultTopic(args.ApplicationMessage.Topic)

@@ -22,7 +22,7 @@ private:
     static constexpr const char *STUJUMP_HOST = "stujump.comp.nus.edu.sg";
     static constexpr unsigned int STUJUMP_PORT = 22;
 
-    // ---- Stage 2: stujump -> ultra96 (the only forward PermitOpen allows) ----
+    // ---- Stage 2: stujump -> ultra96 ----
     static constexpr const char *ULTRA96_HOST = "makerslab-fpga-36.ddns.comp.nus.edu.sg";
     static constexpr unsigned int ULTRA96_SSH_PORT = 22;
     static constexpr uint16_t MQTT_PORT = 1883;

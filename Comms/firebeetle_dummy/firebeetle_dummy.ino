@@ -226,9 +226,9 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
 }
 
 void connectMQTT() {
-  // "ultra96"/1883 here are placeholders - SSHForwardClient ignores them and
-  // always routes through the hardcoded stujump -> ultra96 -> localhost:1883
-  // path from secrets.h / ssh_client.h.
+  // Establishes this device's MQTT session on top of the SSH tunne
+  // Sets up the Last Will and Testament
+  // On a successful connect, subscribes to this device's own control topics
   mqtt.setServer("ultra96", 1883);
   mqtt.setCallback(onMessage);
 
@@ -241,9 +241,9 @@ void connectMQTT() {
                             willTopic.c_str(), 1, true, willMsg.c_str());
     if (ok) {
       Serial.println(" connected");
-      mqtt.subscribe(topicCmdSet().c_str());
-      mqtt.subscribe(topicPing().c_str());
-      publishHello();
+      mqtt.subscribe(topicCmdSet().c_str()); // cmd/<id>/set (CONFIG)
+      mqtt.subscribe(topicPing().c_str());  // cmd/<id>/ping
+      publishHello(); // sys/<id>/status
     } else {
       Serial.print(" failed, rc=");
       Serial.print(mqtt.state());
