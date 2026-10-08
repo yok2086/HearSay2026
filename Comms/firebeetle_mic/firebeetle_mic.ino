@@ -315,6 +315,8 @@ void setupLeftRightMicrophones() {
 
   i2s_pin_config_t micPins = {
 
+    .mck_io_num = I2S_PIN_NO_CHANGE,
+
     .bck_io_num = MIC_BCLK,
 
     .ws_io_num = MIC_WS,
@@ -409,6 +411,8 @@ void setupCentreMicrophone() {
 
 
   i2s_pin_config_t centrePins = {
+
+    .mck_io_num = I2S_PIN_NO_CHANGE,
 
     .bck_io_num = CENTRE_BCLK,
 
