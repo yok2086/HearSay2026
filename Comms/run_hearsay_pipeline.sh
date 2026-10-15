@@ -10,7 +10,10 @@ REMOTE_LOG_DIR="/home/xilinx/logs"
 REMOTE_BROKER_LOG="$REMOTE_LOG_DIR/mosquitto.log"
 
 # Dummy Inference
-REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
+# REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
+
+# TCN inference on the DPU (two gloves)
+REMOTE_INFERENCE_SCRIPT="/home/xilinx/jupyter_notebooks/tcn/tcn_handler.py"
 
 # Dummy Phone sender
 # REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_phone_sender.py"
@@ -22,6 +25,9 @@ REMOTE_INFERENCE_SCRIPT="/home/xilinx/dummy_inference.py"
 # REMOTE_INFERENCE_SCRIPT="/home/xilinx/keyboard_ultra96.py"
 
 REMOTE_INFERENCE_LOG="$REMOTE_LOG_DIR/ultra96_inference.log"
+
+REMOTE_PYTHON="sudo -n /usr/local/share/pynq-venv/bin/python3"
+# REMOTE_PYTHON="python3"
 
 LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
@@ -49,7 +55,8 @@ cleanup() {
      pkill -f '[u]ltra96_inference.py' || true; \
      pkill -f '[d]ummy_inference.py' || true; \
      pkill -f '[d]ummy_phone_sender.py' || true; \
-     pkill -f '[k]eyboard_ultra96.py' || true" \
+     pkill -f '[k]eyboard_ultra96.py' || true; \
+     sudo -n pkill -f '[t]cn_handler.py' || true" \
     2>/dev/null || true
 
   echo "Closing local relay tunnel..."
@@ -85,8 +92,12 @@ echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
 #   "pgrep -f '[u]ltra96_inference.py' || true")
 
 # Inference using dummy data
+# INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#     "pgrep -f '[d]ummy_inference.py' || true")
+
+# TCN inference on the DPU
 INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-    "pgrep -f '[d]ummy_inference.py' || true")
+    "pgrep -f '[t]cn_handler.py' || true")
 
 # Dummy phone sender data
 # INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
@@ -101,7 +112,7 @@ if [ -n "$INFERENCE_RUNNING" ]; then
 else
   echo "Starting inference script..."
   ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-    "mkdir -p $REMOTE_LOG_DIR; setsid nohup python3 $REMOTE_INFERENCE_SCRIPT > $REMOTE_INFERENCE_LOG 2>&1 < /dev/null &"
+    "mkdir -p $REMOTE_LOG_DIR; setsid nohup $REMOTE_PYTHON $REMOTE_INFERENCE_SCRIPT > $REMOTE_INFERENCE_LOG 2>&1 < /dev/null &"
   sleep 2
 fi
 
