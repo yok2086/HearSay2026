@@ -119,3 +119,11 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# MQTT Certificates
+**/mosquitto_certs/
+
+# Passwords
+**/secrets.h
+**/Secrets.h
+**/UnitySecrets.cs

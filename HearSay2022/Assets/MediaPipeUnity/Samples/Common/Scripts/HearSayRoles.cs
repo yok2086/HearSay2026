@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using CG4002.Comms;
 
 namespace HearSay
 {
@@ -20,8 +21,10 @@ namespace HearSay
         private Coroutine polling;
         private HearSayPartnerCamera partnerCamera;
         private HearSayPartnerHands partnerHands;
+        private HearSaySshMqttManager partnerMqtt;
         private static string resetServerUrl;
         private bool resetInProgress;
+        private const float TunnelTimeoutSeconds = 60f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void SetLandscape()
@@ -30,6 +33,16 @@ namespace HearSay
             Screen.autorotateToPortrait = false;
             Screen.autorotateToPortraitUpsideDown = false;
             Screen.orientation = ScreenOrientation.LandscapeLeft;
+            Application.quitting += ServerTunnel.Stop;
+        }
+
+        // A loopback address means the server is reached through the phone's SSH
+        // tunnel (stujump -> ultra96 -> Mac, see run_hearsay_pipeline.sh).
+        public static bool EnsureTunnel(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || !uri.IsLoopback) return false;
+            ServerTunnel.EnsureStarted(uri.Port);
+            return true;
         }
 
         [Serializable]
@@ -106,6 +119,23 @@ namespace HearSay
         private IEnumerator ResetServer(string statusUrl)
         {
             resetInProgress = true;
+            bool tunnelled = EnsureTunnel(statusUrl);
+            if (tunnelled)
+            {
+                float deadline = Time.realtimeSinceStartup + TunnelTimeoutSeconds;
+                while (!ServerTunnel.Ready && Time.realtimeSinceStartup < deadline)
+                {
+                    connection = "Opening SSH tunnel to Ultra96… " + ServerTunnel.Status;
+                    yield return null;
+                }
+                if (!ServerTunnel.Ready)
+                {
+                    connection = "SSH tunnel not ready: " + ServerTunnel.Status + " Select your role to retry.";
+                    connectionExpanded = true;
+                    resetInProgress = false;
+                    yield break;
+                }
+            }
             connection = "Clearing previous sound and ASL commands…";
             using (var request = new UnityWebRequest(new Uri(new Uri(statusUrl), "/reset").AbsoluteUri, "POST"))
             {
@@ -122,8 +152,9 @@ namespace HearSay
                 }
                 else
                 {
-                    connection = "Reset failed: " + (request.error ?? connection) +
-                        " (HTTP " + request.responseCode + ") at " + statusUrl;
+                    connection = tunnelled
+                        ? "Reset failed through the SSH tunnel. Check HearSayDummyServer.py and run_hearsay_pipeline.sh (8080 reverse forward) are running, then select your role to retry."
+                        : "Reset failed. Check the server address and restart the updated Python server, then select your role to retry.";
                     connectionExpanded = true;
                 }
             }
@@ -177,6 +208,8 @@ namespace HearSay
                         partnerHands.Initialize(partnerCamera);
                     }
                     else Debug.LogError("Partner hand tracking prefab is missing.");
+                    // Ultra96 RESULT messages arrive over SSH + MQTT, alongside terminal commands over HTTP.
+                    partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
                     polling = StartCoroutine(PollSigns());
                 }
                 if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
@@ -217,13 +250,16 @@ namespace HearSay
                 GUI.Label(new Rect(185, 387, 630, 32), "ASL  /  LIVE TRANSLATION", HearSayTheme.Label(16, HearSayTheme.Accent));
                 GUI.Label(new Rect(185, 427, 630, 80), translation.Replace("ASL DETECTED\n", ""),
                     HearSayTheme.Label(36, Color.white, TextAnchor.MiddleCenter));
-                GUI.Label(new Rect(185, 528, 630, 26), connection == "SERVER: CONNECTED" ? "Connected" : connection,
+                string serverText = connection == "SERVER: CONNECTED" ? "Connected" : connection;
+                if (partnerMqtt != null) serverText += "  ·  Ultra96: " + partnerMqtt.ConnectionStatus;
+                GUI.Label(new Rect(185, 528, 630, 26), serverText,
                     HearSayTheme.Label(16, HearSayTheme.Muted, TextAnchor.MiddleCenter));
                 if (HearSayTheme.Action(new Rect(350, 585, 300, 48), "Change role / connection", 19))
                 {
                     if (polling != null) StopCoroutine(polling);
                     if (partnerHands != null) Destroy(partnerHands.gameObject);
                     if (partnerCamera != null) Destroy(partnerCamera);
+                    if (partnerMqtt != null) Destroy(partnerMqtt);
                     partner = false;
                     translation = "Waiting for a sign…";
                 }
@@ -250,11 +286,16 @@ namespace HearSay
             SceneManager.LoadScene("HearSay Start");
         }
 
+        // Shows whichever source changed most recently: a terminal command from the
+        // dummy server (HTTP) or an Ultra96 RESULT (MQTT).
         private IEnumerator PollSigns()
         {
+            string lastHttpSign = null, lastMqttEvent = null;
+            float httpChangedAt = 0f, mqttChangedAt = 0f;
             while (true)
             {
-                using (var request = HearSayStatusRequest.Get(SessionServerUrl))
+                string httpWord = null;
+                using (var request = UnityWebRequest.Get(SessionServerUrl))
                 {
                     request.timeout = 2;
                     yield return request.SendWebRequest();
@@ -264,27 +305,33 @@ namespace HearSay
                         {
                             var sign = JsonUtility.FromJson<SignStatus>(request.downloadHandler.text);
                             if (sign == null) throw new FormatException("Empty server data");
-                            if (partnerHands != null)
-                                partnerHands.Word = sign.aslDetected ? (sign.aslWord ?? "").Replace('_', ' ') : null;
-                            connection = request.error ?? "SERVER: CONNECTED";
-                            translation = sign.aslDetected && !string.IsNullOrEmpty(sign.aslWord)
-                                ? "ASL DETECTED\n" + sign.aslWord.Replace('_', ' ')
-                                : "Waiting for a sign…";
+                            connection = "SERVER: CONNECTED";
+                            if (sign.aslDetected && !string.IsNullOrEmpty(sign.aslWord)) httpWord = sign.aslWord;
                         }
-                        catch (Exception)
-                        {
-                            connection = "SERVER: INVALID DATA";
-                            translation = "Waiting for a sign…";
-                            if (partnerHands != null) partnerHands.Word = null;
-                        }
+                        catch (Exception) { connection = "SERVER: INVALID DATA"; }
                     }
-                    else
+                    else connection = "SERVER: " + request.error;
+                }
+
+                if (httpWord != lastHttpSign) { lastHttpSign = httpWord; httpChangedAt = Time.realtimeSinceStartup; }
+                string mqttWord = null;
+                if (partnerMqtt != null && partnerMqtt.aslDetected)
+                {
+                    mqttWord = partnerMqtt.aslWord;
+                    if (partnerMqtt.lastResultEventId != lastMqttEvent)
                     {
-                        connection = "SERVER: " + request.error;
-                        translation = "Waiting for connection…";
-                        if (partnerHands != null) partnerHands.Word = null;
+                        lastMqttEvent = partnerMqtt.lastResultEventId;
+                        mqttChangedAt = Time.realtimeSinceStartup;
                     }
                 }
+
+                string word = mqttWord != null && (httpWord == null || mqttChangedAt >= httpChangedAt)
+                    ? mqttWord : httpWord;
+                if (partnerHands != null) partnerHands.Word = word?.Replace('_', ' ');
+                if (word != null) translation = "ASL DETECTED\n" + word.Replace('_', ' ');
+                else translation = connection == "SERVER: CONNECTED" ||
+                    (partnerMqtt != null && partnerMqtt.ConnectionStatus == "Connected over SSH")
+                    ? "Waiting for a sign…" : "Waiting for connection…";
                 yield return new WaitForSecondsRealtime(0.25f);
             }
         }
