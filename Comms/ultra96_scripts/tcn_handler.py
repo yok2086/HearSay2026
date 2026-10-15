@@ -11,7 +11,6 @@ MODEL_DIR = "/home/xilinx/jupyter_notebooks/tcn"
 sys.path.insert(0, MODEL_DIR)
 from tcn_infer import TcnDpu
 
-
 BROKER_HOST = "localhost"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
