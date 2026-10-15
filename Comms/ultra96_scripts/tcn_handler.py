@@ -8,6 +8,11 @@ import numpy as np
 import paho.mqtt.client as mqtt
 
 MODEL_DIR = "/home/xilinx/jupyter_notebooks/tcn"
+
+# Normally exported by /etc/profile.d/xrt_setup.sh, but sudo and non-login ssh
+# drop it - and pynq only registers the FPGA device if it is set at import time.
+os.environ.setdefault("XILINX_XRT", "/usr")
+
 sys.path.insert(0, MODEL_DIR)
 from tcn_infer import TcnDpu
 
@@ -107,7 +112,7 @@ def pair_samples(client):
 
 def on_connect(client, userdata, flags, rc):
     print(f"Connected to broker (rc={rc})")
-    client.subscribe([("tele/glove_01/raw", 0), ("tele/glove_02/raw", 0)])
+    client.subscribe([(f"tele/{device_id}/raw", 0) for device_id in GLOVE_IDS])
     print(f"Subscribed to telemetry from {', '.join(GLOVE_IDS)}")
 
 

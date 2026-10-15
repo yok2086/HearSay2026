@@ -13,7 +13,7 @@ MPU6050 mpu;
 // MQTT SETTINGS
 // ==================================================
 
-const char* DEVICE_ID = "glove_01A";
+const char* DEVICE_ID = "glove_01B";
 const char* MQTT_USER = "nathan";
 const char* MQTT_PASS = "mqtt";
 

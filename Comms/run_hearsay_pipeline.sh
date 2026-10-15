@@ -26,8 +26,8 @@ REMOTE_INFERENCE_SCRIPT="/home/xilinx/jupyter_notebooks/tcn/tcn_handler.py"
 
 REMOTE_INFERENCE_LOG="$REMOTE_LOG_DIR/ultra96_inference.log"
 
-REMOTE_PYTHON="sudo -n /usr/local/share/pynq-venv/bin/python3"
-# REMOTE_PYTHON="python3"
+REMOTE_PYTHON="sudo -n /usr/local/share/pynq-venv/bin/python3 -u"
+# REMOTE_PYTHON="python3 -u"
 
 LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
