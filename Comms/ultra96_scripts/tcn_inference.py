@@ -18,7 +18,7 @@ MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
 CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt"
 
-GLOVE_IDS = ("glove_01", "glove_02")
+GLOVE_IDS = ("glove_01A", "glove_01B")
 RESULT_DEVICE_ID = "glove_pair"
 WINDOW_SIZE = 96
 
@@ -99,7 +99,6 @@ def infer_window(client):
 
 
 def pair_samples(client):
-    """Pair samples in arrival order after both gloves have data available."""
     left_queue = sample_queues[GLOVE_IDS[0]]
     right_queue = sample_queues[GLOVE_IDS[1]]
     while left_queue and right_queue:

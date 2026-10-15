@@ -85,8 +85,7 @@ void publishConfigAck() {
   char buf[192];
   serializeJson(doc, buf);
   mqtt.publish(topicCmdAck().c_str(), buf);
-  isRunning = true;
-  Serial.println("Published CONFIG_ACK -> now RUNNING");
+  Serial.println("Published CONFIG_ACK");
 }
 
 void onMessage(char* topic, byte* payload, unsigned int length) {
@@ -126,6 +125,9 @@ void connectMQTT() {
       mqtt.subscribe(topicCmdSet().c_str());
       mqtt.subscribe(topicPing().c_str());
       publishHello();
+      // Stream straight away - a CONFIG on cmd/<id>/set is now an optional
+      // override, not a gate.
+      isRunning = true;
     } else {
       Serial.print(" failed, rc=");
       Serial.print(mqtt.state());

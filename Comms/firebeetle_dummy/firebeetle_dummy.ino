@@ -110,10 +110,7 @@ void publishConfigAck() {
   char buf[192];
   serializeJson(doc, buf);
   mqtt.publish(topicCmdAck().c_str(), buf);
-  Serial.println("Published CONFIG_ACK -> now RUNNING");
-  isRunning = true;
-  statsBytes = statsMsgs = statsFailed = totalBytes = totalMsgs = 0;
-  statsStartMs = runningSinceMs = millis();
+  Serial.println("Published CONFIG_ACK");
 }
 
 void maybeSwitchRegime() {
@@ -244,6 +241,11 @@ void connectMQTT() {
       mqtt.subscribe(topicCmdSet().c_str()); // cmd/<id>/set (CONFIG)
       mqtt.subscribe(topicPing().c_str());  // cmd/<id>/ping
       publishHello(); // sys/<id>/status
+      // Stream straight away at sampleRateHz - a CONFIG on cmd/<id>/set is now an optional
+      // override, not a gate.
+      isRunning = true;
+      statsBytes = statsMsgs = statsFailed = totalBytes = totalMsgs = 0;
+      statsStartMs = runningSinceMs = millis();
     } else {
       Serial.print(" failed, rc=");
       Serial.print(mqtt.state());

@@ -219,8 +219,7 @@ void publishConfigAck() {
   char buf[192];
   serializeJson(doc, buf);
   mqtt.publish(topicCmdAck().c_str(), buf);
-  Serial.println("Published CONFIG_ACK -> now RUNNING");
-  isRunning = true;
+  Serial.println("Published CONFIG_ACK");
 }
 
 // Round to 2 decimals so the JSON stays short - every byte has to go through
@@ -351,6 +350,9 @@ void connectMQTT() {
       Serial.println(" connected");
       mqtt.subscribe(topicCmdSet().c_str());
       publishHello();
+      // Stream straight away at the compiled-in sampleRateHz - a CONFIG on
+      // cmd/<id>/set is now an optional override, not a gate.
+      isRunning = true;
     } else {
       Serial.print(" failed, rc=");
       Serial.print(mqtt.state());
