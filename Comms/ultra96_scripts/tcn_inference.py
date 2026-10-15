@@ -1,19 +1,3 @@
-"""Run two-glove TCN inference from MQTT telemetry on the Ultra96.
-
-Each glove publishes 11 features per sample:
-    ax, ay, az, gx, gy, gz, flex1, flex2, flex3, flex4, flex5
-
-The bridge pairs glove_01 and glove_02 samples into 22-feature timesteps,
-buffers 96 timesteps, runs the DPU TCN, and publishes the result to:
-    tele/glove_pair/result
-
-Run from the TCN directory, where tcn_infer.py, dpu.bit, and tcn.xmodel live:
-    sudo su
-    . /etc/profile.d/xrt_setup.sh
-    . /etc/profile.d/pynq_venv.sh
-    cd /home/xilinx/jupyter_notebooks/tcn
-    python3 tcn_mqtt_inference.py
-"""
 import collections
 import json
 import os
@@ -156,7 +140,6 @@ def on_message(client, userdata, msg):
 def main():
     global classifier
 
-    # TcnDpu currently opens dpu.bit using a relative path.
     os.chdir(MODEL_DIR)
     print("Loading TCN DPU model...")
     classifier = TcnDpu()
