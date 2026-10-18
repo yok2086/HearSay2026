@@ -58,6 +58,9 @@ namespace HearSay
 
             if (useMqttInsteadOfHttp && sshMqttManager != null)
             {
+                // The deaf user gets the mic's left/right cue; glove ASL goes to the partner.
+                if (HearSayRoles.DeafRole) sshMqttManager.receiveAsl = false;
+
                 // Real data path: sshMqttManager already runs its own SSH+MQTT
                 // connection independently (see HearSaySshMqttManager.Start()).
                 // We just read its public fields every frame in Update() below -
@@ -109,8 +112,8 @@ namespace HearSay
                 nextRandomStateAt = Time.unscaledTime + Random.Range(3.5f, 6f);
             }
 
-            // The sound cue guides the user only until the existing speaker detector locks on.
-            var speakerDetected = SpeakerActivity.IsSpeaking;
+            // The sound cue follows the mic alone: each LEFT/RIGHT event from mic_lr_01
+            // shows that side for soundCueDuration. Whisper captions run independently.
             string direction = (status.soundDirection ?? "").Trim().ToLowerInvariant();
             bool newSound = status.soundActive &&
                 (!previousSoundActive || direction != previousSoundDirection ||
@@ -119,9 +122,8 @@ namespace HearSay
             previousSoundActive = status.soundActive;
             previousSoundDirection = direction;
             previousSoundEventId = status.soundEventId;
-            // Consume the cue when a speaker is found; don't replay it on losing the face.
-            if (speakerDetected || !status.soundActive) soundCueUntil = 0f;
-            SetSoundCueVisible(status.soundActive && !speakerDetected && Time.unscaledTime < soundCueUntil);
+            if (!status.soundActive) soundCueUntil = 0f;
+            SetSoundCueVisible(Time.unscaledTime < soundCueUntil);
             SetAslVisible(status.aslDetected && !HearSayRoles.DeafRole);
             UpdateCalibrationReadout();
         }
@@ -189,7 +191,7 @@ namespace HearSay
         {
             status.soundActive = sshMqttManager.soundActive;
             status.soundDirection = sshMqttManager.soundDirection;
-            status.soundEventId = sshMqttManager.lastResultEventId;
+            status.soundEventId = sshMqttManager.lastSoundEventId;
             status.aslDetected = sshMqttManager.aslDetected;
             status.aslWord = sshMqttManager.aslWord;
             status.aslConfidence = sshMqttManager.aslConfidence;

@@ -182,6 +182,7 @@ namespace HearSay
                     else Debug.LogError("Partner hand tracking prefab is missing.");
                     // Ultra96 RESULT messages arrive over SSH + MQTT, alongside terminal commands over HTTP.
                     partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
+                    partnerMqtt.receiveSound = false;   // mic direction is for the deaf user only
                     polling = StartCoroutine(PollSigns());
                 }
                 if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())

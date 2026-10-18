@@ -9,8 +9,6 @@ import paho.mqtt.client as mqtt
 
 MODEL_DIR = "/home/xilinx/jupyter_notebooks/tcn"
 
-# Normally exported by /etc/profile.d/xrt_setup.sh, but sudo and non-login ssh
-# drop it - and pynq only registers the FPGA device if it is set at import time.
 os.environ.setdefault("XILINX_XRT", "/usr")
 
 sys.path.insert(0, MODEL_DIR)
