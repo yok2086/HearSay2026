@@ -12,6 +12,7 @@ namespace HearSay.Editor
         public const string Original = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity";
         public const string NormalHome = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Start.unity";
         public const string VrScene = "Assets/HearSayVR/HearSay VR Test.unity";
+        public const string VrHome = "Assets/HearSayVR/HearSay VR Home.unity";
         public const string SetupScene = "Assets/HearSayVR/HearSay VR Setup.unity";
 
         [MenuItem("HearSay/VR/Open VR setup")]
@@ -45,7 +46,10 @@ namespace HearSay.Editor
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
-                    scenes = new[] { SetupScene, VrScene, NormalHome, Original },
+                    // The VR APK uses the real Home and Demo scenes. VR mode is
+                    // enabled by the setup screen at runtime, so their layouts
+                    // and behavior stay identical to the normal app.
+                    scenes = new[] { VrHome, Original },
                     locationPathName = path,
                     target = BuildTarget.Android,
                     options = BuildOptions.Development

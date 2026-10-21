@@ -139,7 +139,6 @@ namespace HearSay
 
         private void OnGUI()
         {
-            if (HearSayVrDisplay.Active) return; // Cardboard supplies its own exit control.
             if (HearSayRoles.HomeButton()) HearSayRoles.ReturnToSelector();
             float scale = Mathf.Clamp(UnityEngine.Screen.height / 650f, 0.75f, 2.5f);
             Rect safe = UnityEngine.Screen.safeArea;
