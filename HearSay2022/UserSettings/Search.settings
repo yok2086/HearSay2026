@@ -1,6 +1,5 @@
 trackSelection = true
 refreshSearchWindowsInPlayMode = false
-pickerAdvancedUI = false
 fetchPreview = true
 defaultFlags = 0
 keepOpen = true
@@ -12,6 +11,9 @@ scopes = {
 	"last_search.66F56946" = ""
 	"OpenInspectorPreview.66F56946" = "0"
 	"currentGroup.66F56946" = "all"
+	"last_search.9D791F98" = "NuGet"
+	"OpenInspectorPreview.9D791F98" = "0"
+	"currentGroup.9D791F98" = null
 }
 providers = {
 	asset = {
@@ -59,10 +61,17 @@ providers = {
 		priority = 210
 		defaultAction = null
 	}
+	presets_provider = {
+		active = false
+		priority = -10
+		defaultAction = null
+	}
 }
 objectSelectors = {
 }
 recentSearches = [
+	"proto"
+	"Google.Protobuf"
 ]
 searchItemFavorites = [
 ]

@@ -29,10 +29,10 @@ namespace HearSay
         {
             while (true)
             {
-                using (var request = UnityWebRequest.Get(url))
+                using (var request = HearSayStatusRequest.Get(url))
                 {
                     request.timeout = 3;
-                    UnityWebRequestAsyncOperation operation = null;
+                    IEnumerator operation = null;
                     try { operation = request.SendWebRequest(); }
                     catch (Exception e) { state = "Connection error: " + e.Message; }
                     if (operation != null) yield return operation;
@@ -46,7 +46,7 @@ namespace HearSay
                             responses++;
                             lastResponse = Time.unscaledTime;
                             source = data.source ?? "unspecified";
-                            state = data.stale ? "STALE — sensor sender stopped (server still reachable)" : "Connected";
+                            state = request.error ?? (data.stale ? "STALE — sensor sender stopped (server still reachable)" : "Connected");
                             sound = data.soundActive && !data.stale ? (data.soundDirection ?? "missing direction").ToUpperInvariant() : "OFF";
                             sign = data.aslDetected && !data.stale
                                 ? (data.aslWord ?? "missing word").Replace('_', ' ') + "  (" + data.aslConfidence.ToString("P0") + ")"

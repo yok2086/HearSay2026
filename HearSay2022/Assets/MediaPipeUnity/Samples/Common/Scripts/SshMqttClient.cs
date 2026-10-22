@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Formatter;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 
@@ -112,7 +114,9 @@ namespace CG4002.Comms
         string status = "Idle";
         long rejected, dropped;
         int running;
+        string lastError;
         public string Status { get { lock (gate) return status; } }
+        public string LastError { get { lock (gate) return lastError; } }
         public long RejectedMessages { get { lock (gate) return rejected; } }
         public long DroppedMessages { get { lock (gate) return dropped; } }
         public SshMqttClient(ConnectionSecrets settings) { settings.Validate(); secrets = settings; }
@@ -158,7 +162,9 @@ namespace CG4002.Comms
                         using (var jump = CreateSsh(secrets.jumpHost, secrets.jumpPort,
                             secrets.socUsername, secrets.socPassword, key))
                         {
-                            await jump.ConnectAsync(cancellation).ConfigureAwait(false);
+                            // Blocking Connect on a worker thread: on Android (IL2CPP) ConnectAsync
+                            // timed out in ReceiveAsync waiting for the server banner.
+                            await Task.Run(() => jump.Connect(), cancellation).ConfigureAwait(false);
                             using (var sshPort = new ForwardedPortLocal("127.0.0.1", 0,
                                 secrets.ultra96Host, (uint)secrets.ultra96Port))
                             {
@@ -167,7 +173,7 @@ namespace CG4002.Comms
                                 using (var ultra = CreateSsh("127.0.0.1", (int)sshPort.BoundPort,
                                     secrets.ultra96Username, secrets.ultra96Password, key))
                                 {
-                                    await ultra.ConnectAsync(cancellation).ConfigureAwait(false);
+                                    await Task.Run(() => ultra.Connect(), cancellation).ConfigureAwait(false);
                                     using (var brokerPort = new ForwardedPortLocal("127.0.0.1", 0, "127.0.0.1", 1883))
                                     {
                                         ultra.AddForwardedPort(brokerPort); brokerPort.Start();
@@ -181,7 +187,11 @@ namespace CG4002.Comms
                     catch (SshAuthenticationException)
                     { SetStatus("SSH authentication failed. Correct settings and retry."); return; }
                     catch (Exception error)
-                    { SetStatus("Disconnected: " + error.Message + " (retrying)"); }
+                    {
+                        var root = error.GetBaseException();
+                        lock (gate) lastError = error.ToString();
+                        SetStatus("Disconnected: " + root.GetType().Name + ": " + root.Message + " (retrying)");
+                    }
                     try { await Task.Delay(3000, cancellation).ConfigureAwait(false); }
                     catch (OperationCanceledException) { break; }
                 }
@@ -195,8 +205,13 @@ namespace CG4002.Comms
             using (var connection = new MqttFactory().CreateMqttClient())
             {
                 connection.ApplicationMessageReceivedAsync += args => {
+                    if (args.ApplicationMessage.Topic == LatencyPingTopic)
+                        return EchoLatencyPingAsync(connection, args.ApplicationMessage.PayloadSegment);
+                    var ack = IsResultTopic(args.ApplicationMessage.Topic)
+                        ? AckResultAsync(connection, args.ApplicationMessage.Topic, args.ApplicationMessage.PayloadSegment)
+                        : Task.CompletedTask;
                     Store(args.ApplicationMessage.Topic, args.ApplicationMessage.PayloadSegment);
-                    return Task.CompletedTask;
+                    return ack;
                 };
                 var options = new MqttClientOptionsBuilder().WithClientId(clientId)
                     .WithTcpServer("127.0.0.1", port).WithCredentials(secrets.mqttUsername, secrets.mqttPassword)
@@ -208,7 +223,8 @@ namespace CG4002.Comms
                     await connection.ConnectAsync(options, cancellation).ConfigureAwait(false);
                     var subscriptions = new MqttClientSubscribeOptionsBuilder()
                         .WithTopicFilter("sys/+/status").WithTopicFilter("tele/+/raw")
-                        .WithTopicFilter("tele/+/result").WithTopicFilter("cmd/+/ack").Build();
+                        .WithTopicFilter("tele/+/result").WithTopicFilter("cmd/+/ack")
+                        .WithTopicFilter(LatencyPingTopic).Build();
                     var result = await connection.SubscribeAsync(subscriptions, cancellation).ConfigureAwait(false);
                     if (result.Items.Any(x => (int)x.ResultCode >= 128))
                         throw new IOException("Broker rejected a subscription.");
@@ -231,6 +247,45 @@ namespace CG4002.Comms
                     finally { publishGate.Release(); }
                 }
             }
+        }
+
+        const string LatencyPingTopic = "latency/phone/ping";
+
+        async Task EchoLatencyPingAsync(IMqttClient connection, ArraySegment<byte> payload)
+        {
+            try
+            {
+                await connection.PublishAsync(new MqttApplicationMessageBuilder()
+                    .WithTopic("latency/phone/" + clientId + "/pong").WithPayload(payload.ToArray())
+                    .WithRetainFlag(false).Build()).ConfigureAwait(false);
+            }
+            catch (Exception) { /* A lost echo only drops one latency sample. */ }
+        }
+
+        static bool IsResultTopic(string topic)
+        {
+            var parts = (topic ?? "").Split('/');
+            return parts.Length == 3 && parts[0] == "tele" && parts[2] == "result";
+        }
+
+        // Acknowledges every received word (RESULT) on phone/<clientId>/ack as soon as it
+        // arrives, before Unity processes it. Comms/stats.py times RESULT -> ACK to get the
+        // Ultra96 <-> phone round trip.
+        async Task AckResultAsync(IMqttClient connection, string topic, ArraySegment<byte> payload)
+        {
+            try
+            {
+                var seq = JObject.Parse(Encoding.UTF8.GetString(payload.Array, payload.Offset, payload.Count))["seq"];
+                if (seq == null) return;
+                var ack = new JObject {
+                    ["type"] = "ACK", ["device_id"] = clientId,
+                    ["ack_topic"] = topic, ["ack_seq"] = seq
+                };
+                await connection.PublishAsync(new MqttApplicationMessageBuilder()
+                    .WithTopic("phone/" + clientId + "/ack").WithPayload(ack.ToString(Formatting.None))
+                    .WithRetainFlag(false).Build()).ConfigureAwait(false);
+            }
+            catch (Exception) { /* Malformed result or lost ack: only one latency sample is dropped. */ }
         }
 
         static bool ValidModel(string id) => !string.IsNullOrEmpty(id) && id.Length <= 64 &&

@@ -14,6 +14,12 @@ namespace HearSay
         [SerializeField] private float pollIntervalSeconds = 0.25f;
         [SerializeField] private bool useRandomFallback = false;
         [SerializeField, Range(1f, 2f)] private float soundCueDuration = 1.5f;
+
+        [Header("Real data (MQTT via SSH tunnel)")]
+        [Tooltip("If set, data comes from this instead of HTTP polling. Attach a HearSaySshMqttManager to a GameObject and drag it here.")]
+        [SerializeField] private HearSaySshMqttManager sshMqttManager;
+        [Tooltip("When true and sshMqttManager is set, skips HTTP polling entirely and reads live values from sshMqttManager every frame instead.")]
+        [SerializeField] private bool useMqttInsteadOfHttp = true;
         private float soundCueUntil;
         private bool previousSoundActive;
         private string previousSoundDirection;
@@ -49,13 +55,37 @@ namespace HearSay
             if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
                 serverUrl = HearSayRoles.SessionServerUrl;
             ActiveServerUrl = serverUrl;
+            HearSayRoles.EnsureTunnel(serverUrl);
             CreateUi();
-            StartCoroutine(PollServer());
+
+            if (useMqttInsteadOfHttp && sshMqttManager != null)
+            {
+                // Real data path: sshMqttManager already runs its own SSH+MQTT
+                // connection independently (see HearSaySshMqttManager.Start()).
+                // We just read its public fields every frame in Update() below -
+                // no coroutine/network call needed here at all.
+                serverHasResponded = true;
+                serverStatus = "SERVER: CONNECTING (MQTT)";
+            }
+            else
+            {
+                StartCoroutine(PollServer());
+            }
+
             StartCoroutine(ReportSpeakerStatus());
         }
 
         private IEnumerator ReportSpeakerStatus()
         {
+            if (HearSayLocalMqtt.IsMqtt(serverUrl))
+            {
+                while (true)
+                {
+                    _ = HearSayLocalMqtt.For(serverUrl).Report("speaker", SpeakerActivity.IsSpeaking
+                        ? "{\"detected\":true}" : "{\"detected\":false}");
+                    yield return new WaitForSecondsRealtime(0.5f);
+                }
+            }
             var endpoint = new System.Uri(new System.Uri(serverUrl), "/speaker").AbsoluteUri;
             while (true)
             {
@@ -80,7 +110,11 @@ namespace HearSay
 
         private void Update()
         {
-            if (useRandomFallback && !serverHasResponded && Time.unscaledTime >= nextRandomStateAt)
+            if (useMqttInsteadOfHttp && sshMqttManager != null)
+            {
+                SyncFromMqttManager();
+            }
+            else if (useRandomFallback && !serverHasResponded && Time.unscaledTime >= nextRandomStateAt)
             {
                 CreateRandomStatus();
                 nextRandomStateAt = Time.unscaledTime + Random.Range(3.5f, 6f);
@@ -105,7 +139,6 @@ namespace HearSay
 
         private void OnGUI()
         {
-            if (HearSayVrDisplay.Active) return; // Cardboard supplies its own exit control.
             if (HearSayRoles.HomeButton()) HearSayRoles.ReturnToSelector();
             float scale = Mathf.Clamp(UnityEngine.Screen.height / 650f, 0.75f, 2.5f);
             Rect safe = UnityEngine.Screen.safeArea;
@@ -119,10 +152,10 @@ namespace HearSay
         {
             while (true)
             {
-                using (var request = UnityWebRequest.Get(serverUrl))
+                using (var request = HearSayStatusRequest.Get(serverUrl))
                 {
                     request.timeout = 2;
-                    UnityWebRequestAsyncOperation operation = null;
+                    IEnumerator operation = null;
                     try
                     {
                         operation = request.SendWebRequest();
@@ -150,7 +183,7 @@ namespace HearSay
                         {
                             status = response;
                             serverHasResponded = true;
-                            serverStatus = "SERVER: CONNECTED";
+                            serverStatus = request.error ?? "SERVER: CONNECTED";
                         }
                     }
                     else if (operation != null)
@@ -161,6 +194,19 @@ namespace HearSay
 
                 yield return new WaitForSecondsRealtime(pollIntervalSeconds);
             }
+        }
+
+        private void SyncFromMqttManager()
+        {
+            status.soundActive = sshMqttManager.soundActive;
+            status.soundDirection = sshMqttManager.soundDirection;
+            status.soundEventId = sshMqttManager.lastResultEventId;
+            status.aslDetected = sshMqttManager.aslDetected;
+            status.aslWord = sshMqttManager.aslWord;
+            status.aslConfidence = sshMqttManager.aslConfidence;
+
+            serverHasResponded = true;
+            serverStatus = "SERVER: " + sshMqttManager.ConnectionStatus;
         }
 
         private void CreateRandomStatus()

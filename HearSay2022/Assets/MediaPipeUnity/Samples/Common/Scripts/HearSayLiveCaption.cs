@@ -400,6 +400,11 @@ namespace HearSay
         private IEnumerator SendCaptionToTerminal(string caption)
         {
             string statusUrl = HearSayDemoVisuals.ActiveServerUrl;
+            if (HearSayLocalMqtt.IsMqtt(statusUrl))
+            {
+                _ = HearSayLocalMqtt.For(statusUrl).Report("caption", JsonUtility.ToJson(new CaptionPayload { caption = caption }));
+                yield break;
+            }
             if (string.IsNullOrEmpty(statusUrl))
             {
                 yield break;

@@ -5,16 +5,16 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639261680410000000
-    m_Hash: 1415688259
+      ticks: 639281809780000000
+    m_Hash: 770487021
   m_LockFileStatus:
     m_FilePath: /Users/gyurim/HearSay2022/HearSay2022/Packages/packages-lock.json
     m_PathExists: 1
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
-      ticks: 639261680980000000
-    m_Hash: 2596912594
+      ticks: 639281833880000000
+    m_Hash: 2555030040
 m_EmbeddedPackageManifests:
   m_ManifestsStatus:
     /Users/gyurim/HearSay2022/HearSay2022/Packages/com.github.homuler.mediapipe/package.json:
@@ -122,6 +122,67 @@ m_ResolvedPackages:
   git:
     hash: 3e21f7f7a43a6c9ce9690248028f94d44cde3988
     revision: v1.24.0
+  upmReserved: 
+  assetStore:
+    productId: 
+- packageId: com.github-glitchenzo.nugetforunity@https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity
+  testable: 0
+  isDirectDependency: 1
+  version: 4.5.0
+  source: 5
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.github-glitchenzo.nugetforunity@acc1c7bc9e
+  assetPath: Packages/com.github-glitchenzo.nugetforunity
+  name: com.github-glitchenzo.nugetforunity
+  displayName: NuGetForUnity
+  author:
+    name: 
+    email: 
+    url: 
+  category: 
+  type: 
+  description: A NuGet Package Manager for Unity
+  errors: []
+  versions:
+    all: []
+    compatible: []
+    recommended: 
+    deprecated: []
+  dependencies: []
+  resolvedDependencies: []
+  keywords:
+  - nuget
+  - unity
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  entitlements:
+    licensingModel: 0
+  isAssetStorePackage: 0
+  datePublishedTicks: 0
+  documentationUrl: https://github.com/GlitchEnzo/NuGetForUnity
+  hasRepository: 0
+  repository:
+    type: 
+    url: 
+    revision: 
+    path: 
+  unityLifecycle:
+    version: 
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  git:
+    hash: acc1c7bc9ea34c33b830e40316fca52553878d29
+    revision: HEAD
   upmReserved: 
   assetStore:
     productId: 
@@ -341,12 +402,12 @@ m_ResolvedPackages:
   upmReserved: 
   assetStore:
     productId: 
-- packageId: com.unity.ads@4.4.2
+- packageId: com.unity.ads@4.4.3
   testable: 0
   isDirectDependency: 1
-  version: 4.4.2
+  version: 4.4.3
   source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ads@4.4.2
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ads@4.4.3
   assetPath: Packages/com.unity.ads
   name: com.unity.ads
   displayName: Advertisement Legacy
@@ -355,7 +416,7 @@ m_ResolvedPackages:
     email: 
     url: 
   category: 
-  type: asset
+  type: 
   description: "Connect your game to the Unity Ads Network for iOS and Android to
     quickly and effectively monetize your games.\n\nNOTE: Unity has joined forces
     with ironSource and recommends using Unity LevelPlay for ad mediation (instead
@@ -455,7 +516,7 @@ m_ResolvedPackages:
   entitlements:
     licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 638161229410000000
+  datePublishedTicks: 638985474305310000
   documentationUrl: https://docs.unity3d.com/Packages/com.unity.ads@4.4/manual/index.html
   hasRepository: 1
   repository:
@@ -476,15 +537,15 @@ m_ResolvedPackages:
     revision: 
   upmReserved: '{"changelog":"## **Unity**\n - Remove redirect pop-ups directing
     users to Unity Mediation.\n## **Android**\n### **Bugfix**\n- Fixed a NullPointerException
-    when Application Context is null for cached directory file path.","gameService":{"groupName":"Monetization","groupIndex":4,"configurePath":"Project/Services/Ads","genericDashboardUrl":"https://unityads.unity3d.com/help/index","projectDashboardUrl":"https://dashboard.unity3d.com/organizations/{0}/projects/{1}/monetization/about","projectDashboardUrlType":"OrganizationKeyAndProjectGuid"},"supportedPlatforms":["Android","iOS"]}'
+    when Application Context is null for cached directory file path.","gameService":{"groupName":"Monetization","groupIndex":4,"configurePath":"Project/Services/Ads","genericDashboardUrl":"https://unityads.unity3d.com/help/index","projectDashboardUrl":"https://dashboard.unity3d.com/organizations/{0}/projects/{1}/monetization/about","projectDashboardUrlType":"OrganizationKeyAndProjectGuid"}}'
   assetStore:
     productId: 
-- packageId: com.unity.ai.navigation@2.0.0
+- packageId: com.unity.ai.navigation@2.0.6
   testable: 0
   isDirectDependency: 1
-  version: 2.0.0
+  version: 2.0.6
   source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ai.navigation@2.0.0
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ai.navigation@2.0.6
   assetPath: Packages/com.unity.ai.navigation
   name: com.unity.ai.navigation
   displayName: AI Navigation
@@ -493,9 +554,12 @@ m_ResolvedPackages:
     email: 
     url: 
   category: 
-  type: assets
-  description: High-level NavMesh components for building and using NavMeshes at
-    runtime and at edit time.
+  type: 
+  description: The AI Navigation package contains high-level components that allow
+    you to use navmeshes to incorporate navigation and pathfinding in your game.
+    With this package installed you can build and use navmeshes at runtime and at
+    edit time, create dynamic obstacles, and use links to allow specific actions
+    (like jumping) as your characters navigate between navmeshes.
   errors: []
   versions:
     all:
@@ -526,6 +590,7 @@ m_ResolvedPackages:
     - 2.0.13
     - 2.0.14
     - 2.0.15
+    - 2.0.16
     compatible:
     - 2.0.0
     - 2.0.3
@@ -540,7 +605,25 @@ m_ResolvedPackages:
   resolvedDependencies:
   - name: com.unity.modules.ai
     version: 1.0.0
-  keywords: []
+  keywords:
+  - carving
+  - mesh
+  - navigation
+  - navmesh
+  - NavMesh
+  - navmesh agent
+  - navmesh link
+  - navmeshlink
+  - navmesh modifier
+  - navmeshmodifier
+  - navmesh modifier volume
+  - navmeshmodifiervolume
+  - navmesh obstacle
+  - navmesh surface
+  - navmeshsurface
+  - offmesh link
+  - off-mesh link
+  - pathfinding
   registry:
     id: main
     name: 
@@ -553,13 +636,13 @@ m_ResolvedPackages:
   entitlements:
     licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 638333060450000000
+  datePublishedTicks: 638744428199200000
   documentationUrl: https://docs.unity3d.com/Packages/com.unity.ai.navigation@2.0/manual/index.html
   hasRepository: 1
   repository:
     type: git
     url: https://github.cds.internal.unity3d.com/unity/com.unity.ai.navigation.git
-    revision: 365db7071a1efdbf9fc337dd1c0de02f909cd685
+    revision: 40d59de7f59b90e8da1a6176e78784a85f3e7f80
     path: 
   unityLifecycle:
     version: 2.0.0
@@ -572,17 +655,24 @@ m_ResolvedPackages:
   git:
     hash: 
     revision: 
-  upmReserved: '{"changelog":"### Fixed\n* When the \"Auto Update Position\" option
-    of NavMeshLink is enabled, the link now correctly updates the connection in the
-    next frame after any of the link''s ends change their world position."}'
+  upmReserved: '{"changelog":"### Added\n* New **OffMesh Link Converter** tool in
+    the **Window** > **AI** > **Navigation Updater** window to help you automatically
+    replace **OffMesh Links** with **NavMesh Links** in the scenes and prefabs of
+    your project.\n\n### Fixed\n* Fixed a regression that caused controls in the
+    navigation scene view overlay popup to display on top of one another when foldouts
+    were open. (Requires Unity 6000.0.22f1 or newer)\n* The AI Navigation overlay
+    was rarely needed upon the initial installation of the package. Now it is hidden
+    by default and you can enable it through the [Overlay Menu](https://docs.unity3d.com/Manual/display-and-hide-overlay.html).\n*
+    Fixed a regression that caused the Editor to allocate unnecessary memory on some
+    platforms, when the project contained package test files."}'
   assetStore:
     productId: 
-- packageId: com.unity.analytics@3.8.1
+- packageId: com.unity.analytics@3.8.2
   testable: 0
   isDirectDependency: 1
-  version: 3.8.1
+  version: 3.8.2
   source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.analytics@3.8.1
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.analytics@3.8.2
   assetPath: Packages/com.unity.analytics
   name: com.unity.analytics
   displayName: Analytics Library
@@ -591,7 +681,7 @@ m_ResolvedPackages:
     email: 
     url: 
   category: 
-  type: asset
+  type: 
   description: The Unity Analytics Library contains the Analytics Event Tracker component,
     the Data Privacy plug-in, and the Standard Events API.
   errors: []
@@ -678,7 +768,7 @@ m_ResolvedPackages:
   entitlements:
     licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 637789683740000000
+  datePublishedTicks: 638971744759330000
   documentationUrl: 
   hasRepository: 1
   repository:
@@ -700,12 +790,12 @@ m_ResolvedPackages:
   upmReserved: 
   assetStore:
     productId: 
-- packageId: com.unity.ide.rider@3.0.36
+- packageId: com.unity.ide.rider@3.0.40
   testable: 0
   isDirectDependency: 1
-  version: 3.0.36
+  version: 3.0.40
   source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.rider@3.0.36
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.rider@3.0.40
   assetPath: Packages/com.unity.ide.rider
   name: com.unity.ide.rider
   displayName: JetBrains Rider Editor
@@ -804,13 +894,13 @@ m_ResolvedPackages:
   entitlements:
     licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 638799562419060000
+  datePublishedTicks: 639117612635980000
   documentationUrl: https://docs.unity3d.com/Packages/com.unity.ide.rider@3.0/manual/index.html
   hasRepository: 1
   repository:
     type: git
     url: https://github.cds.internal.unity3d.com/unity/com.unity.ide.rider.git
-    revision: b5315083ab3861d21f6ab2ed0d9514daf04bf208
+    revision: ac65c165e102e0e3a75f1448b8578d29ba0eaf58
     path: 
   unityLifecycle:
     version: 3.0.28
@@ -823,16 +913,16 @@ m_ResolvedPackages:
   git:
     hash: 
     revision: 
-  upmReserved: '{"changelog":"- fix RIDER-124592 Avoid affecting \"Strip Engine Code\"
-    while IL2CPP debug enabled"}'
+  upmReserved: '{"changelog":"- Normalise paths for additional files for roslyn,
+    fixes RIDER-136169 Roslyn process gets stuck"}'
   assetStore:
     productId: 
-- packageId: com.unity.ide.visualstudio@2.0.22
+- packageId: com.unity.ide.visualstudio@2.0.28
   testable: 0
   isDirectDependency: 1
-  version: 2.0.22
+  version: 2.0.28
   source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.visualstudio@2.0.22
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.visualstudio@2.0.28
   assetPath: Packages/com.unity.ide.visualstudio
   name: com.unity.ide.visualstudio
   displayName: Visual Studio Editor
@@ -841,7 +931,7 @@ m_ResolvedPackages:
     email: 
     url: 
   category: 
-  type: assets
+  type: 
   description: Code editor integration for supporting Visual Studio as code editor
     for unity. Adds support for generating csproj files for intellisense purposes,
     auto discovery of installations, etc.
@@ -888,7 +978,7 @@ m_ResolvedPackages:
     deprecated: []
   dependencies:
   - name: com.unity.test-framework
-    version: 1.1.9
+    version: 1.1.33
   resolvedDependencies:
   - name: com.unity.test-framework
     version: 1.3.9
@@ -911,13 +1001,13 @@ m_ResolvedPackages:
   entitlements:
     licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 638326061910000000
+  datePublishedTicks: 639227371274680000
   documentationUrl: https://docs.unity3d.com/Packages/com.unity.ide.visualstudio@2.0/manual/index.html
   hasRepository: 1
   repository:
     type: git
     url: https://github.cds.internal.unity3d.com/unity/com.unity.ide.visualstudio.git
-    revision: 700b44077345e97d37d464ff25507638983aed64
+    revision: 42b6d0ca1fd84c87fe13d17234820429db9019c7
     path: 
   unityLifecycle:
     version: 2.0.22
@@ -930,410 +1020,10 @@ m_ResolvedPackages:
   git:
     hash: 
     revision: 
-  upmReserved: '{"changelog":"Integration:\n\n- Add support for `XDG_DATA_DIRS` and
-    `.desktop` files on Linux for `VS Code` discovery.\n- Use compile-time platform-specifics
-    instead of using runtime conditions.\n\nProject generation:\n\n- Suppress `USG0001`
-    warnings.\n- Mark referenced assemblies as private (to not copy extra files to
-    output directory when building).\n- Add Unity capability to SDK-Style projects.\n-
-    Prevent circular dependency errors with SDK-Style projects."}'
-  assetStore:
-    productId: 
-- packageId: com.unity.ide.vscode@1.2.5
-  testable: 0
-  isDirectDependency: 1
-  version: 1.2.5
-  source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.vscode@1.2.5
-  assetPath: Packages/com.unity.ide.vscode
-  name: com.unity.ide.vscode
-  displayName: Visual Studio Code Editor
-  author:
-    name: 
-    email: 
-    url: 
-  category: 
-  type: asset
-  description: Code editor integration for supporting Visual Studio Code as code
-    editor for unity. Adds support for generating csproj files for intellisense purposes,
-    auto discovery of installations, etc.
-  errors: []
-  versions:
-    all:
-    - 1.0.2
-    - 1.0.3
-    - 1.0.7
-    - 1.1.0
-    - 1.1.2
-    - 1.1.3
-    - 1.1.4
-    - 1.2.0
-    - 1.2.1
-    - 1.2.2
-    - 1.2.3
-    - 1.2.4
-    - 1.2.5
-    compatible:
-    - 1.0.2
-    - 1.0.3
-    - 1.0.7
-    - 1.1.0
-    - 1.1.2
-    - 1.1.3
-    - 1.1.4
-    - 1.2.0
-    - 1.2.1
-    - 1.2.2
-    - 1.2.3
-    - 1.2.4
-    - 1.2.5
-    recommended: 
-    deprecated: []
-  dependencies: []
-  resolvedDependencies: []
-  keywords: []
-  registry:
-    id: main
-    name: 
-    url: https://packages.unity.com
-    scopes: []
-    isDefault: 1
-    capabilities: 7
-    configSource: 0
-  hideInEditor: 1
-  entitlements:
-    licensingModel: 1
-  isAssetStorePackage: 0
-  datePublishedTicks: 637800255360000000
-  documentationUrl: 
-  hasRepository: 1
-  repository:
-    type: git
-    url: https://github.com/Unity-Technologies/com.unity.ide.vscode.git
-    revision: b0740c80bfc2440527c317109f7c3d9100132722
-    path: 
-  unityLifecycle:
-    version: 
-    nextVersion: 
-    recommendedVersion: 
-    isDeprecated: 1
-    deprecationMessage: Visual Studio Code package is not supported anymore. You
-      can continue to use it, but we won't provide any update anymore.
-  isDeprecated: 0
-  deprecationMessage: 
-  git:
-    hash: 
-    revision: 
-  upmReserved: 
-  assetStore:
-    productId: 
-- packageId: com.unity.purchasing@4.11.0
-  testable: 0
-  isDirectDependency: 1
-  version: 4.11.0
-  source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.purchasing@4.11.0
-  assetPath: Packages/com.unity.purchasing
-  name: com.unity.purchasing
-  displayName: In App Purchasing
-  author:
-    name: 
-    email: 
-    url: 
-  category: 
-  type: assets
-  description: "IMPORTANT UPGRADE NOTES:\n\nIf updating from Unity IAP (com.unity.purchasing
-    + the Asset Store plugin) versions 2.x to version 3.x, complete the following
-    actions in order to resolve compilation errors:\n 1. Move IAPProductCatalog.json
-    and BillingMode.json\n\tFROM: Assets/Plugins/UnityPurchasing/Resources/\n\tTO:
-    Assets/Resources/.\n 2. Move AppleTangle.cs and GooglePlayTangle.cs\n\tFROM:
-    Assets/Plugins/UnityPurchasing/generated\n\tTO: Assets/Scripts/UnityPurchasing/generated.\n
-    3. Remove all remaining Asset Store plugin folders and files in Assets/Plugins/UnityPurchasing
-    from your project.\n\nPACKAGE DESCRIPTION:\n\nWith Unity IAP, setting up in-app
-    purchases for your game across multiple app stores has never been easier.\n\nThis
-    package provides:\n\n \u25AA One common API to access all stores for free so
-    you can fully understand and optimize your in-game economy\n \u25AA Automatic
-    coupling with Unity Analytics to enable monitoring and decision-making based
-    on trends in your revenue and purchase data across multiple platforms\n \u25AA
-    Support for iOS, Mac, tvOS, Google Play, Windows, and Amazon app stores(*).\n
-    \u25AA Support to work with the Unity Distribution Portal to synchronize catalogs
-    and transactions with other app stores\n \u25AA Client-side receipt validation
-    for Apple App Store and Google Play\n\nAfter installing this package, open the
-    Services Window to enable In-App Purchasing to use these features."
-  errors: []
-  versions:
-    all:
-    - 0.0.3
-    - 0.0.4
-    - 0.0.5
-    - 0.0.6
-    - 0.0.7
-    - 0.0.8
-    - 0.0.9
-    - 0.0.10
-    - 0.0.11
-    - 0.0.12
-    - 0.0.13
-    - 0.0.14
-    - 0.0.15
-    - 0.0.16
-    - 0.0.17
-    - 0.0.18
-    - 0.0.19
-    - 2.0.0
-    - 2.0.1
-    - 2.0.3
-    - 2.0.5
-    - 2.0.6
-    - 2.1.0
-    - 2.1.1
-    - 2.2.0
-    - 2.2.1
-    - 2.2.2
-    - 3.0.0-pre.3
-    - 3.0.0-pre.4
-    - 3.0.0-pre.5
-    - 3.0.0-pre.6
-    - 3.0.1
-    - 3.0.2
-    - 3.1.0
-    - 3.2.1
-    - 3.2.2
-    - 3.2.3
-    - 4.0.0
-    - 4.0.3
-    - 4.1.0
-    - 4.1.1
-    - 4.1.2
-    - 4.1.3
-    - 4.1.4
-    - 4.1.5
-    - 4.2.0-pre.1
-    - 4.2.0-pre.2
-    - 4.2.1
-    - 4.3.0
-    - 4.4.0
-    - 4.4.1
-    - 4.5.0
-    - 4.5.1
-    - 4.5.2
-    - 4.6.0
-    - 4.7.0
-    - 4.8.0
-    - 4.9.2
-    - 4.9.3
-    - 4.9.4
-    - 4.10.0
-    - 4.11.0
-    - 4.12.0
-    - 4.12.1-pre.1
-    - 4.12.1-pre.3
-    - 4.12.1-pre.4
-    - 4.12.1
-    - 4.12.2
-    - 4.13.0
-    - 4.13.1
-    - 4.13.2
-    - 4.14.0
-    - 4.14.1
-    - 4.14.2
-    - 4.15.0-pre.1
-    - 4.15.0-pre.2
-    - 4.15.0
-    - 4.15.1
-    - 5.0.0-pre.1
-    - 5.0.0-pre.3
-    - 5.0.0-pre.4
-    - 5.0.0-pre.5
-    - 5.0.0-pre.6
-    - 5.0.0-pre.7
-    - 5.0.0-pre.8
-    - 5.0.0
-    - 5.0.1
-    - 5.0.2
-    - 5.0.3
-    - 5.0.4
-    - 5.1.0
-    - 5.1.1
-    - 5.1.2
-    - 5.2.0-pre.1
-    - 5.2.0-pre.2
-    - 5.2.0
-    - 5.2.1
-    - 5.3.0
-    - 5.3.1
-    - 5.4.0
-    - 5.4.1
-    - 5.4.2
-    - 5.4.3
-    compatible:
-    - 4.11.0
-    - 4.12.0
-    - 4.12.1-pre.1
-    - 4.12.1-pre.3
-    - 4.12.1-pre.4
-    - 4.12.1
-    - 4.12.2
-    - 4.13.0
-    - 4.13.1
-    - 4.13.2
-    - 4.14.0
-    - 4.14.1
-    - 4.14.2
-    - 4.15.0-pre.1
-    - 4.15.0-pre.2
-    - 4.15.0
-    - 4.15.1
-    - 5.0.0-pre.1
-    - 5.0.0-pre.3
-    - 5.0.0-pre.4
-    - 5.0.0-pre.5
-    - 5.0.0-pre.6
-    - 5.0.0-pre.7
-    - 5.0.0-pre.8
-    - 5.0.0
-    - 5.0.1
-    - 5.0.2
-    - 5.0.3
-    - 5.0.4
-    - 5.1.0
-    - 5.1.1
-    - 5.1.2
-    - 5.2.0-pre.1
-    - 5.2.0-pre.2
-    - 5.2.0
-    - 5.2.1
-    - 5.3.0
-    - 5.3.1
-    - 5.4.0
-    - 5.4.1
-    - 5.4.2
-    - 5.4.3
-    recommended: 4.11.0
-    deprecated:
-    - 4.0.0
-    - 4.0.3
-    - 4.1.0
-    - 4.1.1
-    - 4.1.2
-    - 4.1.3
-    - 4.1.4
-    - 4.1.5
-    - 4.2.0-pre.1
-    - 4.2.0-pre.2
-    - 4.2.1
-    - 4.3.0
-    - 4.4.0
-    - 4.4.1
-    - 4.5.0
-    - 4.5.1
-    - 4.5.2
-    - 4.6.0
-    - 4.7.0
-    - 4.8.0
-    - 4.9.2
-    - 4.9.3
-    - 4.9.4
-    - 4.10.0
-    - 4.11.0
-    - 4.12.0
-    - 4.12.1-pre.1
-    - 4.12.1-pre.3
-    - 4.12.1-pre.4
-    - 4.12.1
-    - 4.12.2
-    - 4.13.0
-    - 4.13.1
-    - 4.13.2
-    - 4.14.0
-    - 4.14.1
-    - 4.14.2
-    - 4.15.0-pre.1
-    - 4.15.0-pre.2
-    - 4.15.0
-    - 4.15.1
-  dependencies:
-  - name: com.unity.ugui
-    version: 1.0.0
-  - name: com.unity.services.core
-    version: 1.8.2
-  - name: com.unity.modules.androidjni
-    version: 1.0.0
-  - name: com.unity.modules.jsonserialize
-    version: 1.0.0
-  - name: com.unity.modules.unitywebrequest
-    version: 1.0.0
-  resolvedDependencies:
-  - name: com.unity.ugui
-    version: 2.0.0
-  - name: com.unity.modules.ui
-    version: 1.0.0
-  - name: com.unity.modules.imgui
-    version: 1.0.0
-  - name: com.unity.services.core
-    version: 1.12.5
-  - name: com.unity.modules.androidjni
-    version: 1.0.0
-  - name: com.unity.nuget.newtonsoft-json
-    version: 3.2.1
-  - name: com.unity.modules.unitywebrequest
-    version: 1.0.0
-  - name: com.unity.modules.jsonserialize
-    version: 1.0.0
-  keywords:
-  - purchasing
-  - iap
-  - unity
-  registry:
-    id: main
-    name: 
-    url: https://packages.unity.com
-    scopes: []
-    isDefault: 1
-    capabilities: 7
-    configSource: 0
-  hideInEditor: 0
-  entitlements:
-    licensingModel: 1
-  isAssetStorePackage: 0
-  datePublishedTicks: 638457672620000000
-  documentationUrl: https://docs.unity3d.com/Packages/com.unity.purchasing@4.11/manual/index.html
-  hasRepository: 1
-  repository:
-    type: git
-    url: https://github.cds.internal.unity3d.com/unity/com.unity.purchasing.git
-    revision: d048512094268963253b336dd8eba44548759d38
-    path: 
-  unityLifecycle:
-    version: 4.11.0
-    nextVersion: 
-    recommendedVersion: 
-    isDeprecated: 0
-    deprecationMessage: 
-  isDeprecated: 1
-  deprecationMessage: Unity IAP 4 is unsupported as of June 8, 2026. IAP 5 is the
-    supported version going forward.
-  git:
-    hash: 
-    revision: 
-  upmReserved: '{"changelog":"### Added\n- GooglePlay - `IGooglePlayConfiguration.SetMaxConnectionAttempts(int
-    maxConnectionAttempts)` has been added to specify the max connection attempts
-    to the Google Play Store.\n- Apple - Added privacy manifest to comply with Apple''s
-    new privacy requirements. More details on how the Unity Engine supports this
-    can be found [here](https://forum.unity.com/threads/apple-privacy-manifest-updates-for-unity-engine.1529026/).\n-
-    Added `ConfigurationBuilder.logUnavailableProducts` to specify if unavailable
-    products should be logged.\n\n### Changed\n- GooglePlay - The default max connection
-    attempt to the Google Play Store has been increased from 1 to 3. See `IGooglePlayConfiguration.SetMaxConnectionAttempts`
-    to configure this to a different value.\n- Apple - The log when retrieving products
-    (SKProductsResponse) now also contains the invalid products count.\n- Improved
-    `IStoreListener.OnInitializeFailed` for `InitializationFailureReason.NoProductsAvailable`
-    by adding a message to clarify whether the store returned products or not.\n\n###
-    Fixed\n- GooglePlay - Fixed AndroidJavaObject not being disposed causing a global
-    reference table overflow in an edge case.\n- GooglePlay - Fixed bug causing BillingClient
-    duplication resulting in ANR.\n- Apple - Fixed isFamilyShareable on tvOS to be
-    only available on supported versions (14.0 and above).\n- Apple - Error codes
-    when a purchase fails now always returns the code from Apple instead of defaulting
-    to `SKErrorUnknown`.\n- Fixed Analytics'' transactionServer being null.","gameService":{"groupName":"Monetize","groupIndex":4,"configurePath":"Project/Services/In-App
-    Purchasing","genericDashboardUrl":"https://dashboard.unity3d.com/","projectDashboardUrl":"https://dashboard.unity3d.com/organizations/{0}/projects/{1}/analytics/v2/dashboards/revenue","projectDashboardUrlType":"OrganizationKeyAndProjectGuid"},"supportedPlatforms":["Android","iOS"]}'
+  upmReserved: '{"changelog":"Project generation:\n\n- Enable `Player` projects when
+    using `SDK-Style` project generation.\n- Allow customization of `nullable` when
+    using a `rsp` file.\n\nIntegration:\n\n- Fix Visual Studio Code version detection
+    for installations using the per-commit versioned resources layout."}'
   assetStore:
     productId: 
 - packageId: com.unity.test-framework@1.3.9
@@ -1481,12 +1171,12 @@ m_ResolvedPackages:
     so can be consumed later by Test runners to enrich data for run part."}'
   assetStore:
     productId: 
-- packageId: com.unity.timeline@1.8.6
+- packageId: com.unity.timeline@1.8.12
   testable: 0
   isDirectDependency: 1
-  version: 1.8.6
+  version: 1.8.12
   source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.timeline@1.8.6
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.timeline@1.8.12
   assetPath: Packages/com.unity.timeline
   name: com.unity.timeline
   displayName: Timeline
@@ -1495,7 +1185,7 @@ m_ResolvedPackages:
     email: 
     url: 
   category: 
-  type: assets
+  type: 
   description: Use Unity Timeline to create cinematic content, game-play sequences,
     audio sequences, and complex particle effects.
   errors: []
@@ -1640,13 +1330,13 @@ m_ResolvedPackages:
   entitlements:
     licensingModel: 1
   isAssetStorePackage: 0
-  datePublishedTicks: 638326112870000000
+  datePublishedTicks: 639096350260850000
   documentationUrl: https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/index.html
   hasRepository: 1
   repository:
     type: git
     url: https://github.cds.internal.unity3d.com/unity/com.unity.timeline.git
-    revision: 9b8cc7590b7d733181284f1a846a02406b5524d8
+    revision: ebb3d9b85ccc1dba717b152782ebb2c5251ac79e
     path: 
   unityLifecycle:
     version: 1.8.6
@@ -1659,14 +1349,8 @@ m_ResolvedPackages:
   git:
     hash: 
     revision: 
-  upmReserved: '{"changelog":"### Changed\n\n- In the `Create Asset` menu, the `Signal`
-    and `Timeline` items have been moved to the `Timeline` submenu.\n\n### Fixed\n\n-
-    Fixed issue where changing the name of a group track was not undoable ([TB-218](https://issuetracker.unity3d.com/issues/timeline-track-group-renaming-doesnt-go-into-the-undo-history)).\n-
-    Fixed issue where a warning would be logged in the console for `TrackAsset` ([TB-229](https://issuetracker.unity3d.com/product/unity/issues/guid/TB-229)).\n-
-    Fixed performance regression when rebuilding the playable graph.\n- Fixed a `MissingReferenceException`
-    when editing a Timeline that is an instance of a prefab and a bound `Animator`
-    is destroyed ([TB-222](https://issuetracker.unity3d.com/issues/timeline-missingreferenceexceptions-when-undoing-add-animator-from-timeline))\n-
-    Removed warnings due to obsolete analytics API."}'
+  upmReserved: '{"changelog":"### Fixed\n\n- Fix double clicking on TimelineAsset
+    or console log throwing an error on 6000.0 (UUM-136605)"}'
   assetStore:
     productId: 
 - packageId: com.unity.ugui@2.0.0
@@ -4866,6 +4550,7 @@ m_ResolvedPackages:
     - 1.18.0
     - 1.19.0
     - 1.20.0
+    - 1.20.1
     compatible:
     - 1.7.0
     - 1.8.0-pre.1
@@ -5493,127 +5178,6 @@ m_ResolvedPackages:
   upmReserved: '{"changelog":"- Fixing bug for InstanceID as struct changes"}'
   assetStore:
     productId: 
-- packageId: com.unity.services.core@1.12.5
-  testable: 0
-  isDirectDependency: 0
-  version: 1.12.5
-  source: 1
-  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.services.core@1.12.5
-  assetPath: Packages/com.unity.services.core
-  name: com.unity.services.core
-  displayName: Services Core
-  author:
-    name: 
-    email: 
-    url: 
-  category: 
-  type: assets
-  description: 'This package defines common components used by multiple Game Service
-    packages.
-
-    These are standardized and aim to unify the overall experience
-    of working with Game Services SDK.'
-  errors: []
-  versions:
-    all:
-    - 1.0.1
-    - 1.1.0-pre.7
-    - 1.1.0-pre.8
-    - 1.1.0-pre.9
-    - 1.1.0-pre.10
-    - 1.1.0-pre.11
-    - 1.1.0-pre.41
-    - 1.1.0-pre.69
-    - 1.2.0
-    - 1.3.1
-    - 1.3.2
-    - 1.4.0
-    - 1.4.1
-    - 1.4.2
-    - 1.4.3
-    - 1.5.2
-    - 1.6.0
-    - 1.7.0
-    - 1.7.1
-    - 1.8.1
-    - 1.8.2
-    - 1.9.0
-    - 1.10.1
-    - 1.11.0
-    - 1.12.0
-    - 1.12.1
-    - 1.12.2
-    - 1.12.4
-    - 1.12.5
-    - 1.13.0
-    - 1.14.0
-    - 1.15.1
-    - 1.15.2
-    - 1.16.0
-    - 1.17.0
-    - 1.18.0
-    compatible:
-    - 1.12.5
-    - 1.13.0
-    - 1.14.0
-    - 1.15.1
-    - 1.15.2
-    - 1.16.0
-    - 1.17.0
-    - 1.18.0
-    recommended: 1.12.5
-    deprecated: []
-  dependencies:
-  - name: com.unity.modules.androidjni
-    version: 1.0.0
-  - name: com.unity.nuget.newtonsoft-json
-    version: 3.2.1
-  - name: com.unity.modules.unitywebrequest
-    version: 1.0.0
-  resolvedDependencies:
-  - name: com.unity.modules.androidjni
-    version: 1.0.0
-  - name: com.unity.nuget.newtonsoft-json
-    version: 3.2.1
-  - name: com.unity.modules.unitywebrequest
-    version: 1.0.0
-  keywords: []
-  registry:
-    id: main
-    name: 
-    url: https://packages.unity.com
-    scopes: []
-    isDefault: 1
-    capabilities: 7
-    configSource: 0
-  hideInEditor: 1
-  entitlements:
-    licensingModel: 1
-  isAssetStorePackage: 0
-  datePublishedTicks: 638481576230000000
-  documentationUrl: https://docs.unity3d.com/Packages/com.unity.services.core@1.12/manual/index.html
-  hasRepository: 1
-  repository:
-    type: git
-    url: https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git
-    revision: 85f4cc67cb1ec043a92990cbe34002037e9948e4
-    path: 
-  unityLifecycle:
-    version: 1.12.5
-    nextVersion: 
-    recommendedVersion: 
-    isDeprecated: 0
-    deprecationMessage: 
-  isDeprecated: 0
-  deprecationMessage: 
-  git:
-    hash: 
-    revision: 
-  upmReserved: '{"changelog":"### Added\n\n- Apple privacy manifest file (PrivacyInfo.xcprivacy)\n\n###
-    Fixed\n\n- Fixed an issue with the optional `FEATURE_SERVICES_INSTANCES` preprocessor
-    define."}'
-  assetStore:
-    productId: 
 - packageId: com.unity.services.analytics@4.4.0
   testable: 0
   isDirectDependency: 0
@@ -5967,5 +5531,126 @@ m_ResolvedPackages:
     fields between Editor and Player due to `m_PoseProviderComponent`. That field
     and its type is now always included, not just when `ENABLE_AR` or `ENABLE_VR`
     are defined."}'
+  assetStore:
+    productId: 
+- packageId: com.unity.services.core@1.12.5
+  testable: 0
+  isDirectDependency: 0
+  version: 1.12.5
+  source: 1
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.services.core@1.12.5
+  assetPath: Packages/com.unity.services.core
+  name: com.unity.services.core
+  displayName: Services Core
+  author:
+    name: 
+    email: 
+    url: 
+  category: 
+  type: assets
+  description: 'This package defines common components used by multiple Game Service
+    packages.
+
+    These are standardized and aim to unify the overall experience
+    of working with Game Services SDK.'
+  errors: []
+  versions:
+    all:
+    - 1.0.1
+    - 1.1.0-pre.7
+    - 1.1.0-pre.8
+    - 1.1.0-pre.9
+    - 1.1.0-pre.10
+    - 1.1.0-pre.11
+    - 1.1.0-pre.41
+    - 1.1.0-pre.69
+    - 1.2.0
+    - 1.3.1
+    - 1.3.2
+    - 1.4.0
+    - 1.4.1
+    - 1.4.2
+    - 1.4.3
+    - 1.5.2
+    - 1.6.0
+    - 1.7.0
+    - 1.7.1
+    - 1.8.1
+    - 1.8.2
+    - 1.9.0
+    - 1.10.1
+    - 1.11.0
+    - 1.12.0
+    - 1.12.1
+    - 1.12.2
+    - 1.12.4
+    - 1.12.5
+    - 1.13.0
+    - 1.14.0
+    - 1.15.1
+    - 1.15.2
+    - 1.16.0
+    - 1.17.0
+    - 1.18.0
+    compatible:
+    - 1.12.5
+    - 1.13.0
+    - 1.14.0
+    - 1.15.1
+    - 1.15.2
+    - 1.16.0
+    - 1.17.0
+    - 1.18.0
+    recommended: 1.12.5
+    deprecated: []
+  dependencies:
+  - name: com.unity.modules.androidjni
+    version: 1.0.0
+  - name: com.unity.nuget.newtonsoft-json
+    version: 3.2.1
+  - name: com.unity.modules.unitywebrequest
+    version: 1.0.0
+  resolvedDependencies:
+  - name: com.unity.modules.androidjni
+    version: 1.0.0
+  - name: com.unity.nuget.newtonsoft-json
+    version: 3.2.1
+  - name: com.unity.modules.unitywebrequest
+    version: 1.0.0
+  keywords: []
+  registry:
+    id: main
+    name: 
+    url: https://packages.unity.com
+    scopes: []
+    isDefault: 1
+    capabilities: 7
+    configSource: 0
+  hideInEditor: 1
+  entitlements:
+    licensingModel: 1
+  isAssetStorePackage: 0
+  datePublishedTicks: 638481576230000000
+  documentationUrl: https://docs.unity3d.com/Packages/com.unity.services.core@1.12/manual/index.html
+  hasRepository: 1
+  repository:
+    type: git
+    url: https://github.cds.internal.unity3d.com/unity/operate-services-sdk.git
+    revision: 85f4cc67cb1ec043a92990cbe34002037e9948e4
+    path: 
+  unityLifecycle:
+    version: 1.12.5
+    nextVersion: 
+    recommendedVersion: 
+    isDeprecated: 0
+    deprecationMessage: 
+  isDeprecated: 0
+  deprecationMessage: 
+  git:
+    hash: 
+    revision: 
+  upmReserved: '{"changelog":"### Added\n\n- Apple privacy manifest file (PrivacyInfo.xcprivacy)\n\n###
+    Fixed\n\n- Fixed an issue with the optional `FEATURE_SERVICES_INSTANCES` preprocessor
+    define."}'
   assetStore:
     productId: 

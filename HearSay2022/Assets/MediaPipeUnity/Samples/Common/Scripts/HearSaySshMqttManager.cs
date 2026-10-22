@@ -59,6 +59,7 @@ public class HearSaySshMqttManager : MonoBehaviour
     private float lastRealDataTime = -999f;
 
     private SshMqttClient client;
+    private string lastLoggedStatus;
     private CancellationTokenSource cts;
 
     void Start()
@@ -82,12 +83,56 @@ public class HearSaySshMqttManager : MonoBehaviour
         client = new SshMqttClient(secrets);
         cts = new CancellationTokenSource();
 
+        _ = ProbeJumpHostAsync(jumpHost, jumpPort);
         _ = client.RunAsync(cts.Token);
+    }
+
+    // Diagnostic: plain TCP connect to the jump host, reading the SSH banner.
+    // Tells a network-level block apart from an SSH handshake problem.
+    static async Task ProbeJumpHostAsync(string host, int port)
+    {
+        try
+        {
+            var addresses = await System.Net.Dns.GetHostAddressesAsync(host);
+            Debug.Log($"HearSaySshMqttManager: probe DNS {host} -> {string.Join(", ", (object[])addresses)}");
+            foreach (var address in addresses)
+            {
+                using (var tcp = new System.Net.Sockets.TcpClient(address.AddressFamily))
+                {
+                    var connect = tcp.ConnectAsync(address, port);
+                    if (await Task.WhenAny(connect, Task.Delay(10000)) != connect)
+                    {
+                        Debug.Log($"HearSaySshMqttManager: probe TCP {address}:{port} TIMED OUT (network blocks it)");
+                        continue;
+                    }
+                    await connect;
+                    var buffer = new byte[64];
+                    var read = tcp.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                    string banner = await Task.WhenAny(read, Task.Delay(5000)) == read
+                        ? System.Text.Encoding.ASCII.GetString(buffer, 0, read.Result).Trim()
+                        : "(no banner within 5s)";
+                    Debug.Log($"HearSaySshMqttManager: probe TCP {address}:{port} OK, banner: {banner}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.Log($"HearSaySshMqttManager: probe failed: {ex}");
+        }
     }
 
     void Update()
     {
         if (client == null) return;
+
+        // Shows up in the Console and in `adb logcat -s Unity`.
+        string status = client.Status;
+        if (status != lastLoggedStatus)
+        {
+            Debug.Log($"HearSaySshMqttManager: {status}");
+            if (status.StartsWith("Disconnected")) Debug.Log($"HearSaySshMqttManager: detail {client.LastError}");
+            lastLoggedStatus = status;
+        }
 
         while (client.TryDequeue(out ReceivedMessage msg))
         {
