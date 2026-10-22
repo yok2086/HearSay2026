@@ -39,20 +39,33 @@ public class HearSaySshMqttManager : MonoBehaviour
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
         new System.Collections.Generic.Dictionary<string, string>
     {
-        { "HELLO", "hello" },
-        { "THANK_YOU", "thank_you" },
-        { "YES", "yes" },
-        { "NO", "no" },
-        { "HELP", "help" },
-        { "PLEASE", "please" },
+        { "hello", "hello" },
+        { "later", "later" },
+        { "i", "I" },
+        { "yes", "yes" },
+        { "no", "no" },
+        { "please", "please" },
+        { "thank", "thank" },
+        { "what", "what" },
+        { "eat", "eat" },
+        { "more", "more" },
+        { "go", "go" },
+        { "love", "love" },
+        { "happy", "happy" },
+        { "know", "know" },
+        { "ready", "ready" },
+        { "deaf", "deaf" },
+        { "you", "you" },
+        { "where", "where" },
+        { "sorry", "sorry" },
+        { "wait_notyet_", "wait_notyet_" }
     };
 
     private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
         new System.Collections.Generic.HashSet<string>
     {
-        "hello", "see_you_later", "i_me", "yes", "no", "help", "please", "thank_you",
-        "want", "what", "again_repeat", "eat_food", "more", "go_to", "bathroom",
-        "fine", "like", "learn", "sign", "finish_done",
+           "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
+    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
     };
 
     public float staleAfterSeconds = 10f;
