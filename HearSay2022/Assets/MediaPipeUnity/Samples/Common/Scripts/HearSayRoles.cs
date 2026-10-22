@@ -55,9 +55,14 @@ namespace HearSay
 
         private void Awake()
         {
-            DeafRole = false;
+            DeafRole = SceneManager.GetActiveScene().name == "HearSay Demo" &&
+                PlayerPrefs.GetInt("HearSay.VrRole", 0) == 1;
             const string currentDefault = "http://172.25.96.216:8080/status";
             address = PlayerPrefs.GetString("HearSay.Server", currentDefault);
+            if (SceneManager.GetActiveScene().name == "HearSay Demo" &&
+                Uri.TryCreate(address.Trim(), UriKind.Absolute, out var savedUri) &&
+                (savedUri.Scheme == "http" || savedUri.Scheme == "https"))
+                SessionServerUrl = new Uri(savedUri, "/status").AbsoluteUri;
             // One-time migration of the previous network's default; preserve custom addresses.
             if (!PlayerPrefs.HasKey("HearSay.ServerAddressMigrationV2"))
             {

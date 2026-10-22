@@ -52,13 +52,20 @@ namespace HearSay
                     (uri.Scheme == "http" || uri.Scheme == "https"))
                 {
                     PlayerPrefs.SetString("HearSay.Server", new System.Uri(uri, "/status").AbsoluteUri);
+                    PlayerPrefs.SetInt("HearSay.VRMode", 1);
                     PlayerPrefs.Save();
-                    SceneManager.LoadScene("HearSay VR Test");
+                    // Use the real Home scene so its layout and flow stay
+                    // identical; HearSayRoles adds the Cardboard adapter there.
+                    SceneManager.LoadScene("HearSay Start");
                 }
                 else message = "Enter a valid http:// server address.";
             }
             if (GUI.Button(new Rect(60, 430, 880, 70), "Open normal HearSay instead"))
+            {
+                PlayerPrefs.SetInt("HearSay.VRMode", 0);
+                PlayerPrefs.Save();
                 SceneManager.LoadScene("HearSay Start");
+            }
             GUI.Label(new Rect(60, 530, 880, 60), message);
             GUI.matrix = previous;
         }
