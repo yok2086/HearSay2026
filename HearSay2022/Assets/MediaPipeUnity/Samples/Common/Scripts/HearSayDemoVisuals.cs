@@ -50,7 +50,7 @@ namespace HearSay
 
         private void Start()
         {
-            if (HearSayVrDisplay.Active)
+            if (PlayerPrefs.HasKey("HearSay.Server"))
                 serverUrl = PlayerPrefs.GetString("HearSay.Server", serverUrl);
             if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
                 serverUrl = HearSayRoles.SessionServerUrl;

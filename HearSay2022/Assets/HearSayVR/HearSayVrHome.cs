@@ -26,7 +26,16 @@ namespace HearSay
             HearSayTheme.Card(new Rect(60, 205, 425, 220), HearSayTheme.Panel); HearSayTheme.Card(new Rect(505, 205, 435, 220), HearSayTheme.Panel);
             GUI.Label(new Rect(85, 222, 365, 45), "Deaf user", HearSayTheme.Label(30, Color.white)); GUI.Label(new Rect(85, 272, 365, 66), "Find the speaker and follow live captions.", HearSayTheme.Label(21, HearSayTheme.Muted));
             GUI.Label(new Rect(530, 222, 380, 45), "Conversation partner", HearSayTheme.Label(28, Color.white)); GUI.Label(new Rect(530, 272, 380, 66), "See sign-language translations in your surroundings.", HearSayTheme.Label(21, HearSayTheme.Muted));
-            if (HearSayTheme.Action(buttons[0], "Open live captions") || HearSayTheme.Action(buttons[1], "Open ASL translation")) SceneManager.LoadScene("HearSay Demo");
+            if (HearSayTheme.Action(buttons[0], "Open live captions"))
+            {
+                PlayerPrefs.SetInt("HearSay.VrRole", 1); PlayerPrefs.Save();
+                SceneManager.LoadScene("HearSay Demo");
+            }
+            if (HearSayTheme.Action(buttons[1], "Open ASL translation"))
+            {
+                PlayerPrefs.SetInt("HearSay.VrRole", 0); PlayerPrefs.Save();
+                SceneManager.LoadScene("HearSay Demo");
+            }
             HearSayTheme.Card(new Rect(60, 448, 310, 48), HearSayTheme.Panel);
             HearSayTheme.Card(new Rect(390, 448, 550, 48), HearSayTheme.Panel);
             GUI.Label(new Rect(60, 448, 310, 48), "Data monitor / teammate", HearSayTheme.Label(18, Color.white, TextAnchor.MiddleCenter));
