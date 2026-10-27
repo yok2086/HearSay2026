@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
 using UnityEngine.UI;
 using CardboardApi = Google.XR.Cardboard.Api;
 
@@ -43,7 +44,14 @@ namespace HearSay
             public bool enabled;
         }
 
-        private void Awake() { Active = true; }
+        private void Awake()
+        {
+            Active = true;
+            // Keep the Cardboard session alive when the VR Home loads the
+            // existing HearSay Demo scene. Normal scenes never create this
+            // adapter, so their phone layout remains unchanged.
+            DontDestroyOnLoad(gameObject);
+        }
 
         private IEnumerator Start()
         {
@@ -52,13 +60,29 @@ namespace HearSay
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             // Let the copied scene create its runtime captions and camera UI first.
             yield return null;
+            if (SceneManager.GetActiveScene().name == "Final VR HearSay")
+                gameObject.AddComponent<HearSayVrHomeCanvas>();
+#if UNITY_ANDROID && !UNITY_EDITOR
+            var xrManager = XRGeneralSettings.Instance != null ? XRGeneralSettings.Instance.Manager : null;
+            if (xrManager == null)
+            {
+                failure = "VR could not start: Unity XR manager is not configured.";
+                yield break;
+            }
+            yield return xrManager.InitializeLoader();
+#endif
             try
             {
+                if (SceneManager.GetActiveScene().name == "Final VR HearSay" && Camera.main != null)
+                {
+                    Camera.main.clearFlags = CameraClearFlags.SolidColor;
+                    Camera.main.backgroundColor = new Color(0.035f, 0.055f, 0.09f, 1f);
+                }
 #if UNITY_ANDROID && !UNITY_EDITOR
-                // A private loader avoids enabling XR on startup in the normal scenes.
-                loader = ScriptableObject.CreateInstance<Google.XR.Cardboard.XRLoader>();
-                if (!loader.Initialize() || !loader.Start())
-                    throw new InvalidOperationException("Cardboard could not start.");
+                // Use Unity's XR manager so Cardboard owns the camera pose and
+                // updates head tracking every frame.
+                if (xrManager.activeLoader == null) throw new InvalidOperationException("Cardboard XR loader did not initialize.");
+                xrManager.StartSubsystems();
                 var displays = new List<XRDisplaySubsystem>();
                 SubsystemManager.GetSubsystems(displays);
                 if (!displays.Exists(display => display.running))

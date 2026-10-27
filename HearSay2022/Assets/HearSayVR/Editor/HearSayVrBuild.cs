@@ -12,7 +12,7 @@ namespace HearSay.Editor
         public const string Original = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity";
         public const string NormalHome = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Start.unity";
         public const string VrScene = "Assets/HearSayVR/HearSay VR Test.unity";
-        public const string VrHome = "Assets/HearSayVR/HearSay VR Home.unity";
+        public const string VrHome = "Assets/HearSayVR/Final VR HearSay.unity";
         public const string SetupScene = "Assets/HearSayVR/HearSay VR Setup.unity";
 
         [MenuItem("HearSay/VR/Open VR setup")]
