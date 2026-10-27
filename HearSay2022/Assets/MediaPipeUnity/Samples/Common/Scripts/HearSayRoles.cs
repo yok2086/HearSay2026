@@ -15,6 +15,7 @@ namespace HearSay
         private string address;
         private string connection = "Waiting to connect";
         private string translation = "Waiting for a sign…";
+        public static string CurrentTranslation { get; private set; } = "Waiting for a sign…";
         private bool partner;
         private HearSayDataMonitor dataMonitor;
         private bool connectionExpanded;
@@ -55,8 +56,12 @@ namespace HearSay
 
         private void Awake()
         {
+            CurrentTranslation = "Waiting for a sign…";
             DeafRole = SceneManager.GetActiveScene().name == "HearSay Demo" &&
                 PlayerPrefs.GetInt("HearSay.VrRole", 0) == 1;
+            Debug.Log("HearSay role init: scene=" + SceneManager.GetActiveScene().name +
+                " savedRole=" + PlayerPrefs.GetInt("HearSay.VrRole", 0) +
+                " deafRole=" + DeafRole);
             const string currentDefault = "http://172.25.96.216:8080/status";
             address = PlayerPrefs.GetString("HearSay.Server", currentDefault);
             if (SceneManager.GetActiveScene().name == "HearSay Demo" &&
@@ -116,9 +121,26 @@ namespace HearSay
         private void Start()
         {
             if (resetServerUrl != null) return;
+            if (SceneManager.GetActiveScene().name == "HearSay Demo" && !DeafRole && !partner)
+                EnterPartnerRole();
             if (Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) &&
                 (uri.Scheme == "http" || uri.Scheme == "https"))
                 StartCoroutine(ResetServer(new Uri(uri, "/status").AbsoluteUri));
+        }
+
+        private void EnterPartnerRole()
+        {
+            partner = true;
+            partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
+            var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
+            if (handPrefab != null)
+            {
+                partnerHands = Instantiate(handPrefab, transform);
+                partnerHands.Initialize(partnerCamera);
+            }
+            else Debug.LogError("Partner hand tracking prefab is missing.");
+            partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
+            polling = StartCoroutine(PollSigns());
         }
 
         private IEnumerator ResetServer(string statusUrl)
@@ -204,18 +226,7 @@ namespace HearSay
                 }
                 if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") && SaveAddress())
                 {
-                    partner = true;
-                    partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
-                    var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
-                    if (handPrefab != null)
-                    {
-                        partnerHands = Instantiate(handPrefab, transform);
-                        partnerHands.Initialize(partnerCamera);
-                    }
-                    else Debug.LogError("Partner hand tracking prefab is missing.");
-                    // Ultra96 RESULT messages arrive over SSH + MQTT, alongside terminal commands over HTTP.
-                    partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
-                    polling = StartCoroutine(PollSigns());
+                    EnterPartnerRole();
                 }
                 if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
                 {
@@ -267,6 +278,7 @@ namespace HearSay
                     if (partnerMqtt != null) Destroy(partnerMqtt);
                     partner = false;
                     translation = "Waiting for a sign…";
+                    CurrentTranslation = translation;
                 }
                 if (partnerCamera != null && !string.IsNullOrEmpty(partnerCamera.Status))
                     GUI.Label(new Rect(60, 105, 880, 50), partnerCamera.Status, HearSayTheme.Label(20, Color.white));
@@ -337,6 +349,7 @@ namespace HearSay
                 else translation = connection == "SERVER: CONNECTED" ||
                     (partnerMqtt != null && partnerMqtt.ConnectionStatus == "Connected over SSH")
                     ? "Waiting for a sign…" : "Waiting for connection…";
+                CurrentTranslation = translation;
                 yield return new WaitForSecondsRealtime(0.25f);
             }
         }

@@ -44,7 +44,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/HearSayVR/Final VR HearSay.unity
     guid: f4ce58b719064a0bbabdd82ee8e49e73
-  - enabled: 0
+  - enabled: 1
     path: Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity
     guid: 9f092576ae9f4b43a65ae97942ff091b
   - enabled: 0

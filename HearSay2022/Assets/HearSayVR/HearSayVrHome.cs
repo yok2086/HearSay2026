@@ -10,7 +10,10 @@ namespace HearSay
         private Rect[] buttons;
         private void Start()
         {
-            buttons = new[] { new Rect(85, 350, 365, 54), new Rect(530, 350, 385, 54) };
+            // The cards are the interactive controls.  Restricting gaze to the
+            // label at the bottom made the options look selectable but made
+            // most of each card inert in Cardboard mode.
+            buttons = new[] { new Rect(60, 205, 425, 220), new Rect(505, 205, 435, 220) };
 #if UNITY_ANDROID && !UNITY_EDITOR
             var loader = ScriptableObject.CreateInstance<Google.XR.Cardboard.XRLoader>();
             loader.Initialize(); loader.Start();
@@ -26,12 +29,12 @@ namespace HearSay
             HearSayTheme.Card(new Rect(60, 205, 425, 220), HearSayTheme.Panel); HearSayTheme.Card(new Rect(505, 205, 435, 220), HearSayTheme.Panel);
             GUI.Label(new Rect(85, 222, 365, 45), "Deaf user", HearSayTheme.Label(30, Color.white)); GUI.Label(new Rect(85, 272, 365, 66), "Find the speaker and follow live captions.", HearSayTheme.Label(21, HearSayTheme.Muted));
             GUI.Label(new Rect(530, 222, 380, 45), "Conversation partner", HearSayTheme.Label(28, Color.white)); GUI.Label(new Rect(530, 272, 380, 66), "See sign-language translations in your surroundings.", HearSayTheme.Label(21, HearSayTheme.Muted));
-            if (HearSayTheme.Action(buttons[0], "Open live captions"))
+            if (HearSayTheme.Action(new Rect(85, 350, 365, 54), "Open live captions"))
             {
                 PlayerPrefs.SetInt("HearSay.VrRole", 1); PlayerPrefs.Save();
                 SceneManager.LoadScene("HearSay Demo");
             }
-            if (HearSayTheme.Action(buttons[1], "Open ASL translation"))
+            if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation"))
             {
                 PlayerPrefs.SetInt("HearSay.VrRole", 0); PlayerPrefs.Save();
                 SceneManager.LoadScene("HearSay Demo");
@@ -41,9 +44,16 @@ namespace HearSay
             GUI.Label(new Rect(60, 448, 310, 48), "Data monitor / teammate", HearSayTheme.Label(18, Color.white, TextAnchor.MiddleCenter));
             GUI.Label(new Rect(390, 448, 550, 48), "Connection settings   +", HearSayTheme.Label(19, Color.white, TextAnchor.MiddleCenter));
 #if UNITY_ANDROID && !UNITY_EDITOR
-            var gaze = GUI.matrix.inverse.MultiplyPoint3x4(new Vector3(Screen.width * .5f, Screen.height * .5f)); int next = -1; for (int i = 0; i < buttons.Length; i++) if (buttons[i].Contains(gaze)) next = i;
+            // GUI coordinates are in the scaled design space after GUI.matrix
+            // is applied; convert the physical screen centre explicitly.
+            var gaze = new Vector2(Screen.width / s * .5f, Screen.height / s * .5f); int next = -1; for (int i = 0; i < buttons.Length; i++) if (buttons[i].Contains(gaze)) next = i;
             if (next != target) { target = next; since = Time.unscaledTime; } GUI.Label(new Rect(gaze.x - 20, gaze.y - 20, 40, 40), "○", HearSayTheme.Label(34, HearSayTheme.Accent, TextAnchor.MiddleCenter));
-            if (target >= 0 && Time.unscaledTime - since > 3f) SceneManager.LoadScene("HearSay Demo");
+            if (target >= 0 && Time.unscaledTime - since > 2f)
+            {
+                PlayerPrefs.SetInt("HearSay.VrRole", target == 0 ? 1 : 0);
+                PlayerPrefs.Save();
+                SceneManager.LoadScene("HearSay Demo");
+            }
 #endif
             GUI.matrix = old;
         }

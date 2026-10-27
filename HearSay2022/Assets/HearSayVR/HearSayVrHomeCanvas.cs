@@ -11,6 +11,9 @@ namespace HearSay
         private Canvas canvas;
         private RectTransform deafButton;
         private RectTransform partnerButton;
+        private Transform reticleTransform;
+        private Quaternion cursorCalibration;
+        private bool cursorCalibrated;
         private float gazeSince = -1f;
         private int gazeTarget = -1;
 
@@ -26,11 +29,11 @@ namespace HearSay
             if (camera == null) return;
 
             var root = new GameObject("HearSay VR Home Canvas");
-            root.transform.SetParent(camera.transform, false);
-            // Shinecon/Cardboard lenses need a large, close virtual panel so the
-            // role choices fill each eye instead of appearing as a tiny card.
-            root.transform.localPosition = new Vector3(0f, 0f, 1.15f);
-            root.transform.localRotation = Quaternion.identity;
+            // Keep the panel in world space. If it is parented to the camera,
+            // tilting moves the buttons and gaze cursor together, so selection
+            // can never change.
+            root.transform.position = camera.transform.position + camera.transform.forward * 1.15f;
+            root.transform.rotation = camera.transform.rotation;
             root.transform.localScale = Vector3.one * 0.0022f;
             canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
@@ -40,9 +43,12 @@ namespace HearSay
             rect.sizeDelta = new Vector2(Width, Height);
             root.AddComponent<GraphicRaycaster>();
 
-            var reticle = AddText(root.transform, "○", 475, 295, 50, 50, 38,
-                new Color(.1f, .85f, .9f), TextAnchor.MiddleCenter);
-            reticle.name = "VR Gaze Reticle";
+            CreateCenteredReticle(camera);
+#if UNITY_ANDROID && !UNITY_EDITOR
+            Input.gyro.enabled = true;
+            cursorCalibration = Quaternion.Inverse(ConvertGyro(Input.gyro.attitude));
+            cursorCalibrated = true;
+#endif
 
             AddText(root.transform, "HEARSAY  /  CONNECTED CONVERSATIONS", 60, 28, 880, 32, 16, new Color(.1f, .85f, .9f));
             AddText(root.transform, "A clearer conversation.", 60, 70, 880, 65, 46, Color.white);
@@ -52,6 +58,24 @@ namespace HearSay
             partnerButton = AddButton(root.transform, "Conversation partner\n\nSee sign-language translations in your surroundings.\n\nOPEN ASL TRANSLATION", 505, 205, 435, 220, 28, () => OpenRole(0));
             AddText(root.transform, "Data monitor / teammate", 60, 448, 310, 48, 18, Color.white, TextAnchor.MiddleCenter);
             AddText(root.transform, "Connection settings   +", 390, 448, 550, 48, 19, Color.white, TextAnchor.MiddleCenter);
+        }
+
+        private void CreateCenteredReticle(Camera camera)
+        {
+            var root = new GameObject("VR Gaze Reticle");
+            reticleTransform = root.transform;
+            root.transform.position = camera.transform.position + camera.transform.forward * 1.05f;
+            root.transform.rotation = camera.transform.rotation;
+            root.transform.localScale = Vector3.one * 0.0022f;
+
+            var reticleCanvas = root.AddComponent<Canvas>();
+            reticleCanvas.renderMode = RenderMode.WorldSpace;
+            reticleCanvas.worldCamera = camera;
+            var rect = reticleCanvas.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(100f, 100f);
+            var reticle = AddText(root.transform, "○", 0f, 0f, 100f, 100f, 38,
+                new Color(.1f, .85f, .9f), TextAnchor.MiddleCenter);
+            reticle.rectTransform.pivot = new Vector2(0f, 1f);
         }
 
         private static Text AddText(Transform parent, string value, float x, float y, float w, float h, int size, Color color, TextAnchor anchor = TextAnchor.UpperLeft)
@@ -73,12 +97,46 @@ namespace HearSay
         private void Update()
         {
             if (canvas == null || Camera.main == null) return;
-            var screen = new Vector2(Screen.width * .5f, Screen.height * .5f);
+            if (reticleTransform == null)
+            {
+                CreateCenteredReticle(Camera.main);
+                if (reticleTransform == null) return;
+            }
+            UpdateReticlePosition();
+            Vector3 reticleScreen = Camera.main.WorldToScreenPoint(reticleTransform.position);
+            var screen = new Vector2(reticleScreen.x, reticleScreen.y);
             int next = -1;
             if (RectTransformUtility.RectangleContainsScreenPoint(deafButton, screen, Camera.main)) next = 0;
             else if (RectTransformUtility.RectangleContainsScreenPoint(partnerButton, screen, Camera.main)) next = 1;
             if (next != gazeTarget) { gazeTarget = next; gazeSince = Time.unscaledTime; }
-            if (gazeTarget >= 0 && Time.unscaledTime - gazeSince >= 3f) { gazeSince = float.PositiveInfinity; (gazeTarget == 0 ? deafButton : partnerButton).GetComponent<Button>().onClick.Invoke(); }
+            if (gazeTarget >= 0 && Time.unscaledTime - gazeSince >= 5f) { gazeSince = float.PositiveInfinity; (gazeTarget == 0 ? deafButton : partnerButton).GetComponent<Button>().onClick.Invoke(); }
+        }
+
+        private void UpdateReticlePosition()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!cursorCalibrated || reticleTransform == null) return;
+            Vector3 angles = (cursorCalibration * ConvertGyro(Input.gyro.attitude)).eulerAngles;
+            float yaw = NormalizeAngle(angles.y);
+            float pitch = NormalizeAngle(angles.x);
+            // Tilt moves the cursor over the fixed world-space menu.
+            float x = Mathf.Clamp(yaw / 35f, -1f, 1f) * 0.55f;
+            float y = Mathf.Clamp(-pitch / 25f, -1f, 1f) * 0.40f;
+            Camera camera = Camera.main;
+            reticleTransform.position = camera.transform.position + camera.transform.rotation * new Vector3(x, y, 1.05f);
+            reticleTransform.rotation = camera.transform.rotation;
+#endif
+        }
+
+        private static float NormalizeAngle(float angle)
+        {
+            if (angle > 180f) angle -= 360f;
+            return angle;
+        }
+
+        private static Quaternion ConvertGyro(Quaternion q)
+        {
+            return new Quaternion(q.x, q.y, -q.z, -q.w);
         }
 
         private static void OpenRole(int role)
