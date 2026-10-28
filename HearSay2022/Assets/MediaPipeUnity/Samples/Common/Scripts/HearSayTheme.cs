@@ -84,7 +84,24 @@ namespace HearSay
         {
             var old = GUI.backgroundColor;
             GUI.backgroundColor = Panel;
-            bool pressed = GUI.Button(rect, title, Button(size));
+            bool pressed;
+            if (HearSayVrSplitScreen.Active)
+            {
+                // Headset (VR scenes only): no touch, so look at a button to press it.
+                pressed = HearSayVrSplitScreen.GazeButton(rect, title, out bool focused, out float dwell);
+                var style = Button(size);
+                if (focused) style.normal.textColor = Accent;
+                GUI.Box(rect, title, style);
+                if (focused && dwell > 0f)
+                {
+                    var color = GUI.color;
+                    GUI.color = Accent;
+                    GUI.DrawTexture(new Rect(rect.x + 12f, rect.yMax - 8f, (rect.width - 24f) * dwell, 4f), Texture2D.whiteTexture);
+                    GUI.color = color;
+                }
+            }
+            else
+                pressed = GUI.Button(rect, title, Button(size));
             GUI.backgroundColor = old;
             return pressed;
         }

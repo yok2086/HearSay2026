@@ -242,7 +242,10 @@ namespace HearSay
         {
             if (captionText == null) return;
 
-            string cleaned = GetNewestCaption(transcript);
+            string cleaned = GetNewestCaption(RemoveNonSpeechTags(transcript));
+            // Whisper labels unclear audio as "[Music]", "(wind)", "[BLANK_AUDIO]" etc.
+            // Keep the last real caption instead of showing those labels.
+            if (cleaned.Length == 0 && transcript.Trim().Length > 0) return;
             LatestCaption = cleaned;
             if (showCaptionsOnlyForSpeaker && !SpeakerActivity.IsSpeaking)
             {
@@ -391,6 +394,13 @@ namespace HearSay
             }
 
             return new Vector2(normalizedPoint.x * Screen.width, (1f - normalizedPoint.y) * Screen.height);
+        }
+
+        private static string RemoveNonSpeechTags(string transcript)
+        {
+            if (string.IsNullOrEmpty(transcript)) return string.Empty;
+            string text = System.Text.RegularExpressions.Regex.Replace(transcript, @"\[[^\]]*\]|\([^)]*\)|\*[^*]*\*|[♪♫]", " ");
+            return System.Text.RegularExpressions.Regex.Replace(text, @"[ \t]+", " ").Trim();
         }
 
         private string GetNewestCaption(string transcript)
