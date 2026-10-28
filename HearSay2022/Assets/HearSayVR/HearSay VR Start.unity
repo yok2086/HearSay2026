@@ -83,8 +83,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c42dd5881b3b49f3b1c91893ac798956, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zoom: 1
-  lensOffsetPixels: 0
+  lensSeparationMm: 62
+  pictureWidthMm: 56
+  centreGapMm: 6
   degreesAcrossScreen: 90
   pointerSmoothing: 10
   dwellSeconds: 2

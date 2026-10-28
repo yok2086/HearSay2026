@@ -19,10 +19,12 @@ namespace HearSay
     {
         public const string VrStartScene = "HearSay VR Start";
 
-        [Tooltip("Size of each eye image relative to half the screen width (1 = touch the edges).")]
-        [Range(0.5f, 1.5f)] public float zoom = 1f;
-        [Tooltip("Pixels to move both eye images apart (+) or together (-) to line up with the lenses.")]
-        public float lensOffsetPixels = 0f;
+        [Tooltip("Distance between the centres of the two pictures, in mm. Match your headset's lens spacing (most phone headsets: 60-64 mm).")]
+        [Range(50f, 75f)] public float lensSeparationMm = 62f;
+        [Tooltip("Width of each picture, in mm (it is made smaller if it would not fit).")]
+        [Range(30f, 80f)] public float pictureWidthMm = 56f;
+        [Tooltip("Minimum black gap between the two pictures in the middle of the screen, in mm.")]
+        [Range(0f, 20f)] public float centreGapMm = 6f;
         [Tooltip("Degrees of head turn needed to pan across the whole screen.")]
         public float degreesAcrossScreen = 90f;
         [Tooltip("Pointer smoothing: higher follows the head faster, lower is steadier.")]
@@ -41,7 +43,7 @@ namespace HearSay
 
         private bool split = true;
         private RenderTexture frame;
-        private Texture2D ring, fill;
+        private Texture2D ring, ringOutline, fill;
         private Vector2 headOffset;          // gaze offset from screen centre, pixels, y up
         private int previousSleep;
         private string focusKey;
@@ -49,6 +51,7 @@ namespace HearSay
         private bool focusSeen, fired;
         private int tapFrame = -10;
         private float baseYaw;
+        private float settleUntil;
         private bool hasBaseline, recenter;
         private Vector2 editorLook;
 
@@ -60,8 +63,10 @@ namespace HearSay
             previousSleep = Screen.sleepTimeout;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             Input.gyro.enabled = true;
-            ring = MakeCircle(48, true);
-            fill = MakeCircle(48, false);
+            settleUntil = Time.unscaledTime + 1f;
+            ringOutline = MakeCircle(64, true, Color.white, 0.24f);
+            ring = MakeCircle(64, true, HearSayTheme.Accent, 0.16f);
+            fill = MakeCircle(64, false, HearSayTheme.Accent, 0f);
             StartCoroutine(Present());
         }
 
@@ -72,6 +77,7 @@ namespace HearSay
             Screen.sleepTimeout = previousSleep;
             if (frame != null) { frame.Release(); Destroy(frame); }
             if (ring != null) Destroy(ring);
+            if (ringOutline != null) Destroy(ringOutline);
             if (fill != null) Destroy(fill);
         }
 
@@ -100,6 +106,10 @@ namespace HearSay
                 // Absolute phone orientation (sensor fusion), so turning follows the
                 // head 1:1 without drift from adding up rotation speeds.
                 Quaternion q = Input.gyro.attitude;
+                // The sensor reports a blank (identity) orientation for a moment after
+                // start-up; never take "straight ahead" from that.
+                bool sensorReady = Mathf.Abs(q.w) < 0.9999f || q.x != 0f || q.y != 0f || q.z != 0f;
+                if (!sensorReady) settleUntil = Time.unscaledTime + 0.75f;
                 Quaternion phone = Quaternion.Euler(90f, 0f, 0f) * new Quaternion(q.x, q.y, -q.z, -q.w);
                 Vector3 f = phone * Vector3.forward; // where the rear camera points
                 float yaw = Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
@@ -107,8 +117,15 @@ namespace HearSay
                 // Up/down is measured from level: phone upright and facing straight
                 // ahead puts the pointer in the centre. Left/right is measured from
                 // the direction faced at start (or when re-centred with a tap).
-                if (!hasBaseline || recenter) { baseYaw = yaw; hasBaseline = true; recenter = false; }
+                // Keep re-centring until the sensor has settled for a moment after start-up.
+                if (!hasBaseline || recenter || Time.unscaledTime < settleUntil)
+                { baseYaw = yaw; hasBaseline = true; recenter = false; }
                 right = Mathf.DeltaAngle(baseYaw, yaw);
+                // Turning past the edge drags "straight ahead" along, so the pointer stays
+                // at the edge and comes straight back, instead of flipping to the other side.
+                float halfRange = degreesAcrossScreen * 0.5f;
+                if (right > halfRange) { baseYaw = Mathf.Repeat(yaw - halfRange + 180f, 360f) - 180f; right = halfRange; }
+                else if (right < -halfRange) { baseYaw = Mathf.Repeat(yaw + halfRange + 180f, 360f) - 180f; right = -halfRange; }
                 up = pitch;
             }
 #if UNITY_EDITOR
@@ -201,7 +218,17 @@ namespace HearSay
             RenderTexture.active = null;
             bool flip = SystemInfo.graphicsUVStartsAtTop != flipVertically;
             float halfW = w * 0.5f;
-            float eyeW = halfW * zoom, eyeH = eyeW * h / w, s = eyeW / w;
+            // Place the two pictures by real size on the screen so their centres sit
+            // under the headset's lenses, with a black gap between them.
+            float dpi = Screen.dpi > 50f ? Screen.dpi : 400f; // some phones report 0
+            float pxPerMm = dpi / 25.4f;
+            float halfSep = Mathf.Min(lensSeparationMm * 0.5f * pxPerMm, halfW * 0.9f);
+            float eyeW = pictureWidthMm * pxPerMm;
+            eyeW = Mathf.Min(eyeW, 2f * (halfSep - centreGapMm * 0.5f * pxPerMm)); // keep the middle gap
+            eyeW = Mathf.Min(eyeW, 2f * (halfW - halfSep));                         // stay on screen
+            float eyeH = eyeW * h / w;
+            if (eyeH > h) { eyeH = h; eyeW = eyeH * w / h; }
+            float s = eyeW / w;
 
             GL.PushMatrix();
             GL.Viewport(new Rect(0, 0, w, h));
@@ -211,7 +238,9 @@ namespace HearSay
                 // Each eye is clipped to its own half of the screen.
                 GL.Viewport(new Rect(eye * halfW, 0, halfW, h));
                 GL.LoadPixelMatrix(0, halfW, h, 0); // top-left origin, like OnGUI
-                float cx = halfW * 0.5f + (eye == 0 ? -lensOffsetPixels : lensOffsetPixels);
+                // Lens centre in this half's coordinates (left half: from its left edge,
+                // right half: from the middle of the screen).
+                float cx = eye == 0 ? halfW - halfSep : halfSep;
                 float cy = h * 0.5f;
                 // The picture stays fixed in each lens; only the pointer moves with the head.
                 var r = new Rect(cx - eyeW * 0.5f, cy - eyeH * 0.5f, eyeW, eyeH);
@@ -220,8 +249,10 @@ namespace HearSay
 
                 // Pointer: where the head is aimed, drawn at the same spot in both eyes.
                 float px = cx + headOffset.x * s, py = cy - headOffset.y * s;
-                float ringSize = Mathf.Max(18f, h * 0.035f);
-                Graphics.DrawTexture(new Rect(px - ringSize * 0.5f, py - ringSize * 0.5f, ringSize, ringSize), ring);
+                float ringSize = Mathf.Max(28f, eyeH * 0.09f);
+                var ringRect = new Rect(px - ringSize * 0.5f, py - ringSize * 0.5f, ringSize, ringSize);
+                Graphics.DrawTexture(ringRect, ringOutline); // white edge: visible on any background
+                Graphics.DrawTexture(ringRect, ring);
                 if (progress > 0f)
                 {
                     float f = ringSize * progress;
@@ -232,12 +263,13 @@ namespace HearSay
             GL.PopMatrix();
         }
 
-        private static Texture2D MakeCircle(int size, bool outline)
+        // thickness: ring width as a fraction of the size (outline only).
+        private static Texture2D MakeCircle(int size, bool outline, Color color, float thickness)
         {
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
             var pixels = new Color[size * size];
-            float c = (size - 1) * 0.5f, outer = size * 0.5f - 1f, inner = outer - size * 0.14f;
-            Color accent = HearSayTheme.Accent;
+            float c = (size - 1) * 0.5f, outer = size * 0.5f - 1f, inner = outer - size * thickness;
+            Color accent = color;
             for (int y = 0; y < size; y++)
                 for (int x = 0; x < size; x++)
                 {
