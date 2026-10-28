@@ -23,6 +23,27 @@ namespace HearSay.Editor
                 EditorSceneManager.OpenScene(VrStart);
         }
 
+        // File > Build Settings: HearSay VR Start first (the app opens in VR), plus the
+        // scenes it loads. Other scenes stay listed but unticked. Use the normal list
+        // again with "Use normal scenes in Build Settings".
+        [MenuItem("HearSay/VR/Use VR scenes in Build Settings")]
+        public static void UseVrScenes() { SetBuildScenes(VrStart, Original, NormalHome); }
+
+        [MenuItem("HearSay/VR/Use normal scenes in Build Settings")]
+        public static void UseNormalScenes() { SetBuildScenes(NormalHome, Original); }
+
+        private static void SetBuildScenes(params string[] enabledInOrder)
+        {
+            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>();
+            foreach (var path in enabledInOrder) list.Add(new EditorBuildSettingsScene(path, true));
+            foreach (var scene in EditorBuildSettings.scenes)
+                if (System.Array.IndexOf(enabledInOrder, scene.path) < 0)
+                    list.Add(new EditorBuildSettingsScene(scene.path, false));
+            EditorBuildSettings.scenes = list.ToArray();
+            AssetDatabase.SaveAssets();
+            UnityEngine.Debug.Log("Build Settings scenes: " + string.Join(", ", enabledInOrder));
+        }
+
         [MenuItem("HearSay/VR/Open VR setup")]
         public static void Open()
         {

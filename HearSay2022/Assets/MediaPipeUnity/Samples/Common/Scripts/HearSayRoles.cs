@@ -23,6 +23,7 @@ namespace HearSay
         private HearSayPartnerCamera partnerCamera;
         private HearSayPartnerHands partnerHands;
         private HearSaySshMqttManager partnerMqtt;
+        private HearSayGloveCalibration calibration;
         private static string resetServerUrl;
         private bool resetInProgress;
         private const float TunnelTimeoutSeconds = 60f;
@@ -260,6 +261,11 @@ namespace HearSay
                         (resetServerUrl != null ? "Ready. Waiting for new terminal commands." : connection),
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
+            else if (calibration != null && calibration.IsOpen)
+            {
+                // "Calibrate glove" steps take over the ASL translation screen until closed.
+                calibration.Draw();
+            }
             else
             {
                 HearSayTheme.Card(new Rect(40, 30, 390, 65), HearSayTheme.Panel);
@@ -272,8 +278,14 @@ namespace HearSay
                 if (partnerMqtt != null) serverText += "  ·  Ultra96: " + partnerMqtt.ConnectionStatus;
                 GUI.Label(new Rect(185, 528, 630, 26), serverText,
                     HearSayTheme.Label(16, HearSayTheme.Muted, TextAnchor.MiddleCenter));
+                if (HearSayTheme.Action(new Rect(450, 38, 230, 50), "Calibrate glove", 19))
+                {
+                    if (calibration == null) calibration = gameObject.AddComponent<HearSayGloveCalibration>();
+                    calibration.Open(partnerMqtt);
+                }
                 if (HearSayTheme.Action(new Rect(350, 585, 300, 48), "Change role / connection", 19))
                 {
+                    if (calibration != null) Destroy(calibration);
                     if (polling != null) StopCoroutine(polling);
                     if (partnerHands != null) Destroy(partnerHands.gameObject);
                     if (partnerCamera != null) Destroy(partnerCamera);
