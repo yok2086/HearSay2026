@@ -197,12 +197,14 @@ namespace HearSay
                 GUI.Label(new Rect(85, 272, 365, 66), "Find the speaker and follow live captions.", HearSayTheme.Label(21, HearSayTheme.Muted));
                 GUI.Label(new Rect(530, 222, 380, 45), "Conversation partner", HearSayTheme.Label(28, Color.white));
                 GUI.Label(new Rect(530, 272, 380, 66), "See sign-language translations in your surroundings.", HearSayTheme.Label(21, HearSayTheme.Muted));
-                if (HearSayTheme.Action(new Rect(85, 350, 365, 54), "Open live captions") && SaveAddress())
+                if (HearSayTheme.Action(new Rect(85, 350, 365, 54), "Open live captions") &&
+                    (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
                     DeafRole = true;
                     SceneManager.LoadScene("HearSay Demo");
                 }
-                if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") && SaveAddress())
+                if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
+                    (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
                     partner = true;
                     partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
@@ -288,7 +290,9 @@ namespace HearSay
         public static void ReturnToSelector()
         {
             DeafRole = false;
-            SceneManager.LoadScene("HearSay Start");
+            // Stay in VR when the session started from the VR start scene.
+            SceneManager.LoadScene(HearSayVrSplitScreen.Instance != null
+                ? HearSayVrSplitScreen.VrStartScene : "HearSay Start");
         }
 
         // Shows whichever source changed most recently: a terminal command from the
