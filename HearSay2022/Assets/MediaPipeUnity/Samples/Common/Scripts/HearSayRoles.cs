@@ -12,11 +12,10 @@ namespace HearSay
     {
         public static bool DeafRole { get; private set; }
         public static string SessionServerUrl { get; private set; }
-        // Off = MQTT only: no /reset gate, no HTTP polling or reporting to HearSayDummyServer.py.
-        public static bool UseServer { get; private set; } = true;
         private string address;
         private string connection = "Waiting to connect";
         private string translation = "Waiting for a sign…";
+        public static string CurrentTranslation { get; private set; } = "Waiting for a sign…";
         private bool partner;
         private HearSayDataMonitor dataMonitor;
         private bool connectionExpanded;
@@ -58,8 +57,12 @@ namespace HearSay
 
         private void Awake()
         {
+            CurrentTranslation = "Waiting for a sign…";
             DeafRole = SceneManager.GetActiveScene().name == "HearSay Demo" &&
                 PlayerPrefs.GetInt("HearSay.VrRole", 0) == 1;
+            Debug.Log("HearSay role init: scene=" + SceneManager.GetActiveScene().name +
+                " savedRole=" + PlayerPrefs.GetInt("HearSay.VrRole", 0) +
+                " deafRole=" + DeafRole);
             const string currentDefault = "http://172.25.96.216:8080/status";
             address = PlayerPrefs.GetString("HearSay.Server", currentDefault);
             if (SceneManager.GetActiveScene().name == "HearSay Demo" &&
@@ -75,16 +78,10 @@ namespace HearSay
                 PlayerPrefs.SetInt("HearSay.ServerAddressMigrationV2", 1);
                 PlayerPrefs.Save();
             }
-            UseServer = PlayerPrefs.GetInt("HearSay.UseServer", 1) == 1;
         }
 
         private bool SaveAddress()
         {
-            if (!UseServer)
-            {
-                SessionServerUrl = null;
-                return true;
-            }
             if (HearSayLocalMqtt.IsMqtt(address.Trim()))
             {
                 if (!HearSayLocalMqtt.Valid(address.Trim()))
@@ -124,10 +121,27 @@ namespace HearSay
 
         private void Start()
         {
-            if (resetServerUrl != null || !UseServer) return;
+            if (resetServerUrl != null) return;
+            if (SceneManager.GetActiveScene().name == "HearSay Demo" && !DeafRole && !partner)
+                EnterPartnerRole();
             if (Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) &&
                 (uri.Scheme == "http" || uri.Scheme == "https"))
                 StartCoroutine(ResetServer(new Uri(uri, "/status").AbsoluteUri));
+        }
+
+        private void EnterPartnerRole()
+        {
+            partner = true;
+            partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
+            var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
+            if (handPrefab != null)
+            {
+                partnerHands = Instantiate(handPrefab, transform);
+                partnerHands.Initialize(partnerCamera);
+            }
+            else Debug.LogError("Partner hand tracking prefab is missing.");
+            partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
+            polling = StartCoroutine(PollSigns());
         }
 
         private IEnumerator ResetServer(string statusUrl)
@@ -215,21 +229,9 @@ namespace HearSay
                 if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
                     (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
-                    partner = true;
-                    partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
-                    var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
-                    if (handPrefab != null)
-                    {
-                        partnerHands = Instantiate(handPrefab, transform);
-                        partnerHands.Initialize(partnerCamera);
-                    }
-                    else Debug.LogError("Partner hand tracking prefab is missing.");
-                    // Ultra96 RESULT messages arrive over SSH + MQTT, alongside terminal commands over HTTP.
-                    partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
-                    partnerMqtt.receiveSound = false;   // mic direction is for the deaf user only
-                    polling = StartCoroutine(PollSigns());
+                    EnterPartnerRole();
                 }
-                if (UseServer && HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
+                if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
                 {
                     dataMonitor = gameObject.AddComponent<HearSayDataMonitor>();
                     dataMonitor.Initialize(SessionServerUrl);
@@ -250,22 +252,12 @@ namespace HearSay
                         address = "mqtt://127.0.0.1:1883/hearsay/demo/status";
                         connection = "Local MQTT demo; no HTTP reset required.";
                     }
-                    if (HearSayTheme.Action(new Rect(640, 503, 300, 30),
-                        UseServer ? "Dummy server: ON" : "Dummy server: OFF (MQTT only)", 15))
-                    {
-                        UseServer = !UseServer;
-                        PlayerPrefs.SetInt("HearSay.UseServer", UseServer ? 1 : 0);
-                        PlayerPrefs.Save();
-                        resetServerUrl = null;
-                        connection = UseServer ? "Dummy server on. Choose your role to connect." : "MQTT only. Choose your role.";
-                    }
                     address = GUI.TextField(new Rect(60, 539, 880, 46), address,
                         new GUIStyle(GUI.skin.textField) { fontSize = 22, padding = new RectOffset(16, 16, 10, 10) });
                     GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
                 }
                 else
-                    GUI.Label(new Rect(60, 520, 880, 45), !UseServer ? "MQTT only. Dummy server is off." :
-                        resetInProgress ? "Clearing previous commands…" :
+                    GUI.Label(new Rect(60, 520, 880, 45), resetInProgress ? "Clearing previous commands…" :
                         (resetServerUrl != null ? "Ready. Waiting for new terminal commands." : connection),
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
@@ -300,6 +292,7 @@ namespace HearSay
                     if (partnerMqtt != null) Destroy(partnerMqtt);
                     partner = false;
                     translation = "Waiting for a sign…";
+                    CurrentTranslation = translation;
                 }
                 if (partnerCamera != null && !string.IsNullOrEmpty(partnerCamera.Status))
                     GUI.Label(new Rect(60, 105, 880, 50), partnerCamera.Status, HearSayTheme.Label(20, Color.white));
@@ -335,9 +328,7 @@ namespace HearSay
             while (true)
             {
                 string httpWord = null;
-                if (SessionServerUrl == null) connection = "MQTT ONLY";
-                // HearSayStatusRequest also handles mqtt:// addresses (the "MQTT demo" button).
-                else using (var request = HearSayStatusRequest.Get(SessionServerUrl))
+                using (var request = UnityWebRequest.Get(SessionServerUrl))
                 {
                     request.timeout = 2;
                     yield return request.SendWebRequest();
@@ -374,6 +365,7 @@ namespace HearSay
                 else translation = connection == "SERVER: CONNECTED" ||
                     (partnerMqtt != null && partnerMqtt.ConnectionStatus == "Connected over SSH")
                     ? "Waiting for a sign…" : "Waiting for connection…";
+                CurrentTranslation = translation;
                 yield return new WaitForSecondsRealtime(0.25f);
             }
         }

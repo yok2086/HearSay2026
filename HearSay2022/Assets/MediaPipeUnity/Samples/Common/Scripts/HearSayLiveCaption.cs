@@ -17,6 +17,8 @@ namespace HearSay
     // Streams local Whisper transcription into a simple on-screen speech bubble.
     public class HearSayLiveCaption : MonoBehaviour
     {
+        public static string LatestCaption { get; private set; } = "";
+        public static bool MicrophoneRecording { get; private set; }
         [SerializeField] private WhisperManager whisper;
         [SerializeField] private MicrophoneRecord microphoneRecord;
         [SerializeField] private bool startOnlyWhenSpeakerDetected;
@@ -49,8 +51,31 @@ namespace HearSay
         private string pendingCaptionForTerminal;
         private string lastCaptionSentToTerminal;
 
+        private void Awake()
+        {
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "HearSay Demo" &&
+                PlayerPrefs.GetInt("HearSay.VrRole", 0) != 1)
+            {
+                // Do not even allow the Deaf-user Whisper UI to initialize in
+                // Conversation partner mode.
+                enabled = false;
+            }
+        }
+
         private void Start()
         {
+            // Live Whisper captions belong only to the Deaf-user role. The
+            // Conversation partner role has its own ASL translation UI and
+            // must not show the Deaf-user "Waiting for speaker" bubble.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "HearSay Demo" &&
+                PlayerPrefs.GetInt("HearSay.VrRole", 0) != 1)
+            {
+                Debug.Log("HearSay captions: disabled for Conversation partner role");
+                enabled = false;
+                return;
+            }
+            LatestCaption = "";
+            MicrophoneRecording = false;
             cameraPreviewScreen = FindFirstObjectByType<Mediapipe.Unity.Screen>();
             CreateSpeechBubble();
             bubble.SetActive(true);
@@ -123,6 +148,7 @@ namespace HearSay
 
                 stream.StartStream();
                 microphoneRecord.StartRecord();
+                MicrophoneRecording = microphoneRecord.IsRecording;
                 Debug.Log("HearSay captions: local Whisper microphone stream started.");
             }
             catch (Exception exception)
@@ -144,6 +170,7 @@ namespace HearSay
             }
             if (microphoneRecord != null && microphoneRecord.IsRecording)
                 microphoneRecord.StopRecord();
+            MicrophoneRecording = false;
             HearSayAudioActivity.SetVoiceDetected(false);
         }
 
@@ -206,6 +233,7 @@ namespace HearSay
                      Time.unscaledTime - lastSpeakerDetectedTime >= speakerLostDelay)
             {
                 microphoneRecord.StopRecord();
+                MicrophoneRecording = false;
                 captionText.text = "Waiting for speaker…";
             }
         }
@@ -218,6 +246,7 @@ namespace HearSay
             // Whisper labels unclear audio as "[Music]", "(wind)", "[BLANK_AUDIO]" etc.
             // Keep the last real caption instead of showing those labels.
             if (cleaned.Length == 0 && transcript.Trim().Length > 0) return;
+            LatestCaption = cleaned;
             if (showCaptionsOnlyForSpeaker && !SpeakerActivity.IsSpeaking)
             {
                 return;

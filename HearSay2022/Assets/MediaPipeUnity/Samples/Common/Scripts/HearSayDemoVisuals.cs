@@ -52,20 +52,14 @@ namespace HearSay
         {
             if (PlayerPrefs.HasKey("HearSay.Server"))
                 serverUrl = PlayerPrefs.GetString("HearSay.Server", serverUrl);
-            // MQTT-only mode (chosen on the start screen): no dummy server at all, so no
-            // HTTP tunnel, /speaker reports or /caption posts (captions still show locally).
-            bool httpServer = !HearSayRoles.DeafRole || HearSayRoles.UseServer;
             if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
                 serverUrl = HearSayRoles.SessionServerUrl;
-            ActiveServerUrl = httpServer ? serverUrl : null;
-            if (httpServer) HearSayRoles.EnsureTunnel(serverUrl);
+            ActiveServerUrl = serverUrl;
+            HearSayRoles.EnsureTunnel(serverUrl);
             CreateUi();
 
             if (useMqttInsteadOfHttp && sshMqttManager != null)
             {
-                // The deaf user gets the mic's left/right cue; glove ASL goes to the partner.
-                if (HearSayRoles.DeafRole) sshMqttManager.receiveAsl = false;
-
                 // Real data path: sshMqttManager already runs its own SSH+MQTT
                 // connection independently (see HearSaySshMqttManager.Start()).
                 // We just read its public fields every frame in Update() below -
@@ -73,12 +67,12 @@ namespace HearSay
                 serverHasResponded = true;
                 serverStatus = "SERVER: CONNECTING (MQTT)";
             }
-            else if (httpServer)
+            else
             {
                 StartCoroutine(PollServer());
             }
 
-            if (httpServer) StartCoroutine(ReportSpeakerStatus());
+            StartCoroutine(ReportSpeakerStatus());
         }
 
         private IEnumerator ReportSpeakerStatus()
@@ -126,8 +120,8 @@ namespace HearSay
                 nextRandomStateAt = Time.unscaledTime + Random.Range(3.5f, 6f);
             }
 
-            // The sound cue follows the mic alone: each LEFT/RIGHT event from mic_lr_01
-            // shows that side for soundCueDuration. Whisper captions run independently.
+            // The sound cue guides the user only until the existing speaker detector locks on.
+            var speakerDetected = SpeakerActivity.IsSpeaking;
             string direction = (status.soundDirection ?? "").Trim().ToLowerInvariant();
             bool newSound = status.soundActive &&
                 (!previousSoundActive || direction != previousSoundDirection ||
@@ -136,8 +130,9 @@ namespace HearSay
             previousSoundActive = status.soundActive;
             previousSoundDirection = direction;
             previousSoundEventId = status.soundEventId;
-            if (!status.soundActive) soundCueUntil = 0f;
-            SetSoundCueVisible(Time.unscaledTime < soundCueUntil);
+            // Consume the cue when a speaker is found; don't replay it on losing the face.
+            if (speakerDetected || !status.soundActive) soundCueUntil = 0f;
+            SetSoundCueVisible(status.soundActive && !speakerDetected && Time.unscaledTime < soundCueUntil);
             SetAslVisible(status.aslDetected && !HearSayRoles.DeafRole);
             UpdateCalibrationReadout();
         }
@@ -205,7 +200,7 @@ namespace HearSay
         {
             status.soundActive = sshMqttManager.soundActive;
             status.soundDirection = sshMqttManager.soundDirection;
-            status.soundEventId = sshMqttManager.lastSoundEventId;
+            status.soundEventId = sshMqttManager.lastResultEventId;
             status.aslDetected = sshMqttManager.aslDetected;
             status.aslWord = sshMqttManager.aslWord;
             status.aslConfidence = sshMqttManager.aslConfidence;

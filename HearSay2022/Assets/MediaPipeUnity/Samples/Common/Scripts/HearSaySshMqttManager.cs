@@ -33,25 +33,15 @@ public class HearSaySshMqttManager : MonoBehaviour
     // -------------------------------------------------------------------------------
 
     public string lastResultEventId = "";
-    public string lastSoundEventId = "";
-
-    [Header("Which streams this role consumes")]
-    [Tooltip("Glove TCN RESULTs (tele/<id>/result) - the conversation partner shows these.")]
-    public bool receiveAsl = true;
-    [Tooltip("Mic direction TELEMETRY from soundDeviceId - the deaf user's left/right cue.")]
-    public bool receiveSound = true;
-    public string soundDeviceId = "mic_lr_01";
 
     public string ConnectionStatus => client?.Status ?? "Not started";
 
-    // TCN labels (SIGNS in tcn_infer.py) -> display word. Anything not listed is dropped.
-    // Case-insensitive: the TCN sends "I" (capital) but the table key is "i".
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
-        new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        new System.Collections.Generic.Dictionary<string, string>
     {
         { "hello", "hello" },
         { "later", "later" },
-        { "I", "I" },
+        { "i", "I" },
         { "yes", "yes" },
         { "no", "no" },
         { "please", "please" },
@@ -71,9 +61,15 @@ public class HearSaySshMqttManager : MonoBehaviour
         { "wait_notyet_", "wait_notyet_" }
     };
 
+    private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
+        new System.Collections.Generic.HashSet<string>
+    {
+           "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
+    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
+    };
+
     public float staleAfterSeconds = 10f;
     private float lastRealDataTime = -999f;
-    private float lastSoundTime = -999f;
 
     private SshMqttClient client;
     private string lastLoggedStatus;
@@ -156,8 +152,12 @@ public class HearSaySshMqttManager : MonoBehaviour
             HandleMessage(msg);
         }
 
-        if (Time.time - lastRealDataTime > staleAfterSeconds) aslDetected = false;
-        if (Time.time - lastSoundTime > staleAfterSeconds) soundActive = false;
+        float ageSeconds = Time.time - lastRealDataTime;
+        if (ageSeconds > staleAfterSeconds)
+        {
+            aslDetected = false;
+            soundActive = false;
+        }
     }
 
     void HandleMessage(ReceivedMessage msg)
@@ -170,26 +170,11 @@ public class HearSaySshMqttManager : MonoBehaviour
             return;
         }
 
-    string type = payload["type"]?.ToString();
-     if (type == "TELEMETRY")
-     {
-        if (receiveSound && msg.ModelId == soundDeviceId) 
-            { 
-                HandleSoundDirection(payload);
-            } 
-            else 
-            {
-                StoreFlex(msg.ModelId, payload);
-            }
-        return;
-     }
-     if (type == "CALIBRATION_ACK") { StoreCalibration(msg.ModelId, payload); return; }
-     if (type == "RESULT" && receiveAsl) HandleAslResult(payload);
- }
+        string type = payload["type"]?.ToString();
+        if (type == "TELEMETRY") { StoreFlex(msg.ModelId, payload); return; }
+        if (type == "CALIBRATION_ACK") { StoreCalibration(msg.ModelId, payload); return; }
+        if (type != "RESULT") return;
 
-
-    void HandleAslResult(JObject payload)
-    {
         string rawEvent = payload["payload"]?["event"]?.ToString();
         float confidence = Mathf.Clamp01(payload["payload"]?["confidence"]?.ToObject<float>() ?? 0f);
 
@@ -199,25 +184,18 @@ public class HearSaySshMqttManager : MonoBehaviour
             return;
         }
 
+        string normalized = mappedWord.ToLowerInvariant().Trim().Replace("/", "_").Replace(" ", "_");
+        if (!AllowedWords.Contains(normalized))
+        {
+            Debug.LogWarning($"HearSaySshMqttManager: '{normalized}' not in allowed word list");
+            return;
+        }
+
         aslDetected = true;
-        aslWord = mappedWord;
+        aslWord = normalized;
         aslConfidence = confidence;
         lastResultEventId = payload["seq"]?.ToString() ?? System.Guid.NewGuid().ToString();
         lastRealDataTime = Time.time;
-    }
-
-    // firebeetle_LR sends one TELEMETRY per speech event with direction
-    // LEFT / RIGHT / FRONT / UNCERTAIN. Only LEFT and RIGHT drive the cue.
-    void HandleSoundDirection(JObject payload)
-    {
-        string direction = payload["payload"]?["direction"]?.ToString()?.Trim().ToLowerInvariant();
-        if (direction != "left" && direction != "right") return;
-
-        soundActive = true;
-        soundDirection = direction;
-        // A new id per event lets HearSayDemoVisuals replay the cue for repeat same-side sounds.
-        lastSoundEventId = payload["seq"]?.ToString() ?? System.Guid.NewGuid().ToString();
-        lastSoundTime = Time.time;
     }
 
     // ---------------- Glove calibration support ----------------
