@@ -12,8 +12,37 @@ namespace HearSay.Editor
         public const string Original = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity";
         public const string NormalHome = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Start.unity";
         public const string VrScene = "Assets/HearSayVR/HearSay VR Test.unity";
-        public const string VrHome = "Assets/HearSayVR/HearSay VR Home.unity";
+        public const string VrHome = "Assets/HearSayVR/Final VR HearSay.unity";
         public const string SetupScene = "Assets/HearSayVR/HearSay VR Setup.unity";
+        public const string VrStart = "Assets/HearSayVR/HearSay VR Start.unity";
+
+        [MenuItem("HearSay/VR/Open VR Start scene")]
+        public static void OpenVrStart()
+        {
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                EditorSceneManager.OpenScene(VrStart);
+        }
+
+        // File > Build Settings: HearSay VR Start first (the app opens in VR), plus the
+        // scenes it loads. Other scenes stay listed but unticked. Use the normal list
+        // again with "Use normal scenes in Build Settings".
+        [MenuItem("HearSay/VR/Use VR scenes in Build Settings")]
+        public static void UseVrScenes() { SetBuildScenes(VrStart, Original, NormalHome); }
+
+        [MenuItem("HearSay/VR/Use normal scenes in Build Settings")]
+        public static void UseNormalScenes() { SetBuildScenes(NormalHome, Original); }
+
+        private static void SetBuildScenes(params string[] enabledInOrder)
+        {
+            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>();
+            foreach (var path in enabledInOrder) list.Add(new EditorBuildSettingsScene(path, true));
+            foreach (var scene in EditorBuildSettings.scenes)
+                if (System.Array.IndexOf(enabledInOrder, scene.path) < 0)
+                    list.Add(new EditorBuildSettingsScene(scene.path, false));
+            EditorBuildSettings.scenes = list.ToArray();
+            AssetDatabase.SaveAssets();
+            UnityEngine.Debug.Log("Build Settings scenes: " + string.Join(", ", enabledInOrder));
+        }
 
         [MenuItem("HearSay/VR/Open VR setup")]
         public static void Open()
@@ -32,7 +61,17 @@ namespace HearSay.Editor
 
         public static void BuildBatch() { Build(Path.GetFullPath("Builds/HearSay-VR-Test.apk")); }
 
-        private static void Build(string path)
+        // Builds and installs/launches on the phone connected by USB (no dialogs).
+        [MenuItem("HearSay/VR/Build and run VR APK on phone")]
+        public static void BuildAndRun()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            Build(Path.GetFullPath("Builds/HearSay-VR-Test.apk"), BuildOptions.Development | BuildOptions.AutoRunPlayer);
+        }
+
+        private static void Build(string path) { Build(path, BuildOptions.Development); }
+
+        private static void Build(string path, BuildOptions buildOptions)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 throw new BuildFailedException("Switch the project to Android before building the VR test.");
@@ -46,13 +85,13 @@ namespace HearSay.Editor
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
-                    // The VR APK uses the real Home and Demo scenes. VR mode is
-                    // enabled by the setup screen at runtime, so their layouts
-                    // and behavior stay identical to the normal app.
-                    scenes = new[] { VrHome, Original },
+                    // Starts in HearSay VR Start (a copy of HearSay Start plus the
+                    // split-screen object), which carries the two-lens view into
+                    // HearSay Demo. The normal scenes themselves are unchanged.
+                    scenes = new[] { VrStart, Original, NormalHome },
                     locationPathName = path,
                     target = BuildTarget.Android,
-                    options = BuildOptions.Development
+                    options = buildOptions
                 });
                 if (report.summary.result != BuildResult.Succeeded)
                     throw new BuildFailedException("VR test build failed; inspect the first Console error.");

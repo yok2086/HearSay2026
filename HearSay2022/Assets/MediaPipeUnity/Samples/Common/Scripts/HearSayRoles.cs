@@ -15,6 +15,7 @@ namespace HearSay
         private string address;
         private string connection = "Waiting to connect";
         private string translation = "Waiting for a sign…";
+        public static string CurrentTranslation { get; private set; } = "Waiting for a sign…";
         private bool partner;
         private HearSayDataMonitor dataMonitor;
         private bool connectionExpanded;
@@ -22,6 +23,7 @@ namespace HearSay
         private HearSayPartnerCamera partnerCamera;
         private HearSayPartnerHands partnerHands;
         private HearSaySshMqttManager partnerMqtt;
+        private HearSayGloveCalibration calibration;
         private static string resetServerUrl;
         private bool resetInProgress;
         private const float TunnelTimeoutSeconds = 60f;
@@ -55,8 +57,12 @@ namespace HearSay
 
         private void Awake()
         {
+            CurrentTranslation = "Waiting for a sign…";
             DeafRole = SceneManager.GetActiveScene().name == "HearSay Demo" &&
                 PlayerPrefs.GetInt("HearSay.VrRole", 0) == 1;
+            Debug.Log("HearSay role init: scene=" + SceneManager.GetActiveScene().name +
+                " savedRole=" + PlayerPrefs.GetInt("HearSay.VrRole", 0) +
+                " deafRole=" + DeafRole);
             const string currentDefault = "http://172.25.96.216:8080/status";
             address = PlayerPrefs.GetString("HearSay.Server", currentDefault);
             if (SceneManager.GetActiveScene().name == "HearSay Demo" &&
@@ -116,9 +122,26 @@ namespace HearSay
         private void Start()
         {
             if (resetServerUrl != null) return;
+            if (SceneManager.GetActiveScene().name == "HearSay Demo" && !DeafRole && !partner)
+                EnterPartnerRole();
             if (Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) &&
                 (uri.Scheme == "http" || uri.Scheme == "https"))
                 StartCoroutine(ResetServer(new Uri(uri, "/status").AbsoluteUri));
+        }
+
+        private void EnterPartnerRole()
+        {
+            partner = true;
+            partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
+            var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
+            if (handPrefab != null)
+            {
+                partnerHands = Instantiate(handPrefab, transform);
+                partnerHands.Initialize(partnerCamera);
+            }
+            else Debug.LogError("Partner hand tracking prefab is missing.");
+            partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
+            polling = StartCoroutine(PollSigns());
         }
 
         private IEnumerator ResetServer(string statusUrl)
@@ -197,25 +220,16 @@ namespace HearSay
                 GUI.Label(new Rect(85, 272, 365, 66), "Find the speaker and follow live captions.", HearSayTheme.Label(21, HearSayTheme.Muted));
                 GUI.Label(new Rect(530, 222, 380, 45), "Conversation partner", HearSayTheme.Label(28, Color.white));
                 GUI.Label(new Rect(530, 272, 380, 66), "See sign-language translations in your surroundings.", HearSayTheme.Label(21, HearSayTheme.Muted));
-                if (HearSayTheme.Action(new Rect(85, 350, 365, 54), "Open live captions") && SaveAddress())
+                if (HearSayTheme.Action(new Rect(85, 350, 365, 54), "Open live captions") &&
+                    (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
                     DeafRole = true;
                     SceneManager.LoadScene("HearSay Demo");
                 }
-                if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") && SaveAddress())
+                if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
+                    (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
-                    partner = true;
-                    partnerCamera = gameObject.AddComponent<HearSayPartnerCamera>();
-                    var handPrefab = Resources.Load<HearSayPartnerHands>("HearSayPartnerHands");
-                    if (handPrefab != null)
-                    {
-                        partnerHands = Instantiate(handPrefab, transform);
-                        partnerHands.Initialize(partnerCamera);
-                    }
-                    else Debug.LogError("Partner hand tracking prefab is missing.");
-                    // Ultra96 RESULT messages arrive over SSH + MQTT, alongside terminal commands over HTTP.
-                    partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
-                    polling = StartCoroutine(PollSigns());
+                    EnterPartnerRole();
                 }
                 if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
                 {
@@ -247,6 +261,11 @@ namespace HearSay
                         (resetServerUrl != null ? "Ready. Waiting for new terminal commands." : connection),
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
+            else if (calibration != null && calibration.IsOpen)
+            {
+                // "Calibrate glove" steps take over the ASL translation screen until closed.
+                calibration.Draw();
+            }
             else
             {
                 HearSayTheme.Card(new Rect(40, 30, 390, 65), HearSayTheme.Panel);
@@ -259,14 +278,21 @@ namespace HearSay
                 if (partnerMqtt != null) serverText += "  ·  Ultra96: " + partnerMqtt.ConnectionStatus;
                 GUI.Label(new Rect(185, 528, 630, 26), serverText,
                     HearSayTheme.Label(16, HearSayTheme.Muted, TextAnchor.MiddleCenter));
+                if (HearSayTheme.Action(new Rect(450, 38, 230, 50), "Calibrate glove", 19))
+                {
+                    if (calibration == null) calibration = gameObject.AddComponent<HearSayGloveCalibration>();
+                    calibration.Open(partnerMqtt);
+                }
                 if (HearSayTheme.Action(new Rect(350, 585, 300, 48), "Change role / connection", 19))
                 {
+                    if (calibration != null) Destroy(calibration);
                     if (polling != null) StopCoroutine(polling);
                     if (partnerHands != null) Destroy(partnerHands.gameObject);
                     if (partnerCamera != null) Destroy(partnerCamera);
                     if (partnerMqtt != null) Destroy(partnerMqtt);
                     partner = false;
                     translation = "Waiting for a sign…";
+                    CurrentTranslation = translation;
                 }
                 if (partnerCamera != null && !string.IsNullOrEmpty(partnerCamera.Status))
                     GUI.Label(new Rect(60, 105, 880, 50), partnerCamera.Status, HearSayTheme.Label(20, Color.white));
@@ -288,7 +314,9 @@ namespace HearSay
         public static void ReturnToSelector()
         {
             DeafRole = false;
-            SceneManager.LoadScene("HearSay Start");
+            // Stay in VR when the session started from the VR start scene.
+            SceneManager.LoadScene(HearSayVrSplitScreen.Instance != null
+                ? HearSayVrSplitScreen.VrStartScene : "HearSay Start");
         }
 
         // Shows whichever source changed most recently: a terminal command from the
@@ -337,6 +365,7 @@ namespace HearSay
                 else translation = connection == "SERVER: CONNECTED" ||
                     (partnerMqtt != null && partnerMqtt.ConnectionStatus == "Connected over SSH")
                     ? "Waiting for a sign…" : "Waiting for connection…";
+                CurrentTranslation = translation;
                 yield return new WaitForSecondsRealtime(0.25f);
             }
         }

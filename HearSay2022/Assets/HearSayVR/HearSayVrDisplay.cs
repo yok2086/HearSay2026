@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
 using UnityEngine.UI;
 using CardboardApi = Google.XR.Cardboard.Api;
 
@@ -43,7 +44,15 @@ namespace HearSay
             public bool enabled;
         }
 
-        private void Awake() { Active = true; }
+        private void Awake()
+        {
+            Active = true;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            // Keep the Cardboard session alive when the VR Home loads the
+            // existing HearSay Demo scene. Normal scenes never create this
+            // adapter, so their phone layout remains unchanged.
+            DontDestroyOnLoad(gameObject);
+        }
 
         private IEnumerator Start()
         {
@@ -52,13 +61,47 @@ namespace HearSay
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             // Let the copied scene create its runtime captions and camera UI first.
             yield return null;
-            try
-            {
+            EnsureSceneOverlay(SceneManager.GetActiveScene().name);
 #if UNITY_ANDROID && !UNITY_EDITOR
-                // A private loader avoids enabling XR on startup in the normal scenes.
+            if (Camera.main != null && Camera.main.GetComponent<HearSayVrGyroFallback>() == null)
+                Camera.main.gameObject.AddComponent<HearSayVrGyroFallback>();
+            var xrManager = XRGeneralSettings.Instance != null ? XRGeneralSettings.Instance.Manager : null;
+            if (xrManager != null)
+            {
+                yield return xrManager.InitializeLoader();
+                if (xrManager.activeLoader == null)
+                {
+                    failure = "VR could not start: Cardboard XR loader did not initialize.";
+                    yield break;
+                }
+                xrManager.StartSubsystems();
+            }
+            else
+            {
+                // This project has no XRGeneralSettings asset wired into
+                // ProjectSettings, so use Cardboard's loader directly.
                 loader = ScriptableObject.CreateInstance<Google.XR.Cardboard.XRLoader>();
                 if (!loader.Initialize() || !loader.Start())
-                    throw new InvalidOperationException("Cardboard could not start.");
+                {
+                    failure = "VR could not start: Cardboard loader failed.";
+                    yield break;
+                }
+            }
+#endif
+            try
+            {
+                if (SceneManager.GetActiveScene().name == "Final VR HearSay" && Camera.main != null)
+                {
+                    Camera.main.clearFlags = CameraClearFlags.SolidColor;
+                    Camera.main.backgroundColor = new Color(0.035f, 0.055f, 0.09f, 1f);
+#if UNITY_ANDROID && !UNITY_EDITOR
+                    if (Camera.main.GetComponent<HearSayVrGyroFallback>() == null)
+                        Camera.main.gameObject.AddComponent<HearSayVrGyroFallback>();
+#endif
+                }
+#if UNITY_ANDROID && !UNITY_EDITOR
+                // Use Unity's XR manager so Cardboard owns the camera pose and
+                // updates head tracking every frame.
                 var displays = new List<XRDisplaySubsystem>();
                 SubsystemManager.GetSubsystems(displays);
                 if (!displays.Exists(display => display.running))
@@ -87,6 +130,19 @@ namespace HearSay
                 yield return new WaitForEndOfFrame();
                 RestoreCanvases();
             }
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            EnsureSceneOverlay(scene.name);
+        }
+
+        private void EnsureSceneOverlay(string sceneName)
+        {
+            if (sceneName == "Final VR HearSay" && GetComponent<HearSayVrHomeCanvas>() == null)
+                gameObject.AddComponent<HearSayVrHomeCanvas>();
+            else if (sceneName == "HearSay Demo" && GetComponent<HearSayVrRoleOverlay>() == null)
+                gameObject.AddComponent<HearSayVrRoleOverlay>();
         }
 
         private void CreateDisplay()
@@ -246,6 +302,7 @@ namespace HearSay
 
         private void OnDestroy()
         {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             ready = false;
             RestoreCanvases();
             StopLoader();

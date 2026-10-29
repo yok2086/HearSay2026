@@ -63,6 +63,7 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/2023.2.22f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/HearSayVR/HearSayVrHomeCanvas.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/UI/Scripts/ModalContents.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSaySoundWaves.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/AssetLoader.cs" />
@@ -121,9 +122,11 @@
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/HearSaySshMqttManager.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/EnumExtension.cs" />
     <Compile Include="Assets/MediaPipeUnity/Tutorial/Tasks/FaceLandmarkerRunner.cs" />
+    <Compile Include="Assets/HearSayVR/HearSayVrGyroFallback.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/Screen.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Detection/FaceDetectorRunner.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Scenes/Face Detection/FaceDetectionConfig.cs" />
+    <Compile Include="Assets/HearSayVR/HearSayVrRoleOverlay.cs" />
     <Compile Include="Assets/Samples/5 - Streaming/StreamingSampleMic.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/ImageSource/ImageSource.cs" />
     <Compile Include="Assets/MediaPipeUnity/Samples/Common/Scripts/WaitForResult.cs" />

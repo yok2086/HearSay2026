@@ -1,0 +1,3 @@
+# Large/generated files: copy models separately, rebuild on each machine.
+models/*.bin
+whisper.cpp/
