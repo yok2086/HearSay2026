@@ -46,7 +46,7 @@ public class HearSaySshMqttManager : MonoBehaviour
     {
         { "hello", "hello" },
         { "later", "later" },
-        { "i", "I" },
+        { "I", "I" },
         { "yes", "yes" },
         { "no", "no" },
         { "please", "please" },
