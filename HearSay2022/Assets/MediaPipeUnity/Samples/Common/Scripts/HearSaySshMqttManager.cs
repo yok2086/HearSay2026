@@ -46,19 +46,19 @@ public class HearSaySshMqttManager : MonoBehaviour
 
     // TCN labels (SIGNS in tcn_infer.py) -> display word. Anything not listed is dropped.
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
-        new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        new System.Collections.Generic.Dictionary<string, string>
     {
         { "hello", "hello" },
-        { "later", "see_you_later" },
-        { "I", "i_me" },
+        { "later", "later" },
+        { "i", "I" },
         { "yes", "yes" },
         { "no", "no" },
         { "please", "please" },
-        { "thank", "thank_you" },
+        { "thank", "thank" },
         { "what", "what" },
-        { "eat", "eat_food" },
+        { "eat", "eat" },
         { "more", "more" },
-        { "go", "go_to" },
+        { "go", "go" },
         { "love", "love" },
         { "happy", "happy" },
         { "know", "know" },
@@ -67,7 +67,14 @@ public class HearSaySshMqttManager : MonoBehaviour
         { "you", "you" },
         { "where", "where" },
         { "sorry", "sorry" },
-        { "wait_notyet_", "wait_not_yet" },
+        { "wait_notyet_", "wait_notyet_" }
+    };
+
+    private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
+        new System.Collections.Generic.HashSet<string>
+    {
+           "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
+    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
     };
 
     public float staleAfterSeconds = 10f;
@@ -169,10 +176,23 @@ public class HearSaySshMqttManager : MonoBehaviour
             return;
         }
 
-        string type = payload["type"]?.ToString();
-        if (type == "RESULT" && receiveAsl) HandleAslResult(payload);
-        else if (type == "TELEMETRY" && receiveSound && msg.ModelId == soundDeviceId) HandleSoundDirection(payload);
-    }
+    string type = payload["type"]?.ToString();
+     if (type == "TELEMETRY")
+     {
+        if (receiveSound && msg.ModelId == soundDeviceId) 
+            { 
+                HandleSoundDirection(payload);
+            } 
+            else 
+            {
+                StoreFlex(msg.ModelId, payload);
+            }
+        return;
+     }
+     if (type == "CALIBRATION_ACK") { StoreCalibration(msg.ModelId, payload); return; }
+     if (type == "RESULT" && receiveAsl) HandleAslResult(payload);
+ }
+
 
     void HandleAslResult(JObject payload)
     {
@@ -204,6 +224,82 @@ public class HearSaySshMqttManager : MonoBehaviour
         // A new id per event lets HearSayDemoVisuals replay the cue for repeat same-side sounds.
         lastSoundEventId = payload["seq"]?.ToString() ?? System.Guid.NewGuid().ToString();
         lastSoundTime = Time.time;
+    }
+
+    // ---------------- Glove calibration support ----------------
+    // Used by HearSayGloveCalibration ("Calibrate glove" on the ASL translation screen).
+
+    public static readonly string[] GloveIds = { "glove_01A", "glove_01B" };
+    public bool IsConnected => ConnectionStatus == "Connected over SSH";
+    public string LastCommandError { get; private set; }
+
+    readonly System.Collections.Generic.Dictionary<string, int[]> latestFlex =
+        new System.Collections.Generic.Dictionary<string, int[]>();
+    readonly System.Collections.Generic.Dictionary<string, float> latestFlexTime =
+        new System.Collections.Generic.Dictionary<string, float>();
+    readonly System.Collections.Generic.Dictionary<string, int[]> calibrationBaseline =
+        new System.Collections.Generic.Dictionary<string, int[]>();
+    readonly System.Collections.Generic.Dictionary<string, float> calibrationTime =
+        new System.Collections.Generic.Dictionary<string, float>();
+
+    void StoreFlex(string gloveId, JObject message)
+    {
+        var flex = message["payload"]?["flex"] as JArray;
+        if (flex == null || flex.Count != 5) return;
+        var values = new int[5];
+        for (int i = 0; i < 5; i++) values[i] = flex[i].Type == JTokenType.Integer ? (int)flex[i] : 0;
+        latestFlex[gloveId] = values;
+        latestFlexTime[gloveId] = Time.time;
+    }
+
+    void StoreCalibration(string gloveId, JObject message)
+    {
+        var baseline = message["payload"]?["flex_baseline"] as JArray;
+        var values = new int[5];
+        if (baseline != null)
+            for (int i = 0; i < Mathf.Min(5, baseline.Count); i++)
+                values[i] = baseline[i].Type == JTokenType.Integer ? (int)baseline[i] : 0;
+        calibrationBaseline[gloveId] = values;
+        calibrationTime[gloveId] = Time.time;
+        Debug.Log($"HearSaySshMqttManager: {gloveId} calibrated, baselines {string.Join(",", values)}");
+    }
+
+    /// Latest finger states (1 = bent, 0 = straight; thumb..pinky) if newer than maxAgeSeconds.
+    public bool TryGetFlex(string gloveId, float maxAgeSeconds, out int[] flex)
+    {
+        flex = null;
+        return latestFlexTime.TryGetValue(gloveId, out float t) && Time.time - t <= maxAgeSeconds &&
+               latestFlex.TryGetValue(gloveId, out flex);
+    }
+
+    /// True once the glove confirmed a calibration that happened after sinceTime.
+    public bool TryGetCalibration(string gloveId, float sinceTime, out int[] baseline)
+    {
+        baseline = null;
+        return calibrationTime.TryGetValue(gloveId, out float t) && t >= sinceTime &&
+               calibrationBaseline.TryGetValue(gloveId, out baseline);
+    }
+
+    /// Asks a glove to re-measure its straight-finger baselines (glove firmware: CALIBRATE).
+    public void RequestCalibration(string gloveId)
+    {
+        if (client == null) { LastCommandError = "Not connected"; return; }
+        string json = "{\"type\":\"CALIBRATE\",\"device_id\":\"phone\",\"payload\":{\"step\":\"open_hand\"}}";
+        _ = SendCommandAsync(gloveId, json);
+    }
+
+    async Task SendCommandAsync(string gloveId, string json)
+    {
+        try
+        {
+            await client.SendConfigAsync(gloveId, json, cts.Token);
+            LastCommandError = null;
+        }
+        catch (Exception ex)
+        {
+            LastCommandError = ex.Message;
+            Debug.LogWarning($"HearSaySshMqttManager: could not send CALIBRATE to {gloveId}: {ex.Message}");
+        }
     }
 
     void OnDestroy()

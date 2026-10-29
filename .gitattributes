@@ -71,6 +71,8 @@ Assets/Plugins/**           linguist-generated
 Packages/packages-lock.json linguist-generated
 
 # Unity LFS
+# Whisper model weights must be stored in LFS rather than ordinary Git blobs.
+HearSay2022/Assets/StreamingAssets/Whisper/*.bin filter=lfs diff=lfs merge=lfs -text
 *.cubemap               lfs
 *.unitypackage          lfs
 

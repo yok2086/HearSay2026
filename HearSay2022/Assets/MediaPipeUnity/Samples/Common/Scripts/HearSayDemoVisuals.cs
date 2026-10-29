@@ -50,6 +50,8 @@ namespace HearSay
 
         private void Start()
         {
+            if (PlayerPrefs.HasKey("HearSay.Server"))
+                serverUrl = PlayerPrefs.GetString("HearSay.Server", serverUrl);
             // MQTT-only mode (chosen on the start screen): no dummy server at all, so no
             // HTTP tunnel, /speaker reports or /caption posts (captions still show locally).
             bool httpServer = !HearSayRoles.DeafRole || HearSayRoles.UseServer;
@@ -81,6 +83,15 @@ namespace HearSay
 
         private IEnumerator ReportSpeakerStatus()
         {
+            if (HearSayLocalMqtt.IsMqtt(serverUrl))
+            {
+                while (true)
+                {
+                    _ = HearSayLocalMqtt.For(serverUrl).Report("speaker", SpeakerActivity.IsSpeaking
+                        ? "{\"detected\":true}" : "{\"detected\":false}");
+                    yield return new WaitForSecondsRealtime(0.5f);
+                }
+            }
             var endpoint = new System.Uri(new System.Uri(serverUrl), "/speaker").AbsoluteUri;
             while (true)
             {
@@ -146,10 +157,10 @@ namespace HearSay
         {
             while (true)
             {
-                using (var request = UnityWebRequest.Get(serverUrl))
+                using (var request = HearSayStatusRequest.Get(serverUrl))
                 {
                     request.timeout = 2;
-                    UnityWebRequestAsyncOperation operation = null;
+                    IEnumerator operation = null;
                     try
                     {
                         operation = request.SendWebRequest();
@@ -177,7 +188,7 @@ namespace HearSay
                         {
                             status = response;
                             serverHasResponded = true;
-                            serverStatus = "SERVER: CONNECTED";
+                            serverStatus = request.error ?? "SERVER: CONNECTED";
                         }
                     }
                     else if (operation != null)
