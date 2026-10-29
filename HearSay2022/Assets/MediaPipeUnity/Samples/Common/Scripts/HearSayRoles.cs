@@ -250,6 +250,15 @@ namespace HearSay
                         address = "mqtt://127.0.0.1:1883/hearsay/demo/status";
                         connection = "Local MQTT demo; no HTTP reset required.";
                     }
+                    if (HearSayTheme.Action(new Rect(640, 503, 300, 30),
+                        UseServer ? "Dummy server: ON" : "Dummy server: OFF (MQTT only)", 15))
+                    {
+                        UseServer = !UseServer;
+                        PlayerPrefs.SetInt("HearSay.UseServer", UseServer ? 1 : 0);
+                        PlayerPrefs.Save();
+                        resetServerUrl = null;
+                        connection = UseServer ? "Dummy server on. Choose your role to connect." : "MQTT only. Choose your role.";
+                    }
                     address = GUI.TextField(new Rect(60, 539, 880, 46), address,
                         new GUIStyle(GUI.skin.textField) { fontSize = 22, padding = new RectOffset(16, 16, 10, 10) });
                     GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
@@ -327,7 +336,8 @@ namespace HearSay
             {
                 string httpWord = null;
                 if (SessionServerUrl == null) connection = "MQTT ONLY";
-                else using (var request = UnityWebRequest.Get(SessionServerUrl))
+                // HearSayStatusRequest also handles mqtt:// addresses (the "MQTT demo" button).
+                else using (var request = HearSayStatusRequest.Get(SessionServerUrl))
                 {
                     request.timeout = 2;
                     yield return request.SendWebRequest();

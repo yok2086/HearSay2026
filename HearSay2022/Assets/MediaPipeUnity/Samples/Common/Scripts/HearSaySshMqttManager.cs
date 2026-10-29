@@ -45,12 +45,13 @@ public class HearSaySshMqttManager : MonoBehaviour
     public string ConnectionStatus => client?.Status ?? "Not started";
 
     // TCN labels (SIGNS in tcn_infer.py) -> display word. Anything not listed is dropped.
+    // Case-insensitive: the TCN sends "I" (capital) but the table key is "i".
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
-        new System.Collections.Generic.Dictionary<string, string>
+        new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "hello", "hello" },
         { "later", "later" },
-        { "i", "I" },
+        { "I", "I" },
         { "yes", "yes" },
         { "no", "no" },
         { "please", "please" },
@@ -68,13 +69,6 @@ public class HearSaySshMqttManager : MonoBehaviour
         { "where", "where" },
         { "sorry", "sorry" },
         { "wait_notyet_", "wait_notyet_" }
-    };
-
-    private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
-        new System.Collections.Generic.HashSet<string>
-    {
-           "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
-    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
     };
 
     public float staleAfterSeconds = 10f;
