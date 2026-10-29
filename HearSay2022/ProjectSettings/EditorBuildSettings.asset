@@ -41,10 +41,10 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Samples/Whisper Test/Whisper Test.unity
     guid: bc8f69bb2aad94ec7b159d0e7a3461cc
-  - enabled: 1
+  - enabled: 0
     path: Assets/HearSayVR/Final VR HearSay.unity
     guid: f4ce58b719064a0bbabdd82ee8e49e73
-  - enabled: 1
+  - enabled: 0
     path: Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity
     guid: 9f092576ae9f4b43a65ae97942ff091b
   - enabled: 0
