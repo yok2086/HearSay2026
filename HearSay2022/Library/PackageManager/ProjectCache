@@ -5,7 +5,11 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
+<<<<<<< HEAD
       ticks: 639281837700000000
+=======
+      ticks: 639281809780000000
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
     m_Hash: 770487021
   m_LockFileStatus:
     m_FilePath: /Users/NathanTan_1/HearSay2026/HearSay2022/Packages/packages-lock.json
@@ -13,7 +17,11 @@ m_ProjectFiles:
     m_ContentTrackingEnabled: 1
     m_ModificationDate:
       serializedVersion: 2
+<<<<<<< HEAD
       ticks: 639281837700000000
+=======
+      ticks: 639281833880000000
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
     m_Hash: 2555030040
 m_EmbeddedPackageManifests:
   m_ManifestsStatus:
@@ -130,7 +138,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 4.5.0
   source: 5
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.github-glitchenzo.nugetforunity@acc1c7bc9e
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.github-glitchenzo.nugetforunity@acc1c7bc9e
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.github-glitchenzo.nugetforunity
   name: com.github-glitchenzo.nugetforunity
   displayName: NuGetForUnity
@@ -407,7 +419,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 4.4.3
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.ads@4.4.3
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ads@4.4.3
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.ads
   name: com.unity.ads
   displayName: Advertisement Legacy
@@ -545,7 +561,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 2.0.6
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.ai.navigation@2.0.6
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ai.navigation@2.0.6
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.ai.navigation
   name: com.unity.ai.navigation
   displayName: AI Navigation
@@ -672,7 +692,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 3.8.2
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.analytics@3.8.2
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.analytics@3.8.2
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.analytics
   name: com.unity.analytics
   displayName: Analytics Library
@@ -795,7 +819,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 3.0.40
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.ide.rider@3.0.40
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.rider@3.0.40
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.ide.rider
   name: com.unity.ide.rider
   displayName: JetBrains Rider Editor
@@ -922,7 +950,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 2.0.28
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.ide.visualstudio@2.0.28
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.ide.visualstudio@2.0.28
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.ide.visualstudio
   name: com.unity.ide.visualstudio
   displayName: Visual Studio Editor
@@ -1176,7 +1208,11 @@ m_ResolvedPackages:
   isDirectDependency: 1
   version: 1.8.12
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.timeline@1.8.12
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.timeline@1.8.12
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.timeline
   name: com.unity.timeline
   displayName: Timeline
@@ -5538,7 +5574,11 @@ m_ResolvedPackages:
   isDirectDependency: 0
   version: 1.12.5
   source: 1
+<<<<<<< HEAD
   resolvedPath: /Users/NathanTan_1/HearSay2026/HearSay2022/Library/PackageCache/com.unity.services.core@1.12.5
+=======
+  resolvedPath: /Users/gyurim/HearSay2022/HearSay2022/Library/PackageCache/com.unity.services.core@1.12.5
+>>>>>>> f4b05e287c152cfcaa3be0945926ee45eefeb96a
   assetPath: Packages/com.unity.services.core
   name: com.unity.services.core
   displayName: Services Core

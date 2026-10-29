@@ -16,6 +16,10 @@ namespace HearSay
     {
         public static bool Active { get; private set; }
         [SerializeField] private Shader displayShader;
+        // The Home/Demo screens use OnGUI. In this mode Cardboard presents the
+        // original camera directly instead of replacing it with the Canvas-only
+        // compositor (which would make the Home screen black).
+        public bool preserveOriginalCamera = true;
         private Google.XR.Cardboard.XRLoader loader;
         private Camera captureCamera;
         private GameObject viewer;
@@ -60,15 +64,22 @@ namespace HearSay
                 if (!displays.Exists(display => display.running))
                     throw new InvalidOperationException("No running Cardboard display subsystem.");
 #endif
-                CreateDisplay();
+                if (!preserveOriginalCamera)
+                    CreateDisplay();
                 ready = true;
-                Debug.Log("HearSay VR: mono camera + existing UI sent to both eye views.");
+                Debug.Log(preserveOriginalCamera
+                    ? "HearSay VR: Cardboard enabled with the original HearSay camera/UI."
+                    : "HearSay VR: mono camera + existing UI sent to both eye views.");
             }
             catch (Exception e)
             {
                 failure = "VR could not start: " + e.Message;
                 Debug.LogException(e);
                 StopLoader();
+                // Never leave the app in a half-VR state. The original Home UI
+                // must remain visible even when Cardboard is unavailable.
+                Active = false;
+                ready = false;
             }
             while (ready)
             {
@@ -141,7 +152,11 @@ namespace HearSay
             if (!ready) return;
             CardboardApi.UpdateScreenParams();
             if (CardboardApi.IsCloseButtonPressed)
+            {
+                PlayerPrefs.SetInt("HearSay.VRMode", 0);
+                PlayerPrefs.Save();
                 SceneManager.LoadScene("HearSay Start");
+            }
             // Do not launch a QR camera while MediaPipe owns the rear camera.
             if (CardboardApi.IsGearButtonPressed)
             {
@@ -150,10 +165,10 @@ namespace HearSay
             }
 #endif
         }
-
+    
         private void LateUpdate()
         {
-            if (!ready) return;
+            if (!ready || preserveOriginalCamera) return;
             RestoreCanvases();
             if (Time.unscaledTime >= nextCanvasScan)
             {
@@ -203,6 +218,17 @@ namespace HearSay
 
         private void OnGUI()
         {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (failure == null && Active)
+            {
+                var old = GUI.color;
+                GUI.color = new Color(0.25f, 0.85f, 0.9f, 0.9f);
+                GUI.Label(new Rect(Screen.width * 0.5f - 24f, Screen.height * 0.5f - 24f,
+                    48f, 48f), "○", new GUIStyle(GUI.skin.label)
+                    { fontSize = 42, alignment = TextAnchor.MiddleCenter });
+                GUI.color = old;
+            }
+#endif
             if (failure == null) return;
             GUI.Box(new Rect(20, 20, Screen.width - 40, 150), failure);
             if (GUI.Button(new Rect(40, 95, 250, 55), "Return to normal HearSay"))

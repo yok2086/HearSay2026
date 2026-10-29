@@ -44,12 +44,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo.unity
     guid: 9f092576ae9f4b43a65ae97942ff091b
-  - enabled: 1
+  - enabled: 0
     path: Assets/HearSayVR/HearSay VR Setup.unity
     guid: c9f3964c01aa46ca8e3c8f13ae81571d
-  - enabled: 1
+  - enabled: 0
     path: Assets/HearSayVR/HearSay VR Test.unity
     guid: e87e6b0af0134e4982b1c107b9cf24ce
+  - enabled: 0
+    path: Assets/HearSayVR/HearSay VR Home.unity
+    guid: 8e8f9a0b1c2d3e4f5061728394a5b6c7
+  - enabled: 1
+    path: Assets/HearSayVR/HearSay VR Start.unity
+    guid: f44e6fb12b754a84a8829e950ab7430b
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: e9bc6ab490aab4db8914b661f96250e3, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: e6d7fab2f76ed42ccafe09e25a550afc, type: 2}
