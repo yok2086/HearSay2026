@@ -120,3 +120,11 @@ InitTestScene*.unity*
 **/secrets.h
 **/Secrets.h
 **/UnitySecrets.cs
+
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
