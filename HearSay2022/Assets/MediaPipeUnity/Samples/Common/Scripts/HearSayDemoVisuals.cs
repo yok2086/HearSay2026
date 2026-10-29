@@ -9,8 +9,8 @@ namespace HearSay
     public class HearSayDemoVisuals : MonoBehaviour
     {
         public static string ActiveServerUrl { get; private set; }
-        [Header("Dummy server")]
-        [SerializeField] private string serverUrl = "http://192.168.1.2:8080/status";
+        [Header("Optional local MQTT demo publisher (mqtt:// address); no HTTP server")]
+        [SerializeField] private string serverUrl = "";
         [SerializeField] private float pollIntervalSeconds = 0.25f;
         [SerializeField] private bool useRandomFallback = false;
         [SerializeField, Range(1f, 2f)] private float soundCueDuration = 1.5f;
@@ -50,12 +50,11 @@ namespace HearSay
 
         private void Start()
         {
-            if (PlayerPrefs.HasKey("HearSay.Server"))
-                serverUrl = PlayerPrefs.GetString("HearSay.Server", serverUrl);
-            if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
-                serverUrl = HearSayRoles.SessionServerUrl;
+            // There is no HTTP dummy server: the only optional source is the local MQTT demo
+            // publisher (an mqtt:// address chosen on the start screen).
+            string saved = PlayerPrefs.GetString("HearSay.Server", "").Trim();
+            serverUrl = HearSayLocalMqtt.Valid(saved) ? saved : null;
             ActiveServerUrl = serverUrl;
-            HearSayRoles.EnsureTunnel(serverUrl);
             CreateUi();
 
             if (useMqttInsteadOfHttp && sshMqttManager != null)
@@ -67,12 +66,12 @@ namespace HearSay
                 serverHasResponded = true;
                 serverStatus = "SERVER: CONNECTING (MQTT)";
             }
-            else
+            else if (serverUrl != null)
             {
                 StartCoroutine(PollServer());
             }
 
-            StartCoroutine(ReportSpeakerStatus());
+            if (serverUrl != null) StartCoroutine(ReportSpeakerStatus());
         }
 
         private IEnumerator ReportSpeakerStatus()
@@ -85,26 +84,6 @@ namespace HearSay
                         ? "{\"detected\":true}" : "{\"detected\":false}");
                     yield return new WaitForSecondsRealtime(0.5f);
                 }
-            }
-            var endpoint = new System.Uri(new System.Uri(serverUrl), "/speaker").AbsoluteUri;
-            while (true)
-            {
-                // A short heartbeat also restores the state after a server restart.
-                // The server prints only transitions, not every heartbeat.
-                var json = SpeakerActivity.IsSpeaking
-                    ? "{\"detected\":true}" : "{\"detected\":false}";
-                using (var request = new UnityWebRequest(endpoint, "POST"))
-                {
-                    request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
-                    request.downloadHandler = new DownloadHandlerBuffer();
-                    request.SetRequestHeader("Content-Type", "application/json");
-                    request.timeout = 2;
-                    UnityWebRequestAsyncOperation operation = null;
-                    try { operation = request.SendWebRequest(); }
-                    catch (System.Exception exception) { Debug.LogWarning("Speaker report: " + exception.Message); }
-                    if (operation != null) yield return operation;
-                }
-                yield return new WaitForSecondsRealtime(0.5f);
             }
         }
 
