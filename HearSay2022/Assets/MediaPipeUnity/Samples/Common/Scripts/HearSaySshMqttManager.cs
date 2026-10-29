@@ -34,6 +34,11 @@ public class HearSaySshMqttManager : MonoBehaviour
 
     public string lastResultEventId = "";
 
+    // ---- Mic direction (firebeetle_LR) -> deaf user's left/right sound waves ----
+    public string soundDeviceId = "mic_lr_01";
+    public string lastSoundEventId = "";
+    private float lastSoundTime = -999f;
+
     public string ConnectionStatus => client?.Status ?? "Not started";
 
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
@@ -156,6 +161,10 @@ public class HearSaySshMqttManager : MonoBehaviour
         if (ageSeconds > staleAfterSeconds)
         {
             aslDetected = false;
+        }
+        // The mic has its own timer so it isn't cleared just because no ASL result arrived.
+        if (Time.time - lastSoundTime > staleAfterSeconds)
+        {
             soundActive = false;
         }
     }
@@ -171,6 +180,7 @@ public class HearSaySshMqttManager : MonoBehaviour
         }
 
         string type = payload["type"]?.ToString();
+        if (type == "TELEMETRY" && msg.ModelId == soundDeviceId) { HandleSoundDirection(payload); return; }
         if (type == "TELEMETRY") { StoreFlex(msg.ModelId, payload); return; }
         if (type == "CALIBRATION_ACK") { StoreCalibration(msg.ModelId, payload); return; }
         if (type != "RESULT") return;
@@ -196,6 +206,20 @@ public class HearSaySshMqttManager : MonoBehaviour
         aslConfidence = confidence;
         lastResultEventId = payload["seq"]?.ToString() ?? System.Guid.NewGuid().ToString();
         lastRealDataTime = Time.time;
+    }
+
+    // firebeetle_LR sends one TELEMETRY per speech event with direction
+    // LEFT / RIGHT / FRONT / UNCERTAIN. Only LEFT and RIGHT drive the sound waves.
+    void HandleSoundDirection(JObject payload)
+    {
+        string direction = payload["payload"]?["direction"]?.ToString()?.Trim().ToLowerInvariant();
+        if (direction != "left" && direction != "right") return;
+
+        soundActive = true;
+        soundDirection = direction;
+        // A new id per event lets HearSayDemoVisuals replay the waves for repeat same-side sounds.
+        lastSoundEventId = payload["seq"]?.ToString() ?? System.Guid.NewGuid().ToString();
+        lastSoundTime = Time.time;
     }
 
     // ---------------- Glove calibration support ----------------

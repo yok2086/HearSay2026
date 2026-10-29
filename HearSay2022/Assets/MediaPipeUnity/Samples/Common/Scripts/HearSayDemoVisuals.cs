@@ -132,7 +132,9 @@ namespace HearSay
             previousSoundEventId = status.soundEventId;
             // Consume the cue when a speaker is found; don't replay it on losing the face.
             if (speakerDetected || !status.soundActive) soundCueUntil = 0f;
-            SetSoundCueVisible(status.soundActive && !speakerDetected && Time.unscaledTime < soundCueUntil);
+            // Sound waves (mic_lr_01 LEFT/RIGHT) are for the deaf user only; ASL is for the partner.
+            SetSoundCueVisible(HearSayRoles.DeafRole &&
+                status.soundActive && !speakerDetected && Time.unscaledTime < soundCueUntil);
             SetAslVisible(status.aslDetected && !HearSayRoles.DeafRole);
             UpdateCalibrationReadout();
         }
@@ -200,7 +202,7 @@ namespace HearSay
         {
             status.soundActive = sshMqttManager.soundActive;
             status.soundDirection = sshMqttManager.soundDirection;
-            status.soundEventId = sshMqttManager.lastResultEventId;
+            status.soundEventId = sshMqttManager.lastSoundEventId;
             status.aslDetected = sshMqttManager.aslDetected;
             status.aslWord = sshMqttManager.aslWord;
             status.aslConfidence = sshMqttManager.aslConfidence;
