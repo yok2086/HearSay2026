@@ -23,7 +23,7 @@ PubSubClient mqtt(sshClient);
 String sessionId = "sess_001";
 uint32_t seq = 0;
 bool isRunning = false;
-unsigned long sampleRateHz = 50;
+unsigned long sampleRateHz = 100;
 unsigned long lastSampleMs = 0;
 
 // Running totals, shown in the serial status line so you can see the real send rate
@@ -382,12 +382,17 @@ void mqttTask(void* param) {
 
     if (isRunning) {
       unsigned long intervalMs = 1000UL / sampleRateHz;
-      if (millis() - lastSampleMs >= intervalMs) {
-        lastSampleMs = millis();
+      unsigned long now = millis();
+      if (now - lastSampleMs >= intervalMs) {
+        // Step by the interval (not to "now") so loop/publish jitter doesn't
+        // stretch every period; resync only if we've fallen a whole period behind.
+        lastSampleMs += intervalMs;
+        if (now - lastSampleMs >= intervalMs) lastSampleMs = now;
         publishTelemetry();
       }
     }
-    vTaskDelay(pdMS_TO_TICKS(5));
+    // 1 ms tick: at 100 Hz the old 5 ms sleep alone ate half of each 10 ms period.
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 

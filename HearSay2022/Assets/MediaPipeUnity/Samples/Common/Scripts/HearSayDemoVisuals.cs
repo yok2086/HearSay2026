@@ -50,10 +50,13 @@ namespace HearSay
 
         private void Start()
         {
+            // MQTT-only mode (chosen on the start screen): no dummy server at all, so no
+            // HTTP tunnel, /speaker reports or /caption posts (captions still show locally).
+            bool httpServer = !HearSayRoles.DeafRole || HearSayRoles.UseServer;
             if (HearSayRoles.DeafRole && !string.IsNullOrEmpty(HearSayRoles.SessionServerUrl))
                 serverUrl = HearSayRoles.SessionServerUrl;
-            ActiveServerUrl = serverUrl;
-            HearSayRoles.EnsureTunnel(serverUrl);
+            ActiveServerUrl = httpServer ? serverUrl : null;
+            if (httpServer) HearSayRoles.EnsureTunnel(serverUrl);
             CreateUi();
 
             if (useMqttInsteadOfHttp && sshMqttManager != null)
@@ -68,12 +71,12 @@ namespace HearSay
                 serverHasResponded = true;
                 serverStatus = "SERVER: CONNECTING (MQTT)";
             }
-            else
+            else if (httpServer)
             {
                 StartCoroutine(PollServer());
             }
 
-            StartCoroutine(ReportSpeakerStatus());
+            if (httpServer) StartCoroutine(ReportSpeakerStatus());
         }
 
         private IEnumerator ReportSpeakerStatus()

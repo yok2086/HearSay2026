@@ -12,6 +12,8 @@ namespace HearSay
     {
         public static bool DeafRole { get; private set; }
         public static string SessionServerUrl { get; private set; }
+        // Off = MQTT only: no /reset gate, no HTTP polling or reporting to HearSayDummyServer.py.
+        public static bool UseServer { get; private set; } = true;
         private string address;
         private string connection = "Waiting to connect";
         private string translation = "Waiting for a sign…";
@@ -57,10 +59,16 @@ namespace HearSay
         {
             DeafRole = false;
             address = PlayerPrefs.GetString("HearSay.Server", "http://127.0.0.1:8080/status");
+            UseServer = PlayerPrefs.GetInt("HearSay.UseServer", 1) == 1;
         }
 
         private bool SaveAddress()
         {
+            if (!UseServer)
+            {
+                SessionServerUrl = null;
+                return true;
+            }
             if (!Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) ||
                 (uri.Scheme != "http" && uri.Scheme != "https"))
             {
@@ -82,7 +90,7 @@ namespace HearSay
 
         private void Start()
         {
-            if (resetServerUrl != null) return;
+            if (resetServerUrl != null || !UseServer) return;
             if (Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) &&
                 (uri.Scheme == "http" || uri.Scheme == "https"))
                 StartCoroutine(ResetServer(new Uri(uri, "/status").AbsoluteUri));
@@ -185,7 +193,7 @@ namespace HearSay
                     partnerMqtt.receiveSound = false;   // mic direction is for the deaf user only
                     polling = StartCoroutine(PollSigns());
                 }
-                if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
+                if (UseServer && HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
                 {
                     dataMonitor = gameObject.AddComponent<HearSayDataMonitor>();
                     dataMonitor.Initialize(SessionServerUrl);
@@ -195,13 +203,23 @@ namespace HearSay
                     connectionExpanded = !connectionExpanded;
                 if (connectionExpanded)
                 {
-                    GUI.Label(new Rect(60, 505, 880, 26), "SERVER ADDRESS  /  Same on both phones", HearSayTheme.Label(15, HearSayTheme.Muted));
+                    GUI.Label(new Rect(60, 505, 560, 26), "SERVER ADDRESS  /  Same on both phones", HearSayTheme.Label(15, HearSayTheme.Muted));
+                    if (HearSayTheme.Action(new Rect(640, 497, 300, 36),
+                        UseServer ? "Dummy server: ON" : "Dummy server: OFF (MQTT only)", 15))
+                    {
+                        UseServer = !UseServer;
+                        PlayerPrefs.SetInt("HearSay.UseServer", UseServer ? 1 : 0);
+                        PlayerPrefs.Save();
+                        resetServerUrl = null;
+                        connection = UseServer ? "Dummy server on. Choose your role to connect." : "MQTT only. Choose your role.";
+                    }
                     address = GUI.TextField(new Rect(60, 539, 880, 46), address,
                         new GUIStyle(GUI.skin.textField) { fontSize = 22, padding = new RectOffset(16, 16, 10, 10) });
                     GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
                 }
                 else
-                    GUI.Label(new Rect(60, 520, 880, 45), resetInProgress ? "Clearing previous commands…" :
+                    GUI.Label(new Rect(60, 520, 880, 45), !UseServer ? "MQTT only. Dummy server is off." :
+                        resetInProgress ? "Clearing previous commands…" :
                         (resetServerUrl != null ? "Ready. Waiting for new terminal commands." : connection),
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
@@ -258,7 +276,8 @@ namespace HearSay
             while (true)
             {
                 string httpWord = null;
-                using (var request = UnityWebRequest.Get(SessionServerUrl))
+                if (SessionServerUrl == null) connection = "MQTT ONLY";
+                else using (var request = UnityWebRequest.Get(SessionServerUrl))
                 {
                     request.timeout = 2;
                     yield return request.SendWebRequest();
