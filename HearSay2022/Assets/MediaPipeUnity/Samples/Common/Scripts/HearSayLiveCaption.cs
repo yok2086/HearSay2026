@@ -32,6 +32,16 @@ namespace HearSay
         [Header("Caption display")]
         [SerializeField] private int maximumCaptionCharacters = 76;
         [SerializeField] private Vector2 fixedBubbleSize = new Vector2(500f, 145f);
+        [Header("Speech recognition on the Ultra96")]
+        [Tooltip("On: send speech clips to the Whisper API on the Ultra96 (whisper_local/run_server.sh) " +
+                 "through the SSH tunnel; the phone never loads Whisper itself, so phones that can't run it work. " +
+                 "Off: run Whisper on the phone as before.")]
+        [SerializeField] private bool useUltra96Whisper = true;
+        [Tooltip("Connection to the Ultra96 (found automatically if empty).")]
+        [SerializeField] private HearSaySshMqttManager ultra96;
+        [Tooltip("A clip is sent when speech pauses for this long, or reaches the maximum length.")]
+        [SerializeField] private float pauseToSendSeconds = 0.7f;
+        [SerializeField] private float maxClipSeconds = 6f;
 
         private WhisperStream stream;
         private GameObject bubble;
@@ -140,8 +150,18 @@ namespace HearSay
 #endif
             Debug.Log("HearSay captions: microphone = " + microphoneRecord.SelectedMicDevice);
 
+            if (useUltra96Whisper)
+            {
+                StartRemoteCaptions();
+                isStartingWhisper = false;
+                return;
+            }
+
             try
             {
+                // The model is loaded only for on-phone captions (initOnAwake is off in the
+                // scene), so phones that cannot run Whisper never load it in Ultra96 mode.
+                if (!whisper.IsLoaded && !whisper.IsLoading) await whisper.InitModel();
                 stream = await whisper.CreateStream(microphoneRecord);
                 if (this == null || microphoneRecord == null) return;
                 stream.OnResultUpdated += ShowTranscript;
@@ -164,6 +184,7 @@ namespace HearSay
 
         private void OnDestroy()
         {
+            if (microphoneRecord != null) microphoneRecord.OnChunkReady -= OnRemoteChunk;
             if (stream != null)
             {
                 stream.OnResultUpdated -= ShowTranscript;
@@ -401,6 +422,128 @@ namespace HearSay
             if (string.IsNullOrEmpty(transcript)) return string.Empty;
             string text = System.Text.RegularExpressions.Regex.Replace(transcript, @"\[[^\]]*\]|\([^)]*\)|\*[^*]*\*|[♪♫]", " ");
             return System.Text.RegularExpressions.Regex.Replace(text, @"[ \t]+", " ").Trim();
+        }
+
+        // ---------------- Ultra96 Whisper API ----------------
+        // The phone records with the existing microphone + voice detection, cuts the
+        // speech into short clips (at a pause or after maxClipSeconds), sends each clip
+        // as a WAV to the Ultra96's whisper-server and shows the returned text.
+
+        private readonly System.Collections.Generic.List<float> clipSamples = new System.Collections.Generic.List<float>();
+        private float[] previousChunk;          // a little audio from before speech started
+        private float lastVoiceTime = -999f;
+        private int clipFrequency = 16000;
+        private bool requestInFlight;
+        private byte[] queuedClip;
+
+        [Serializable] private class WhisperApiReply { public string text; public string error; }
+
+        private void StartRemoteCaptions()
+        {
+            if (ultra96 == null) ultra96 = FindFirstObjectByType<HearSaySshMqttManager>();
+            microphoneRecord.OnChunkReady -= OnRemoteChunk;
+            microphoneRecord.OnChunkReady += OnRemoteChunk;
+            microphoneRecord.StartRecord();
+            captionText.text = ultra96 != null && ultra96.IsConnected ? "Listening…" : "Connecting to Ultra96…";
+            Debug.Log("HearSay captions: using Whisper on the Ultra96 (" + (ultra96 != null ? ultra96.ConnectionStatus : "no SSH manager in scene") + ")");
+        }
+
+        private void OnRemoteChunk(AudioChunk chunk)
+        {
+            clipFrequency = chunk.Frequency;
+            bool voice = chunk.IsVoiceDetected;
+            if (voice) lastVoiceTime = Time.unscaledTime;
+
+            bool inSpeech = Time.unscaledTime - lastVoiceTime < pauseToSendSeconds;
+            if (inSpeech)
+            {
+                if (clipSamples.Count == 0 && previousChunk != null) clipSamples.AddRange(previousChunk);
+                clipSamples.AddRange(chunk.Data);
+            }
+            previousChunk = chunk.Data;
+
+            float seconds = clipSamples.Count / (float)Mathf.Max(1, clipFrequency);
+            if ((!inSpeech && seconds >= 0.5f) || seconds >= maxClipSeconds)
+                SendClip();
+            else if (!inSpeech)
+                clipSamples.Clear();
+        }
+
+        private void SendClip()
+        {
+            if (clipSamples.Count == 0) return;
+            byte[] wav = EncodeWav(clipSamples.ToArray(), clipFrequency);
+            clipSamples.Clear();
+            if (requestInFlight) { queuedClip = wav; return; } // keep only the newest waiting clip
+            StartCoroutine(PostClip(wav));
+        }
+
+        private IEnumerator PostClip(byte[] wav)
+        {
+            requestInFlight = true;
+            string url = ultra96 != null ? ultra96.WhisperApiUrl : null;
+            if (url == null)
+            {
+                captionText.text = "Waiting for Ultra96 connection…\n" + (ultra96 != null ? ultra96.ConnectionStatus : "");
+            }
+            else
+            {
+                var form = new System.Collections.Generic.List<IMultipartFormSection>
+                {
+                    new MultipartFormFileSection("file", wav, "speech.wav", "audio/wav"),
+                    new MultipartFormDataSection("response_format", "json"),
+                    new MultipartFormDataSection("temperature", "0"),
+                };
+                using (var request = UnityWebRequest.Post(url, form))
+                {
+                    request.timeout = 30;
+                    yield return request.SendWebRequest();
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        WhisperApiReply reply = null;
+                        try { reply = JsonUtility.FromJson<WhisperApiReply>(request.downloadHandler.text); }
+                        catch (Exception e) { Debug.LogWarning("HearSay captions: bad reply from Ultra96: " + e.Message); }
+                        if (reply != null && !string.IsNullOrEmpty(reply.error))
+                            Debug.LogWarning("HearSay captions: Ultra96 Whisper error: " + reply.error);
+                        else if (reply != null && !string.IsNullOrEmpty(reply.text))
+                            ShowTranscript(reply.text.Trim());
+                    }
+                    else
+                    {
+                        Debug.LogWarning("HearSay captions: Ultra96 Whisper request failed: " + request.error);
+                        if (!hasTranscript)
+                            captionText.text = "Ultra96 Whisper not reachable.\nIs run_server.sh running on the Ultra96?";
+                    }
+                }
+            }
+            requestInFlight = false;
+            if (queuedClip != null)
+            {
+                byte[] next = queuedClip;
+                queuedClip = null;
+                StartCoroutine(PostClip(next));
+            }
+        }
+
+        // 16-bit PCM mono WAV, the format whisper-server expects (16 kHz).
+        private static byte[] EncodeWav(float[] samples, int frequency)
+        {
+            int dataBytes = samples.Length * 2;
+            var bytes = new byte[44 + dataBytes];
+            void Str(int at, string s) { for (int i = 0; i < 4; i++) bytes[at + i] = (byte)s[i]; }
+            void Int(int at, int v) { BitConverter.GetBytes(v).CopyTo(bytes, at); }
+            void Short(int at, short v) { BitConverter.GetBytes(v).CopyTo(bytes, at); }
+            Str(0, "RIFF"); Int(4, 36 + dataBytes); Str(8, "WAVE");
+            Str(12, "fmt "); Int(16, 16); Short(20, 1); Short(22, 1);
+            Int(24, frequency); Int(28, frequency * 2); Short(32, 2); Short(34, 16);
+            Str(36, "data"); Int(40, dataBytes);
+            for (int i = 0; i < samples.Length; i++)
+            {
+                short s = (short)(Mathf.Clamp(samples[i], -1f, 1f) * short.MaxValue);
+                bytes[44 + i * 2] = (byte)(s & 0xff);
+                bytes[45 + i * 2] = (byte)((s >> 8) & 0xff);
+            }
+            return bytes;
         }
 
         private string GetNewestCaption(string transcript)

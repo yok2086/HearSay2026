@@ -119,6 +119,12 @@ namespace CG4002.Comms
         public string LastError { get { lock (gate) return lastError; } }
         public long RejectedMessages { get { lock (gate) return rejected; } }
         public long DroppedMessages { get { lock (gate) return dropped; } }
+
+        // Whisper speech-to-text API on the Ultra96 (whisper_local/run_server.sh).
+        // Reached through the same SSH tunnel as MQTT; 0 while not connected.
+        public const int WhisperRemotePort = 8090;
+        int whisperLocalPort;
+        public int WhisperApiPort { get { lock (gate) return whisperLocalPort; } }
         public SshMqttClient(ConnectionSecrets settings) { settings.Validate(); secrets = settings; }
         void SetStatus(string text) { lock (gate) status = text; }
         public ReceivedMessage[] Snapshot()
@@ -175,9 +181,16 @@ namespace CG4002.Comms
                                 {
                                     await Task.Run(() => ultra.Connect(), cancellation).ConfigureAwait(false);
                                     using (var brokerPort = new ForwardedPortLocal("127.0.0.1", 0, "127.0.0.1", 1883))
+                                    using (var whisperPort = new ForwardedPortLocal("127.0.0.1", 0, "127.0.0.1", WhisperRemotePort))
                                     {
                                         ultra.AddForwardedPort(brokerPort); brokerPort.Start();
-                                        await ReceiveAsync(jump, ultra, (int)brokerPort.BoundPort, cancellation).ConfigureAwait(false);
+                                        ultra.AddForwardedPort(whisperPort); whisperPort.Start();
+                                        lock (gate) whisperLocalPort = (int)whisperPort.BoundPort;
+                                        try
+                                        {
+                                            await ReceiveAsync(jump, ultra, (int)brokerPort.BoundPort, cancellation).ConfigureAwait(false);
+                                        }
+                                        finally { lock (gate) whisperLocalPort = 0; }
                                     }
                                 }
                             }

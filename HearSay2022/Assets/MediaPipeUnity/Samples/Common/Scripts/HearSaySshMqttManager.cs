@@ -203,6 +203,17 @@ public class HearSaySshMqttManager : MonoBehaviour
 
     public static readonly string[] GloveIds = { "glove_01A", "glove_01B" };
     public bool IsConnected => ConnectionStatus == "Connected over SSH";
+
+    /// Whisper speech-to-text API on the Ultra96 (POST a WAV, get {"text": ...}),
+    /// reached through this SSH tunnel. Null while not connected.
+    public string WhisperApiUrl
+    {
+        get
+        {
+            int port = client != null ? client.WhisperApiPort : 0;
+            return IsConnected && port > 0 ? $"http://127.0.0.1:{port}/inference" : null;
+        }
+    }
     public string LastCommandError { get; private set; }
 
     readonly System.Collections.Generic.Dictionary<string, int[]> latestFlex =

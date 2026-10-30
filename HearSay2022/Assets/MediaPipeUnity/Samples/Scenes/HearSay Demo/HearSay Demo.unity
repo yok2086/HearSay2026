@@ -454,7 +454,7 @@ MonoBehaviour:
   logLevel: 2
   modelPath: Whisper/ggml-base.en.bin
   isModelPathInStreamingAssets: 1
-  initOnAwake: 1
+  initOnAwake: 0
   useGpu: 0
   flashAttention: 0
   language: en

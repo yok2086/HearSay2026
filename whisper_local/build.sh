@@ -12,7 +12,7 @@ SDL=OFF
 if [ "${1:-}" = "--with-mic" ]; then SDL=ON; fi
 cmake -S whisper.cpp -B whisper.cpp/build -DCMAKE_BUILD_TYPE=Release -DWHISPER_BUILD_TESTS=OFF -DWHISPER_SDL2=$SDL
 JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
-TARGETS="--target whisper-cli"
+TARGETS="--target whisper-cli --target whisper-server"
 [ "$SDL" = ON ] && TARGETS="$TARGETS --target whisper-stream"
 cmake --build whisper.cpp/build -j"$JOBS" --config Release $TARGETS
 echo
