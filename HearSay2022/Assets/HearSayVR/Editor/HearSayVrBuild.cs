@@ -83,6 +83,9 @@ namespace HearSay.Editor
                 PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, previousId + ".vrtest");
                 PlayerSettings.productName = "HearSay VR Test";
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
+                // 32-bit (ARMv7) and 64-bit phones. On ARMv7 the captions use the
+                // Ultra96 Whisper server and the camera hand tracking is not available.
+                PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64;
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     // Starts in HearSay VR Start (a copy of HearSay Start plus the

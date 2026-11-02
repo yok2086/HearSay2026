@@ -150,7 +150,9 @@ namespace HearSay
 #endif
             Debug.Log("HearSay captions: microphone = " + microphoneRecord.SelectedMicDevice);
 
-            if (useUltra96Whisper)
+            // 32-bit (ARMv7) phones have no on-phone Whisper library, so they always
+            // use the Ultra96 server.
+            if (useUltra96Whisper || IntPtr.Size == 4)
             {
                 StartRemoteCaptions();
                 isStartingWhisper = false;
