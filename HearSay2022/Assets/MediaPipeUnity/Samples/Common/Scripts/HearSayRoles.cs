@@ -266,6 +266,12 @@ namespace HearSay
                 // "Calibrate glove" steps take over the ASL translation screen until closed.
                 calibration.Draw();
             }
+            else if (partnerMqtt != null && partnerMqtt.IsConnected && !HearSayGloveCalibration.OfferedThisSession)
+            {
+                // First Ultra96 connection this session: offer the guided glove calibration.
+                if (calibration == null) calibration = gameObject.AddComponent<HearSayGloveCalibration>();
+                calibration.Open(partnerMqtt, automatic: true);
+            }
             else
             {
                 HearSayTheme.Card(new Rect(40, 30, 390, 65), HearSayTheme.Panel);

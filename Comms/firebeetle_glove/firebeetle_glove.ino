@@ -53,10 +53,20 @@ String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 #define FLEX5_PIN 33   // Pinky
 
 // ==================================================
-// VIBRATION MOTOR (unused - pin just held LOW so the motor stays off)
+// VIBRATION MOTOR (used only for the calibration steps)
 // ==================================================
 
 #define VIBRATION_PIN 26
+
+// pulses x onMs buzz, with gapMs between pulses. Blocks (calibration only).
+void vibrate(int pulses, int onMs, int gapMs = 150) {
+  for (int i = 0; i < pulses; i++) {
+    digitalWrite(VIBRATION_PIN, HIGH);
+    delay(onMs);
+    digitalWrite(VIBRATION_PIN, LOW);
+    if (i < pulses - 1) delay(gapMs);
+  }
+}
 
 // ==================================================
 // MPU6050 SCALE FACTORS
@@ -78,13 +88,17 @@ String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 // experimental flex-sensor testing. A finger counts as bent when its
 // reading rises at least this far above its own calibrated baseline.
 
-const int flexBendDelta[5] = {
+const int flexBendDeltaDefault[5] = {
   75,    // Flex 1 - Thumb
   140,   // Flex 2 - Index
   80,    // Flex 3 - Middle
   65,    // Flex 4 - Ring
   55     // Flex 5 - Pinky
 };
+
+// Thresholds in use. Start at the defaults; the app's guided calibration
+// replaces them with each wearer's own (halfway between straight and fist).
+int flexBendDelta[5] = {75, 140, 80, 65, 55};
 
 // 100 samples x 10 ms = approximately 1 second
 #define CALIBRATION_SAMPLES 100
@@ -151,6 +165,145 @@ void calibrateFlexSensors(bool waitForUser) {
   Serial.println("----------------------------------");
 }
 
+
+
+// ==================================================
+// GUIDED CALIBRATION (phone app "Calibrate glove")
+// ==================================================
+//
+// The app sends CALIBRATE on cmd/<id>/set with payload.step:
+//   "ready"    one short buzz,  wait settle_ms, check every sensor responds
+//   "straight" one short buzz,  wait settle_ms, measure straight readings
+//   "fist"     two short buzzes, wait settle_ms, measure bent readings
+//   "save"     one long buzz,   use the new baselines + thresholds
+//   "fail"     three short buzzes, keep the previous calibration
+// Each step answers CALIBRATION_ACK on cmd/<id>/ack with the readings and a
+// per-finger ok flag. Nothing changes for translation until "save".
+
+#define ADC_MIN_OK 20        // below this the sensor is probably unplugged
+#define ADC_MAX_OK 4075      // above this the sensor is probably shorted
+#define MAX_STILL_RANGE 250  // max spread while the hand is held still
+
+int pendingStraight[5];
+int pendingBent[5];
+bool haveStraight = false;
+bool haveBent = false;
+
+// About 1 s: average and spread (max - min) of each sensor.
+void measureFlex(int avg[5], int range[5]) {
+  const int pins[5] = {FLEX1_PIN, FLEX2_PIN, FLEX3_PIN, FLEX4_PIN, FLEX5_PIN};
+  long total[5] = {0, 0, 0, 0, 0};
+  int lo[5], hi[5];
+  for (int f = 0; f < 5; f++) { lo[f] = 4095; hi[f] = 0; }
+  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
+    for (int f = 0; f < 5; f++) {
+      int v = analogRead(pins[f]);
+      total[f] += v;
+      if (v < lo[f]) lo[f] = v;
+      if (v > hi[f]) hi[f] = v;
+    }
+    delay(10);
+  }
+  for (int f = 0; f < 5; f++) {
+    avg[f] = total[f] / CALIBRATION_SAMPLES;
+    range[f] = hi[f] - lo[f];
+  }
+}
+
+bool inAdcRange(int v) { return v >= ADC_MIN_OK && v <= ADC_MAX_OK; }
+
+void publishStepAck(const char* step, const int values[5], const bool ok[5]) {
+  bool allOk = true;
+  for (int f = 0; f < 5; f++) allOk = allOk && ok[f];
+
+  StaticJsonDocument<384> doc;
+  doc["type"] = "CALIBRATION_ACK";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+  JsonObject payload = doc.createNestedObject("payload");
+  payload["step"] = step;
+  payload["status"] = allOk ? "OK" : "FAIL";
+  JsonArray v = payload.createNestedArray("values");
+  JsonArray k = payload.createNestedArray("ok");
+  JsonArray b = payload.createNestedArray("flex_baseline");
+  for (int f = 0; f < 5; f++) {
+    v.add(values[f]);
+    k.add(ok[f] ? 1 : 0);
+    b.add(flexBaseline[f]);
+  }
+
+  char buf[384];
+  serializeJson(doc, buf);
+  mqtt.publish(topicCmdAck().c_str(), buf);
+  Serial.printf("Published CALIBRATION_ACK step=%s status=%s\n", step, allOk ? "OK" : "FAIL");
+}
+
+void runCalibrationStep(const String& step, int settleMs) {
+  int avg[5], range[5];
+  bool ok[5];
+
+  if (step == "ready") {
+    haveStraight = haveBent = false;
+    vibrate(1, 150);
+    delay(settleMs);
+    measureFlex(avg, range);
+    for (int f = 0; f < 5; f++) ok[f] = inAdcRange(avg[f]) && range[f] <= 2 * MAX_STILL_RANGE;
+    publishStepAck("ready", avg, ok);
+
+  } else if (step == "straight") {
+    vibrate(1, 150);
+    delay(settleMs);
+    measureFlex(avg, range);
+    for (int f = 0; f < 5; f++) {
+      ok[f] = inAdcRange(avg[f]) && range[f] <= MAX_STILL_RANGE;
+      pendingStraight[f] = avg[f];
+    }
+    haveStraight = true;
+    publishStepAck("straight", avg, ok);
+
+  } else if (step == "fist") {
+    vibrate(2, 150);
+    delay(settleMs);
+    measureFlex(avg, range);
+    for (int f = 0; f < 5; f++) {
+      // A fist must bend each finger clearly past its straight reading.
+      int bend = avg[f] - pendingStraight[f];
+      ok[f] = haveStraight && inAdcRange(avg[f]) && bend >= (flexBendDeltaDefault[f] * 6) / 10;
+      pendingBent[f] = avg[f];
+    }
+    haveBent = true;
+    publishStepAck("fist", avg, ok);
+
+  } else if (step == "save") {
+    for (int f = 0; f < 5; f++) ok[f] = haveStraight && haveBent;
+    if (haveStraight && haveBent) {
+      for (int f = 0; f < 5; f++) {
+        flexBaseline[f] = pendingStraight[f];
+        // Bent = halfway between this wearer's straight and fist readings,
+        // kept within 0.5x - 1.5x of the tested default.
+        int half = (pendingBent[f] - pendingStraight[f]) / 2;
+        flexBendDelta[f] = constrain(half, flexBendDeltaDefault[f] / 2, (flexBendDeltaDefault[f] * 3) / 2);
+      }
+      vibrate(1, 800);
+      Serial.print("Calibration saved. Baselines: ");
+      for (int f = 0; f < 5; f++) { Serial.print(flexBaseline[f]); Serial.print(" "); }
+      Serial.print(" Thresholds: ");
+      for (int f = 0; f < 5; f++) { Serial.print(flexBendDelta[f]); Serial.print(" "); }
+      Serial.println();
+    } else {
+      vibrate(3, 150);
+    }
+    publishStepAck("save", flexBendDelta, ok);
+
+  } else if (step == "fail") {
+    haveStraight = haveBent = false;
+    vibrate(3, 150);
+    for (int f = 0; f < 5; f++) ok[f] = false;
+    publishStepAck("fail", flexBaseline, ok);
+  }
+}
 
 
 // ==================================================
@@ -352,11 +505,18 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     Serial.println(sampleRateHz);
     publishConfigAck();
   } else if (type == "CALIBRATE") {
-    // Phone app: "hold your hand open, fingers straight" -> re-measure the
-    // straight-finger baseline now (about 1 s; telemetry pauses meanwhile).
-    Serial.println("Received CALIBRATE from app");
-    calibrateFlexSensors(false);
-    publishCalibrationAck();
+    String step = doc["payload"]["step"] | "open_hand";
+    int settleMs = constrain((int)(doc["payload"]["settle_ms"] | 2500), 0, 5000);
+    Serial.print("Received CALIBRATE from app, step=");
+    Serial.println(step);
+    if (step == "open_hand") {
+      // Older app versions: re-measure the straight baseline right away.
+      calibrateFlexSensors(false);
+      publishCalibrationAck();
+    } else {
+      // Guided calibration step (telemetry pauses for a few seconds meanwhile).
+      runCalibrationStep(step, settleMs);
+    }
   }
 }
 
@@ -446,6 +606,10 @@ void setup() {
   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
   mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
 
+  // ---- Vibration motor off (buzzes only during calibration steps) ----
+  pinMode(VIBRATION_PIN, OUTPUT);
+  digitalWrite(VIBRATION_PIN, LOW);
+
   // ---- Initialise flex sensor pins ----
   pinMode(FLEX1_PIN, INPUT);
   pinMode(FLEX2_PIN, INPUT);
@@ -469,10 +633,6 @@ void setup() {
   // and fingers straight for ~3 s after switching the glove on. The phone app's
   // "Calibrate glove" button can redo this at any time.
   calibrateFlexSensors(true);
-
-  // ---- Keep the vibration motor off ----
-  pinMode(VIBRATION_PIN, OUTPUT);
-  digitalWrite(VIBRATION_PIN, LOW);
 
   // ---- Network ----
   connectWiFi();

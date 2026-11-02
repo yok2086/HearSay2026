@@ -235,16 +235,67 @@ public class HearSaySshMqttManager : MonoBehaviour
         latestFlexTime[gloveId] = Time.time;
     }
 
+    static int[] ReadInts(JToken token)
+    {
+        var values = new int[5];
+        if (token is JArray array)
+            for (int i = 0; i < Mathf.Min(5, array.Count); i++)
+                values[i] = array[i].Type == JTokenType.Integer ? (int)array[i] : 0;
+        return values;
+    }
+
     void StoreCalibration(string gloveId, JObject message)
     {
-        var baseline = message["payload"]?["flex_baseline"] as JArray;
-        var values = new int[5];
-        if (baseline != null)
-            for (int i = 0; i < Mathf.Min(5, baseline.Count); i++)
-                values[i] = baseline[i].Type == JTokenType.Integer ? (int)baseline[i] : 0;
+        var payload = message["payload"];
+        var values = ReadInts(payload?["flex_baseline"]);
         calibrationBaseline[gloveId] = values;
         calibrationTime[gloveId] = Time.time;
-        Debug.Log($"HearSaySshMqttManager: {gloveId} calibrated, baselines {string.Join(",", values)}");
+
+        string step = payload?["step"]?.ToString();
+        if (!string.IsNullOrEmpty(step))
+        {
+            var okFlags = ReadInts(payload["ok"]);
+            var ack = new CalibrationStepAck
+            {
+                step = step,
+                values = ReadInts(payload["values"]),
+                ok = new bool[5],
+                receivedAt = Time.time,
+            };
+            for (int i = 0; i < 5; i++) ack.ok[i] = okFlags[i] == 1;
+            calibrationSteps[gloveId + "/" + step] = ack;
+            Debug.Log($"HearSaySshMqttManager: {gloveId} calibration step {step}: values {string.Join(",", ack.values)} ok {string.Join(",", okFlags)}");
+        }
+        else Debug.Log($"HearSaySshMqttManager: {gloveId} calibrated, baselines {string.Join(",", values)}");
+    }
+
+    /// One guided-calibration step reported by a glove (CALIBRATION_ACK with payload.step).
+    public class CalibrationStepAck
+    {
+        public string step;
+        public int[] values;   // raw readings (or thresholds for "save")
+        public bool[] ok;      // per finger, thumb..pinky
+        public float receivedAt;
+    }
+
+    readonly System.Collections.Generic.Dictionary<string, CalibrationStepAck> calibrationSteps =
+        new System.Collections.Generic.Dictionary<string, CalibrationStepAck>();
+
+    /// The glove's answer to a guided-calibration step sent after sinceTime.
+    public bool TryGetCalibrationStep(string gloveId, string step, float sinceTime, out CalibrationStepAck ack)
+    {
+        return calibrationSteps.TryGetValue(gloveId + "/" + step, out ack) && ack.receivedAt >= sinceTime;
+    }
+
+    /// Guided calibration (glove firmware: CALIBRATE with payload.step =
+    /// ready / straight / fist / check / save / fail). The glove buzzes, waits
+    /// settleMs for the wearer to get into position, measures and answers.
+    public void RequestCalibrationStep(string gloveId, string step, int settleMs)
+    {
+        if (client == null) { LastCommandError = "Not connected"; return; }
+        string json = "{\"type\":\"CALIBRATE\",\"device_id\":\"phone\",\"payload\":{\"step\":\"" + step +
+                      "\",\"settle_ms\":" + settleMs + "}}";
+        _ = SendCommandAsync(gloveId, json);
     }
 
     /// Latest finger states (1 = bent, 0 = straight; thumb..pinky) if newer than maxAgeSeconds.
