@@ -98,10 +98,41 @@ namespace HearSay
             }
         }
 
+        [Tooltip("No-gyroscope phones: degrees of pointer movement per degree of sideways head tilt.")]
+        public float tiltToTurn = 2f;
+        private bool gyroSeen;
+        private Vector3 gravity;
+        private float baseTilt;
+
         private void TrackHead()
         {
             float right = 0f, up = 0f; // degrees from where the user re-centred
-            if (SystemInfo.supportsGyroscope)
+            // Phones without a gyroscope (e.g. Galaxy A10), or whose orientation sensor
+            // never starts, use the accelerometer: tilt up/down to move up/down and tilt
+            // the head sideways (ear to shoulder) to move left/right.
+            if (SystemInfo.supportsGyroscope && !gyroSeen)
+            {
+                Quaternion a0 = Input.gyro.attitude;
+                if (Mathf.Abs(a0.w) < 0.9999f || a0.x != 0f || a0.y != 0f || a0.z != 0f) gyroSeen = true;
+            }
+            bool useGyro = SystemInfo.supportsGyroscope && (gyroSeen || Time.unscaledTime < 3f);
+            if (!useGyro && SystemInfo.supportsAccelerometer)
+            {
+                // Smoothed gravity in device axes; the app is locked to landscape-left,
+                // where the screen's up is device +x and its right is device -y.
+                gravity = Vector3.Lerp(gravity, Input.acceleration, 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
+                if (gravity.sqrMagnitude > 0.01f)
+                {
+                    Vector3 g = gravity.normalized;
+                    float pitch = Mathf.Asin(Mathf.Clamp(g.z, -1f, 1f)) * Mathf.Rad2Deg;
+                    float tilt = -Mathf.Atan2(g.y, -g.x) * Mathf.Rad2Deg; // + = head tilted right
+                    if (!hasBaseline || recenter) { baseTilt = tilt; hasBaseline = true; recenter = false; }
+                    right = Mathf.Clamp(Mathf.DeltaAngle(baseTilt, tilt) * tiltToTurn,
+                        -degreesAcrossScreen * 0.5f, degreesAcrossScreen * 0.5f);
+                    up = pitch;
+                }
+            }
+            else if (useGyro)
             {
                 // Absolute phone orientation (sensor fusion), so turning follows the
                 // head 1:1 without drift from adding up rotation speeds.
