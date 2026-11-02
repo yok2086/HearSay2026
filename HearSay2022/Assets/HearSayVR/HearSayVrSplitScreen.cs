@@ -100,7 +100,7 @@ namespace HearSay
         }
 
         [Tooltip("No-gyroscope phones: degrees of pointer movement per degree of sideways head tilt.")]
-        public float tiltToTurn = 2.5f;
+        public float tiltToTurn = 1.2f;
         private bool gyroSeen;
         private Vector3 gravity;
         private float baseTilt;
@@ -130,7 +130,7 @@ namespace HearSay
             {
                 // Smoothed gravity. Unity reports it in screen axes: x = screen right,
                 // y = screen up, z = out of the screen (towards the eyes).
-                gravity = Vector3.Lerp(gravity, Input.acceleration, 1f - Mathf.Exp(-4f * Time.unscaledDeltaTime));
+                gravity = Vector3.Lerp(gravity, Input.acceleration, 1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
                 if (gravity.sqrMagnitude > 0.01f)
                 {
                     Vector3 g = gravity.normalized;
