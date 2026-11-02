@@ -2594,10 +2594,10 @@ void dispatchAudioCommand(String command);
 bool isCompleteAudioCommand(String command) {
   command.trim();
   const char *commands[] = {
-    "hello", "see_you_later", "me", "i", "yes", "no", "help",
-    "please", "thank_you", "want", "what", "again", "repeat",
-    "eat_food", "more", "go_to", "bathroom", "fine", "like",
-    "learn", "sign", "done", "finish"
+    "hello", "see_you_later", "me", "yes", "no", "help",
+    "please", "thank_you", "want", "what", "again",
+    "eat_food", "more", "go_to", "toilet", "fine", "like",
+    "learn", "sign", "finish"
   };
   for (const char *candidate : commands) {
     if (command.equalsIgnoreCase(candidate)) return true;
@@ -2635,7 +2635,7 @@ void dispatchAudioCommand(String command) {
   command.trim();
   if (command.equalsIgnoreCase("hello")) playAudioPhrase(HELLO_AUDIO_BASE64, HELLO_AUDIO_SAMPLES, "Hello");
   else if (command.equalsIgnoreCase("see_you_later")) playAudioPhrase(SEE_YOU_LATER_AUDIO_BASE64, SEE_YOU_LATER_AUDIO_SAMPLES, "See you later");
-  else if (command.equalsIgnoreCase("me") || command.equalsIgnoreCase("i")) playMeSound();
+  else if (command.equalsIgnoreCase("me")) playMeSound();
   else if (command.equalsIgnoreCase("yes")) playAudioPhrase(YES_AUDIO_BASE64, YES_AUDIO_SAMPLES, "Yes");
   else if (command.equalsIgnoreCase("no")) playAudioPhrase(NO_AUDIO_BASE64, NO_AUDIO_SAMPLES, "No");
   else if (command.equalsIgnoreCase("help")) playAudioPhrase(HELP_AUDIO_BASE64, HELP_AUDIO_SAMPLES, "Help");
@@ -2643,17 +2643,17 @@ void dispatchAudioCommand(String command) {
   else if (command.equalsIgnoreCase("thank_you")) playAudioPhrase(THANK_YOU_AUDIO_BASE64, THANK_YOU_AUDIO_SAMPLES, "Thank you");
   else if (command.equalsIgnoreCase("want")) playAudioPhrase(WANT_AUDIO_BASE64, WANT_AUDIO_SAMPLES, "Want");
   else if (command.equalsIgnoreCase("what")) playAudioPhrase(WHAT_AUDIO_BASE64, WHAT_AUDIO_SAMPLES, "What");
-  else if (command.equalsIgnoreCase("again") || command.equalsIgnoreCase("repeat")) playAudioPhrase(AGAIN_AUDIO_BASE64, AGAIN_AUDIO_SAMPLES, "Again");
+  else if (command.equalsIgnoreCase("again")) playAudioPhrase(AGAIN_AUDIO_BASE64, AGAIN_AUDIO_SAMPLES, "Again");
   else if (command.equalsIgnoreCase("eat_food")) playAudioPhrase(EAT_FOOD_AUDIO_BASE64, EAT_FOOD_AUDIO_SAMPLES, "Eat food");
   else if (command.equalsIgnoreCase("more")) playAudioPhrase(MORE_AUDIO_BASE64, MORE_AUDIO_SAMPLES, "More");
   else if (command.equalsIgnoreCase("go_to")) playAudioPhrase(GO_TO_AUDIO_BASE64, GO_TO_AUDIO_SAMPLES, "Go to");
-  else if (command.equalsIgnoreCase("bathroom")) playAudioPhrase(BATHROOM_AUDIO_BASE64, BATHROOM_AUDIO_SAMPLES, "Bathroom");
+  else if (command.equalsIgnoreCase("toilet")) playAudioPhrase(BATHROOM_AUDIO_BASE64, BATHROOM_AUDIO_SAMPLES, "Bathroom");
   else if (command.equalsIgnoreCase("fine")) playAudioPhrase(FINE_AUDIO_BASE64, FINE_AUDIO_SAMPLES, "Fine");
   else if (command.equalsIgnoreCase("like")) playAudioPhrase(LIKE_AUDIO_BASE64, LIKE_AUDIO_SAMPLES, "Like");
   else if (command.equalsIgnoreCase("learn")) playAudioPhrase(LEARN_AUDIO_BASE64, LEARN_AUDIO_SAMPLES, "Learn");
   else if (command.equalsIgnoreCase("sign")) playAudioPhrase(SIGN_AUDIO_BASE64, SIGN_AUDIO_SAMPLES, "Sign");
-  else if (command.equalsIgnoreCase("done") || command.equalsIgnoreCase("finish")) playAudioPhrase(DONE_AUDIO_BASE64, DONE_AUDIO_SAMPLES, "Done");
-  else { Serial.println("Unknown command. Try hello, see_you_later, me, yes, no, help, please, thank_you, want, what, again, eat_food, more, go_to, bathroom, fine, like, learn, sign, done."); }
+  else if (command.equalsIgnoreCase("finish")) playAudioPhrase(DONE_AUDIO_BASE64, DONE_AUDIO_SAMPLES, "Done");
+  else { Serial.println("Unknown command. Try hello, see_you_later, me, yes, no, help, please, thank_you, want, what, again, eat_food, more, go_to, toilet, fine, like, learn, sign, finish."); }
 }
 
 // ==================================================
@@ -3551,10 +3551,12 @@ void processMicrophone() {
 // Returns nullptr for signs with no recorded phrase.
 const char* phraseForSign(const char* sign) {
   static const char* const table[][2] = {
-    {"hello", "hello"}, {"later", "see_you_later"}, {"I", "me"},
-    {"yes", "yes"}, {"no", "no"}, {"please", "please"},
-    {"thank", "thank_you"}, {"what", "what"}, {"eat", "eat_food"},
-    {"more", "more"}, {"go", "go_to"},
+    {"hello", "hello"}, {"see_you_later", "see_you_later"}, {"me", "me"},
+    {"yes", "yes"}, {"no", "no"}, {"help", "help"}, {"please", "please"},
+    {"thank_you", "thank_you"}, {"want", "want"}, {"what", "what"},
+    {"again", "again"}, {"eat_food", "eat_food"}, {"more", "more"},
+    {"go_to", "go_to"}, {"toilet", "toilet"}, {"fine", "fine"},
+    {"like", "like"}, {"learn", "learn"}, {"sign", "sign"}, {"finish", "finish"},
   };
   for (const auto& entry : table) {
     if (strcasecmp(entry[0], sign) == 0) return entry[1];

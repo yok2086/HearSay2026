@@ -18,8 +18,9 @@ from pynq_dpu import DpuOverlay
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 SIGNS = [
-    "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
-    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
+    "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you",
+    "want", "what", "again", "eat_food", "more", "go_to", "toilet", "fine",
+    "like", "learn", "sign", "finish",
 ]
 
 

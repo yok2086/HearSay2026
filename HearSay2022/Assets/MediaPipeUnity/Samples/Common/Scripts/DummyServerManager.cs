@@ -55,8 +55,8 @@ public class DummyServerManager : MonoBehaviour
         // Fake ASL model
         if (Input.GetKeyDown(KeyCode.A))
         {
-            aslWord = "HELLO";
-            Debug.Log("Dummy Server: ASL = HELLO");
+            aslWord = "hello";
+            Debug.Log("Dummy Server: ASL = hello");
         }
 
         // Reset everything

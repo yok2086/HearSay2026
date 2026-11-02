@@ -41,36 +41,69 @@ public class HearSaySshMqttManager : MonoBehaviour
 
     public string ConnectionStatus => client?.Status ?? "Not started";
 
+    // private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
+    //     new System.Collections.Generic.Dictionary<string, string>
+    // {
+    //     { "hello", "hello" },
+    //     { "later", "later" },
+    //     { "I", "I" },
+    //     { "yes", "yes" },
+    //     { "no", "no" },
+    //     { "please", "please" },
+    //     { "thank", "thank" },
+    //     { "what", "what" },
+    //     { "eat", "eat" },
+    //     { "more", "more" },
+    //     { "go", "go" },
+    //     { "love", "love" },
+    //     { "happy", "happy" },
+    //     { "know", "know" },
+    //     { "ready", "ready" },
+    //     { "deaf", "deaf" },
+    //     { "you", "you" },
+    //     { "where", "where" },
+    //     { "sorry", "sorry" },
+    //     { "wait_notyet_", "wait_notyet_" }
+    // };
+
+    // private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
+    //     new System.Collections.Generic.HashSet<string>
+    // {
+    //        "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
+    // "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
+    // };
+
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
         new System.Collections.Generic.Dictionary<string, string>
     {
         { "hello", "hello" },
-        { "later", "later" },
-        { "I", "I" },
+        { "see_you_later", "see_you_later" },
+        { "me", "me" },
         { "yes", "yes" },
         { "no", "no" },
+        { "help", "help" },
         { "please", "please" },
-        { "thank", "thank" },
+        { "thank_you", "thank_you" },
+        { "want", "want" },
         { "what", "what" },
-        { "eat", "eat" },
+        { "again", "again" },
+        { "eat_food", "eat_food" },
         { "more", "more" },
-        { "go", "go" },
-        { "love", "love" },
-        { "happy", "happy" },
-        { "know", "know" },
-        { "ready", "ready" },
-        { "deaf", "deaf" },
-        { "you", "you" },
-        { "where", "where" },
-        { "sorry", "sorry" },
-        { "wait_notyet_", "wait_notyet_" }
+        { "go_to", "go_to" },
+        { "toilet", "toilet" },
+        { "fine", "fine" },
+        { "like", "like" },
+        { "learn", "learn" },
+        { "sign", "sign" },
+        { "finish", "finish" }
     };
 
+    // HandleMessage lowercases before checking this set, so every entry must be lowercase.
     private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
         new System.Collections.Generic.HashSet<string>
     {
-           "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
-    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
+        "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you", "want", "what",
+        "again", "eat_food", "more", "go_to", "toilet", "fine", "like", "learn", "sign", "finish",
     };
 
     public float staleAfterSeconds = 10f;
@@ -260,7 +293,7 @@ public class HearSaySshMqttManager : MonoBehaviour
         Debug.Log($"HearSaySshMqttManager: {gloveId} calibrated, baselines {string.Join(",", values)}");
     }
 
-    /// Latest finger states (1 = bent, 0 = straight; thumb..pinky) if newer than maxAgeSeconds.
+    /// Latest raw flex readings (0-4095; thumb..pinky) if newer than maxAgeSeconds.
     public bool TryGetFlex(string gloveId, float maxAgeSeconds, out int[] flex)
     {
         flex = null;

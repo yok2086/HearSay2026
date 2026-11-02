@@ -23,8 +23,8 @@ FLEX_BENT_FRACTION = 0.5
 MIN_PATTERN_MATCH = 0.6
 
 FINGER_PATTERNS = {
-    (1, 1, 1, 1, 1): "BYE",     # closed fist
-    (0, 0, 0, 0, 0): "HELLO",   # open hand
+    (1, 1, 1, 1, 1): "see_you_later",     # closed fist
+    (0, 0, 0, 0, 0): "hello",   # open hand
 }
 
 # Gyro: real deg/s. Resting noise is typically a few deg/s; deliberate motion
@@ -75,12 +75,12 @@ def run_inference(window):
         confidence = min(0.99, match_fraction)
     elif avg_gyro_mag > GYRO_THRESHOLD_DEG_S:
         # Larger-than-usual rotation across the window
-        event = "THANK YOU"
+        event = "thank_you"
         confidence = min(0.99, 0.5 + (avg_gyro_mag - GYRO_THRESHOLD_DEG_S) / 60)
     else:
         # No recognised finger pattern and no strong motion - default/idle
-        event = "WELCOME"
-        confidence = 0.6
+        event = "NONE"
+        confidence = 0.0
 
     return {"event": event, "confidence": round(confidence, 2)}
 

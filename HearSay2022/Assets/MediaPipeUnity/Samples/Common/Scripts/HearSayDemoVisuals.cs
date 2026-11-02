@@ -194,9 +194,9 @@ namespace HearSay
         {
             var words = new[]
             {
-                "hello", "see_you_later", "i_me", "yes", "no", "help", "please", "thank_you",
-                "want", "what", "again_repeat", "eat_food", "more", "go_to", "bathroom", "fine",
-                "like", "learn", "sign", "finish_done"
+                "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you",
+                "want", "what", "again", "eat_food", "more", "go_to", "toilet", "fine",
+                "like", "learn", "sign", "finish"
             };
             var directions = new[] { "left", "right" };
             status.soundActive = Random.value > 0.2f;
