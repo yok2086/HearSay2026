@@ -25,7 +25,21 @@ namespace Mediapipe.Unity.Sample
         Stop();
       }
       base.Play();
-      _coroutine = StartCoroutine(Run());
+      _coroutine = StartCoroutine(Bootstrap.MediaPipeAvailable ? Run() : CameraOnly());
+    }
+
+    // 32-bit phones (no MediaPipe library): just show the camera feed.
+    private System.Collections.IEnumerator CameraOnly()
+    {
+      var imageSource = ImageSourceProvider.ImageSource;
+      if (imageSource == null) yield break;
+      if (!imageSource.isPrepared) yield return imageSource.Play();
+      if (!imageSource.isPrepared)
+      {
+        Debug.LogError("HearSay: camera did not start.");
+        yield break;
+      }
+      if (screen != null) screen.Initialize(imageSource);
     }
 
     public override void Pause()

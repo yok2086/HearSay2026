@@ -99,7 +99,7 @@ namespace HearSay
         }
 
         [Tooltip("No-gyroscope phones: degrees of pointer movement per degree of sideways head tilt.")]
-        public float tiltToTurn = 2f;
+        public float tiltToTurn = 2.5f;
         private bool gyroSeen;
         private Vector3 gravity;
         private float baseTilt;
@@ -128,7 +128,7 @@ namespace HearSay
             {
                 // Smoothed gravity. Unity reports it in screen axes: x = screen right,
                 // y = screen up, z = out of the screen (towards the eyes).
-                gravity = Vector3.Lerp(gravity, Input.acceleration, 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
+                gravity = Vector3.Lerp(gravity, Input.acceleration, 1f - Mathf.Exp(-4f * Time.unscaledDeltaTime));
                 if (gravity.sqrMagnitude > 0.01f)
                 {
                     Vector3 g = gravity.normalized;
@@ -138,7 +138,10 @@ namespace HearSay
                     // Level = centre (like up/down). A tap while not looking at a button
                     // re-centres on the current tilt.
                     if (recenter) { baseTilt = tilt; recenter = false; }
-                    right = Mathf.Clamp(Mathf.DeltaAngle(baseTilt, tilt) * tiltToTurn,
+                    // Small dead zone so head movement and shake don't nudge it sideways.
+                    float t = Mathf.DeltaAngle(baseTilt, tilt);
+                    t = Mathf.Sign(t) * Mathf.Max(0f, Mathf.Abs(t) - 5f);
+                    right = Mathf.Clamp(t * tiltToTurn,
                         -degreesAcrossScreen * 0.5f, degreesAcrossScreen * 0.5f);
                     // Lying flat (e.g. on a desk) has no meaningful sideways tilt: stay centred.
                     float upright = new Vector2(g.x, g.y).magnitude;

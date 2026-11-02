@@ -15,6 +15,10 @@ namespace Mediapipe.Unity.Sample
 
     public InferenceMode inferenceMode { get; private set; }
     public bool isFinished { get; private set; }
+
+    /// MediaPipe's Android library is 64-bit only. On 32-bit (ARMv7) phones the
+    /// camera still runs, but face / speaker detection is not available.
+    public static bool MediaPipeAvailable => Application.isEditor || System.IntPtr.Size == 8;
     private bool _isGlogInitialized;
 
     private void OnEnable()
@@ -31,12 +35,16 @@ namespace Mediapipe.Unity.Sample
 
       Logger.MinLogLevel = _appSettings.logLevel;
 
-      Protobuf.SetLogHandler(Protobuf.DefaultLogHandler);
+      if (MediaPipeAvailable)
+      {
+        Protobuf.SetLogHandler(Protobuf.DefaultLogHandler);
 
-      Debug.Log("Setting global flags...");
-      _appSettings.ResetGlogFlags();
-      Glog.Initialize("MediaPipeUnityPlugin");
-      _isGlogInitialized = true;
+        Debug.Log("Setting global flags...");
+        _appSettings.ResetGlogFlags();
+        Glog.Initialize("MediaPipeUnityPlugin");
+        _isGlogInitialized = true;
+      }
+      else Debug.LogWarning("HearSay: 32-bit phone - MediaPipe is not available, showing the camera only.");
 
       Debug.Log("Initializing AssetLoader...");
       switch (_appSettings.assetLoaderType)
@@ -70,7 +78,7 @@ namespace Mediapipe.Unity.Sample
       }
 
       DecideInferenceMode();
-      if (inferenceMode == InferenceMode.GPU)
+      if (inferenceMode == InferenceMode.GPU && MediaPipeAvailable)
       {
         Debug.Log("Initializing GPU resources...");
         yield return GpuManager.Initialize();
@@ -103,7 +111,7 @@ namespace Mediapipe.Unity.Sample
 
     private void OnApplicationQuit()
     {
-      GpuManager.Shutdown();
+      if (MediaPipeAvailable) GpuManager.Shutdown();
 
       if (_isGlogInitialized)
       {
