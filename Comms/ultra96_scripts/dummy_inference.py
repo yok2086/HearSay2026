@@ -45,16 +45,16 @@ def run_inference(window):
     ) / n
 
     if avg_flex > 0.6:
-        event = "HELLO"
+        event = "hello"
         confidence = min(0.99, 0.5 + (avg_flex - 0.6) / 0.4)
     elif avg_flex < 0.2:
-        event = "YES"
+        event = "yes"
         confidence = min(0.99, 0.5 + (0.2 - avg_flex) / 0.4)
     elif avg_gyro_mag > 40.0:
-        event = "THANK_YOU"
+        event = "thank_you"
         confidence = min(0.99, 0.5 + (avg_gyro_mag - 40.0) / 60.0)
     else:
-        event = "PLEASE"
+        event = "please"
         confidence = 0.6
 
     return {"event": event, "confidence": round(confidence, 2)}

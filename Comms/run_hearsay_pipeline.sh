@@ -33,10 +33,6 @@ LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
 REMOTE_PORT="8883"
 
-# Reverse forward so the phone reaches HearSayDummyServer.py through its own
-# stujump -> ultra96 tunnel instead of connecting to the Mac directly.
-DEMO_SERVER_PORT="8080"
-
 LOCAL_DIR="$HOME/HearSay2026/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
 
@@ -123,9 +119,8 @@ lsof -ti :"$LOCAL_PORT" | xargs -r kill 2>/dev/null || true
 sleep 1
 
 ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" -f -N \
-  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" \
-  -R "${DEMO_SERVER_PORT}:127.0.0.1:${DEMO_SERVER_PORT}" "$ULTRA_HOST"
-echo "Tunnel opened in background (Ultra96 localhost:${DEMO_SERVER_PORT} -> Mac HearSayDummyServer)."
+  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" "$ULTRA_HOST"
+echo "Tunnel opened in background (Mac ${LOCAL_PORT} -> Ultra96 broker)."
 sleep 1
 
 echo ""

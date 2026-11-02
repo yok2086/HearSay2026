@@ -13,7 +13,7 @@ MPU6050 mpu;
 // MQTT SETTINGS
 // ==================================================
 
-const char* DEVICE_ID = "glove_01B";
+const char* DEVICE_ID = "glove_01A";
 const char* MQTT_USER = "nathan";
 const char* MQTT_PASS = "mqtt";
 
@@ -71,89 +71,6 @@ String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 #define GRAVITY 9.80665
 
 // ==================================================
-// FLEX SENSOR SETTINGS (binary output: 1 = bent, 0 = straight)
-// ==================================================
-
-// Individual bending thresholds determined from
-// experimental flex-sensor testing. A finger counts as bent when its
-// reading rises at least this far above its own calibrated baseline.
-
-const int flexBendDelta[5] = {
-  75,    // Flex 1 - Thumb
-  140,   // Flex 2 - Index
-  80,    // Flex 3 - Middle
-  65,    // Flex 4 - Ring
-  55     // Flex 5 - Pinky
-};
-
-// 100 samples x 10 ms = approximately 1 second
-#define CALIBRATION_SAMPLES 100
-
-// Starting baseline (straight/rest reading) of each flex sensor
-int flexBaseline[5];
-
-
-// ==================================================
-// FUNCTION: CALIBRATE FLEX SENSORS
-// ==================================================
-
-// waitForUser: true at power-on (gives 2 s to straighten the fingers).
-// false when the phone app asks for it - the app already showed a countdown.
-void calibrateFlexSensors(bool waitForUser) {
-
-  long total[5] = {0, 0, 0, 0, 0};
-
-  Serial.println();
-  Serial.println("Starting flex sensor calibration...");
-  Serial.println("Keep all fingers in the straight/rest position.");
-
-  // Give user time to position hand
-  if (waitForUser) delay(2000);
-
-  Serial.println("Measuring baseline...");
-
-  // 100 samples x 10 ms = approximately 1 second
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-
-    total[0] += analogRead(FLEX1_PIN);
-    total[1] += analogRead(FLEX2_PIN);
-    total[2] += analogRead(FLEX3_PIN);
-    total[3] += analogRead(FLEX4_PIN);
-    total[4] += analogRead(FLEX5_PIN);
-
-    delay(10);
-  }
-
-  // Calculate individual average baselines
-  for (int i = 0; i < 5; i++) {
-    flexBaseline[i] = total[i] / CALIBRATION_SAMPLES;
-  }
-
-  Serial.println("Flex sensor calibration complete.");
-
-  Serial.print("Flex baselines: ");
-
-  for (int i = 0; i < 5; i++) {
-    Serial.print(flexBaseline[i]);
-    Serial.print(" ");
-  }
-
-  Serial.println();
-
-  Serial.print("Flex thresholds: ");
-
-  for (int i = 0; i < 5; i++) {
-    Serial.print(flexBendDelta[i]);
-    Serial.print(" ");
-  }
-
-  Serial.println();
-  Serial.println("----------------------------------");
-}
-
-
-
-// ==================================================
 // WIFI (eduroam, WPA2-Enterprise)
 // ==================================================
 
@@ -209,26 +126,6 @@ void publishHello() {
   Serial.println("Published HELLO");
 }
 
-// Sent after a calibration requested by the app (CALIBRATE on cmd/<id>/set),
-// so the app can show the new straight-finger baselines.
-void publishCalibrationAck() {
-  StaticJsonDocument<256> doc;
-  doc["type"] = "CALIBRATION_ACK";
-  doc["device_id"] = DEVICE_ID;
-  doc["session_id"] = sessionId;
-  doc["seq"] = seq++;
-  doc["timestamp_ms"] = millis();
-  JsonObject payload = doc.createNestedObject("payload");
-  payload["status"] = "OK";
-  JsonArray baseline = payload.createNestedArray("flex_baseline");
-  for (int i = 0; i < 5; i++) baseline.add(flexBaseline[i]);
-
-  char buf[256];
-  serializeJson(doc, buf);
-  mqtt.publish(topicCmdAck().c_str(), buf);
-  Serial.println("Published CALIBRATION_ACK");
-}
-
 void publishConfigAck() {
   StaticJsonDocument<192> doc;
   doc["type"] = "CONFIG_ACK";
@@ -252,6 +149,8 @@ static inline float r2(float v) {
 
 void publishTelemetry() {
 
+  unsigned long t = millis();   // timestamp at read time, not publish time
+
   // ---- Read MPU6050 ----
   int16_t axRaw, ayRaw, azRaw;
   int16_t gxRaw, gyRaw, gzRaw;
@@ -266,7 +165,7 @@ void publishTelemetry() {
   float gy = gyRaw / GYRO_SENSITIVITY;
   float gz = gzRaw / GYRO_SENSITIVITY;
 
-  // ---- Read flex sensors and convert each to a binary state ----
+  // ---- Read flex sensors (raw 12-bit ADC, 0-4095) ----
   int flexValue[5];
   flexValue[0] = analogRead(FLEX1_PIN);
   flexValue[1] = analogRead(FLEX2_PIN);
@@ -274,21 +173,13 @@ void publishTelemetry() {
   flexValue[3] = analogRead(FLEX4_PIN);
   flexValue[4] = analogRead(FLEX5_PIN);
 
-  int flexChange[5];   // reading minus that finger's own baseline
-  int flexState[5];    // 1 = bent, 0 = straight
-
-  for (int i = 0; i < 5; i++) {
-    flexChange[i] = flexValue[i] - flexBaseline[i];
-    flexState[i] = (flexChange[i] >= flexBendDelta[i]) ? 1 : 0;
-  }
-
   // ---- Build and publish the message ----
   StaticJsonDocument<320> doc;
   doc["type"] = "TELEMETRY";
   doc["device_id"] = DEVICE_ID;
   doc["session_id"] = sessionId;
   doc["seq"] = seq++;
-  doc["timestamp_ms"] = millis();
+  doc["timestamp_ms"] = t;
 
   JsonObject payload = doc.createNestedObject("payload");
   JsonObject imu = payload.createNestedObject("imu");
@@ -299,10 +190,10 @@ void publishTelemetry() {
   imu["gy"] = r2(gy);
   imu["gz"] = r2(gz);
 
-  // Binary flex states: 1 = bent, 0 = straight (thumb .. pinky)
+  // Raw flex readings, 0-4095 (thumb .. pinky)
   JsonArray flex = payload.createNestedArray("flex");
   for (int i = 0; i < 5; i++) {
-    flex.add(flexState[i]);
+    flex.add(flexValue[i]);
   }
 
   char buf[384];
@@ -351,12 +242,6 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     Serial.print("Received CONFIG, sample_rate_hz=");
     Serial.println(sampleRateHz);
     publishConfigAck();
-  } else if (type == "CALIBRATE") {
-    // Phone app: "hold your hand open, fingers straight" -> re-measure the
-    // straight-finger baseline now (about 1 s; telemetry pauses meanwhile).
-    Serial.println("Received CALIBRATE from app");
-    calibrateFlexSensors(false);
-    publishCalibrationAck();
   }
 }
 
@@ -468,12 +353,6 @@ void setup() {
   analogSetPinAttenuation(FLEX5_PIN, ADC_11db);
 
   Serial.println("Five flex sensors initialised.");
-
-  // Measure each finger's straight baseline at power-on. Without this every
-  // baseline is 0 and almost every reading counts as "bent". Keep the hand open
-  // and fingers straight for ~3 s after switching the glove on. The phone app's
-  // "Calibrate glove" button can redo this at any time.
-  calibrateFlexSensors(true);
 
   // ---- Keep the vibration motor off ----
   pinMode(VIBRATION_PIN, OUTPUT);

@@ -12,7 +12,11 @@ MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
 CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt" 
 
-EVENTS = ["HELLO", "THANK_YOU", "YES", "NO", "HELP", "PLEASE"]
+EVENTS = [
+    "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you",
+    "want", "what", "again", "eat_food", "more", "go_to", "toilet", "fine",
+    "like", "learn", "sign", "finish",
+]
 
 relay_queue = queue.Queue()
 

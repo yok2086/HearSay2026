@@ -4,7 +4,7 @@ import threading
 import paho.mqtt.client as mqtt
 
 # ---- Details ----
-BROKER_HOST = "Nathans-MacBook-Pro-4.local"
+BROKER_HOST = "localhost"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"

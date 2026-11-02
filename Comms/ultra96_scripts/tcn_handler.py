@@ -26,7 +26,7 @@ WINDOW_SIZE = 96
 
 # The model expects normalized features. Replace these values with the exact
 # mean/std used when the TCN training windows were created. The feature order
-# is glove_01's 11 features followed by glove_02's 11 features.
+# is glove_01A's 11 features followed by glove_01B's 11 features.
 FEATURE_MEAN = np.zeros(22, dtype=np.float32)
 FEATURE_STD = np.ones(22, dtype=np.float32)
 

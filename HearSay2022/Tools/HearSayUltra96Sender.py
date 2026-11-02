@@ -4,9 +4,9 @@ import json
 from urllib.request import Request, urlopen
 
 WORDS = (
-    "hello", "see_you_later", "i_me", "yes", "no", "help", "please", "thank_you",
-    "want", "what", "again_repeat", "eat_food", "more", "go_to", "bathroom",
-    "fine", "like", "learn", "sign", "finish_done",
+    "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you",
+    "want", "what", "again", "eat_food", "more", "go_to", "toilet",
+    "fine", "like", "learn", "sign", "finish",
 )
 
 def build_payload(direction=None, word=None, confidence=0.0):
