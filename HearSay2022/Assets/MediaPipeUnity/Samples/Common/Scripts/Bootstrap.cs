@@ -46,6 +46,8 @@ namespace Mediapipe.Unity.Sample
       }
       else Debug.LogWarning("HearSay: 32-bit phone - MediaPipe is not available, showing the camera only.");
 
+      if (MediaPipeAvailable)
+      {
       Debug.Log("Initializing AssetLoader...");
       switch (_appSettings.assetLoaderType)
       {
@@ -88,6 +90,9 @@ namespace Mediapipe.Unity.Sample
           Debug.LogWarning("If your native library is built for CPU, change 'Preferable Inference Mode' to CPU from the Inspector Window for AppSettings");
         }
       }
+
+      }
+      else inferenceMode = InferenceMode.CPU;
 
       Debug.Log("Preparing ImageSource...");
       ImageSourceProvider.Initialize(

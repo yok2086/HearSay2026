@@ -63,6 +63,7 @@ namespace HearSay
             previousSleep = Screen.sleepTimeout;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             Input.gyro.enabled = true;
+            Input.compass.enabled = true; // used (if the phone has one) when there is no gyroscope
             settleUntil = Time.unscaledTime + 1f;
             ringOutline = MakeCircle(64, true, Color.white, 0.24f);
             ring = MakeCircle(64, true, HearSayTheme.Accent, 0.16f);
@@ -119,10 +120,11 @@ namespace HearSay
             bool useGyro = SystemInfo.supportsGyroscope && (gyroSeen || Time.unscaledTime < 3f);
             if (Time.unscaledTime >= nextSensorLog)
             {
-                nextSensorLog = Time.unscaledTime + 1f;
+                nextSensorLog = Time.unscaledTime + 5f;
                 Debug.Log($"HearSay VR sensors: gyroSupported={SystemInfo.supportsGyroscope} gyroEnabled={Input.gyro.enabled} " +
                           $"attitude={Input.gyro.attitude} rate={Input.gyro.rotationRateUnbiased} accel={Input.acceleration} " +
-                          $"useGyro={useGyro} orientation={Screen.orientation} offset={headOffset}");
+                          $"useGyro={useGyro} orientation={Screen.orientation} offset={headOffset} " +
+                          $"compass={Input.compass.enabled} raw={Input.compass.rawVector} heading={Input.compass.magneticHeading} ts={Input.compass.timestamp}");
             }
             if (!useGyro && SystemInfo.supportsAccelerometer)
             {
