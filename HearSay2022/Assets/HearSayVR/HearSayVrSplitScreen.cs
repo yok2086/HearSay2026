@@ -103,6 +103,7 @@ namespace HearSay
         private bool gyroSeen;
         private Vector3 gravity;
         private float baseTilt;
+        private float nextSensorLog;
 
         private void TrackHead()
         {
@@ -116,19 +117,32 @@ namespace HearSay
                 if (Mathf.Abs(a0.w) < 0.9999f || a0.x != 0f || a0.y != 0f || a0.z != 0f) gyroSeen = true;
             }
             bool useGyro = SystemInfo.supportsGyroscope && (gyroSeen || Time.unscaledTime < 3f);
+            if (Time.unscaledTime >= nextSensorLog)
+            {
+                nextSensorLog = Time.unscaledTime + 1f;
+                Debug.Log($"HearSay VR sensors: gyroSupported={SystemInfo.supportsGyroscope} gyroEnabled={Input.gyro.enabled} " +
+                          $"attitude={Input.gyro.attitude} rate={Input.gyro.rotationRateUnbiased} accel={Input.acceleration} " +
+                          $"useGyro={useGyro} orientation={Screen.orientation} offset={headOffset}");
+            }
             if (!useGyro && SystemInfo.supportsAccelerometer)
             {
-                // Smoothed gravity in device axes; the app is locked to landscape-left,
-                // where the screen's up is device +x and its right is device -y.
+                // Smoothed gravity. Unity reports it in screen axes: x = screen right,
+                // y = screen up, z = out of the screen (towards the eyes).
                 gravity = Vector3.Lerp(gravity, Input.acceleration, 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
                 if (gravity.sqrMagnitude > 0.01f)
                 {
                     Vector3 g = gravity.normalized;
                     float pitch = Mathf.Asin(Mathf.Clamp(g.z, -1f, 1f)) * Mathf.Rad2Deg;
-                    float tilt = -Mathf.Atan2(g.y, -g.x) * Mathf.Rad2Deg; // + = head tilted right
-                    if (!hasBaseline || recenter) { baseTilt = tilt; hasBaseline = true; recenter = false; }
+                    // Sideways head tilt, 0 when the phone is held level; + = tilted right.
+                    float tilt = Mathf.Atan2(g.x, -g.y) * Mathf.Rad2Deg;
+                    // Level = centre (like up/down). A tap while not looking at a button
+                    // re-centres on the current tilt.
+                    if (recenter) { baseTilt = tilt; recenter = false; }
                     right = Mathf.Clamp(Mathf.DeltaAngle(baseTilt, tilt) * tiltToTurn,
                         -degreesAcrossScreen * 0.5f, degreesAcrossScreen * 0.5f);
+                    // Lying flat (e.g. on a desk) has no meaningful sideways tilt: stay centred.
+                    float upright = new Vector2(g.x, g.y).magnitude;
+                    right *= Mathf.Clamp01((upright - 0.2f) / 0.3f);
                     up = pitch;
                 }
             }
