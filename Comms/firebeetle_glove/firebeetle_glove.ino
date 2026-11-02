@@ -13,7 +13,7 @@ MPU6050 mpu;
 // MQTT SETTINGS
 // ==================================================
 
-const char* DEVICE_ID = "glove_01A";
+const char* DEVICE_ID = "glove_01B";
 const char* MQTT_USER = "nathan";
 const char* MQTT_PASS = "mqtt";
 
@@ -32,6 +32,7 @@ unsigned long publishFail = 0;
 
 String topicStatus() { return String("sys/") + DEVICE_ID + "/status"; }
 String topicRaw()    { return String("tele/") + DEVICE_ID + "/raw"; }
+String topicCalibration() { return String("sys/") + DEVICE_ID + "/calibration"; }
 String topicCmdSet() { return String("cmd/") + DEVICE_ID + "/set"; }
 String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 
@@ -52,11 +53,45 @@ String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 #define FLEX4_PIN 32   // Ring
 #define FLEX5_PIN 33   // Pinky
 
+const int flexPins[5] = {
+  FLEX1_PIN,
+  FLEX2_PIN,
+  FLEX3_PIN,
+  FLEX4_PIN,
+  FLEX5_PIN
+};
+
 // ==================================================
-// VIBRATION MOTOR (unused - pin just held LOW so the motor stays off)
+// VIBRATION MOTOR
 // ==================================================
 
 #define VIBRATION_PIN 26
+
+#define SHORT_VIBRATION_MS 120
+#define LONG_VIBRATION_MS 700
+
+// ==================================================
+// CALIBRATION SETTINGS
+// ==================================================
+
+#define CALIBRATION_SAMPLES 100
+#define CALIBRATION_SAMPLE_DELAY_MS 10
+
+// Extra spacing so each vibration cue is easier to distinguish.
+#define CALIBRATION_PREP_DELAY_MS 4000
+#define BETWEEN_STAGES_DELAY_MS 2000
+
+// Straight-hand and clenched-fist readings. Sent to the Ultra96, which uses
+// them to normalise the raw flex values in the telemetry.
+int flexStraight[5] = {0, 0, 0, 0, 0};
+int flexBent[5] = {0, 0, 0, 0, 0};
+
+// Gyro reading (deg/s) while the hand is held still. The MPU6050's zero-rate
+// offset changes at every power-up; the Ultra96 subtracts this.
+float gyroOffset[3] = {0, 0, 0};
+
+bool calibrationComplete = false;
+bool calibrationPublished = false;
 
 // ==================================================
 // MPU6050 SCALE FACTORS
@@ -69,6 +104,213 @@ String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 #define GYRO_SENSITIVITY 131.0
 
 #define GRAVITY 9.80665
+
+// ==================================================
+// VIBRATION FUNCTIONS
+// ==================================================
+
+void vibrateShort() {
+  digitalWrite(VIBRATION_PIN, HIGH);
+  delay(SHORT_VIBRATION_MS);
+  digitalWrite(VIBRATION_PIN, LOW);
+}
+
+void vibrateLong() {
+  digitalWrite(VIBRATION_PIN, HIGH);
+  delay(LONG_VIBRATION_MS);
+  digitalWrite(VIBRATION_PIN, LOW);
+}
+
+void vibrateTwice() {
+  vibrateShort();
+  delay(150);
+  vibrateShort();
+}
+
+// ==================================================
+// READ AND AVERAGE ALL FIVE FLEX SENSORS
+// ==================================================
+
+// Calibration takes longer than the MQTT keepalive (15 s), so keep servicing
+// the connection while waiting or the broker drops the glove part way through.
+void calibrationWait(unsigned long ms) {
+  unsigned long start = millis();
+  while (millis() - start < ms) {
+    mqtt.loop();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
+
+void recordFlexReadings(int readings[5]) {
+
+  long total[5] = {0, 0, 0, 0, 0};
+
+  for (int sample = 0; sample < CALIBRATION_SAMPLES; sample++) {
+
+    for (int sensor = 0; sensor < 5; sensor++) {
+      total[sensor] += analogRead(flexPins[sensor]);
+    }
+
+    calibrationWait(CALIBRATION_SAMPLE_DELAY_MS);
+  }
+
+  for (int sensor = 0; sensor < 5; sensor++) {
+    readings[sensor] = total[sensor] / CALIBRATION_SAMPLES;
+  }
+}
+
+void recordGyroOffset() {
+
+  float total[3] = {0, 0, 0};
+
+  for (int sample = 0; sample < CALIBRATION_SAMPLES; sample++) {
+
+    int16_t axRaw, ayRaw, azRaw;
+    int16_t gxRaw, gyRaw, gzRaw;
+    mpu.getMotion6(&axRaw, &ayRaw, &azRaw, &gxRaw, &gyRaw, &gzRaw);
+
+    total[0] += gxRaw / GYRO_SENSITIVITY;
+    total[1] += gyRaw / GYRO_SENSITIVITY;
+    total[2] += gzRaw / GYRO_SENSITIVITY;
+
+    calibrationWait(CALIBRATION_SAMPLE_DELAY_MS);
+  }
+
+  for (int axis = 0; axis < 3; axis++) {
+    gyroOffset[axis] = total[axis] / CALIBRATION_SAMPLES;
+  }
+
+  Serial.printf("Gyro offset deg/s: %.2f %.2f %.2f\n", gyroOffset[0], gyroOffset[1], gyroOffset[2]);
+}
+
+// ==================================================
+// PRINT CALIBRATION READINGS
+// ==================================================
+
+void printReadings(const char *label, const int readings[5]) {
+
+  Serial.print(label);
+  Serial.print(": ");
+
+  for (int i = 0; i < 5; i++) {
+    Serial.print(readings[i]);
+
+    if (i < 4) {
+      Serial.print(" ");
+    }
+  }
+
+  Serial.println();
+}
+
+// ==================================================
+// CALIBRATION PROCESS
+// ==================================================
+
+// Runs once the glove is connected to the broker. No telemetry is sent until
+// it succeeds.
+void calibrateFlexSensors() {
+
+  calibrationComplete = false;
+
+  // Repeat the entire sequence until valid calibration
+  // readings are obtained.
+
+  while (!calibrationComplete) {
+
+    // ---- Start calibration ----
+    Serial.println();
+    Serial.println("======================================");
+    Serial.println("       FLEX SENSOR CALIBRATION");
+    Serial.println("======================================");
+    Serial.println("Calibration starting.");
+    Serial.println("Vibration: one short pulse.");
+
+    vibrateShort();
+
+    // ---- Straighten fingers ----
+    Serial.println();
+    Serial.println("STEP 1: STRAIGHTEN ALL FINGERS");
+    Serial.println("Keep all fingers straight and relaxed.");
+    Serial.println("Recording straight-hand readings in 4 seconds...");
+
+    calibrationWait(CALIBRATION_PREP_DELAY_MS);
+
+    Serial.println("Recording straight-hand readings...");
+    recordFlexReadings(flexStraight);
+    printReadings("Straight readings", flexStraight);
+
+    Serial.println("Hold still, measuring gyro offset...");
+    recordGyroOffset();
+
+    Serial.println("Vibration: one long pulse.");
+    vibrateLong();
+    calibrationWait(BETWEEN_STAGES_DELAY_MS);
+
+    // ---- Clench fingers ----
+    Serial.println();
+    Serial.println("STEP 2: CLENCH ALL FINGERS");
+    Serial.println("Make a comfortable fist with all fingers.");
+    Serial.println("Vibration: two short pulses.");
+
+    vibrateTwice();
+
+    Serial.println("Hold the fist steady.");
+    Serial.println("Recording fist readings in 4 seconds...");
+
+    calibrationWait(CALIBRATION_PREP_DELAY_MS);
+
+    Serial.println("Recording clenched-fist readings...");
+    recordFlexReadings(flexBent);
+    printReadings("Clenched readings", flexBent);
+
+    Serial.println("Vibration: one long pulse.");
+    vibrateLong();
+    calibrationWait(BETWEEN_STAGES_DELAY_MS);
+
+    // ---- Validate ----
+    Serial.println();
+    Serial.println("Checking calibration readings...");
+
+    bool validCalibration = true;
+
+    for (int i = 0; i < 5; i++) {
+      Serial.printf("Sensor %d | Straight: %d | Clenched: %d | Difference: %d\n",
+                    i + 1, flexStraight[i], flexBent[i], flexBent[i] - flexStraight[i]);
+
+      // Assumption: bending increases the ADC reading.
+      // If even one clench reading is lower than its
+      // straight reading, restart the entire calibration.
+      if (flexBent[i] < flexStraight[i]) {
+        validCalibration = false;
+      }
+    }
+
+    if (!validCalibration) {
+      Serial.println();
+      Serial.println("CALIBRATION FAILED!");
+      Serial.println("At least one clench reading is lower");
+      Serial.println("than its straight reading.");
+      Serial.println("Check sensor wiring and finger movement.");
+      Serial.println("Restarting calibration...");
+      Serial.println();
+
+      calibrationWait(1000);
+      continue;
+    }
+
+    calibrationComplete = true;
+
+    Serial.println();
+    Serial.println("======================================");
+    Serial.println("     CALIBRATION SUCCESSFUL!");
+    Serial.println("======================================");
+    printReadings("Straight readings", flexStraight);
+    printReadings("Clenched readings", flexBent);
+    Serial.println();
+  }
+}
+
 
 // ==================================================
 // WIFI (eduroam, WPA2-Enterprise)
@@ -126,6 +368,39 @@ void publishHello() {
   Serial.println("Published HELLO");
 }
 
+// Round to 2 decimals so the JSON stays short - every byte has to go through
+// two SSH hops on the ESP32, and 2 decimals is well within the sensor's noise.
+static inline float r2(float v) {
+  return roundf(v * 100.0f) / 100.0f;
+}
+
+// Retained, so the Ultra96 handler still gets it if it starts after the glove.
+bool publishCalibration() {
+  StaticJsonDocument<512> doc;
+  doc["type"] = "CALIBRATION";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+  JsonObject payload = doc.createNestedObject("payload");
+  JsonArray straight = payload.createNestedArray("straight");
+  JsonArray bent = payload.createNestedArray("bent");
+  for (int i = 0; i < 5; i++) {
+    straight.add(flexStraight[i]);
+    bent.add(flexBent[i]);
+  }
+  JsonArray gyro = payload.createNestedArray("gyro_offset");
+  for (int i = 0; i < 3; i++) {
+    gyro.add(r2(gyroOffset[i]));
+  }
+
+  char buf[320];
+  serializeJson(doc, buf);
+  bool ok = mqtt.publish(topicCalibration().c_str(), buf, true);
+  Serial.println(ok ? "Published CALIBRATION" : "Failed to publish CALIBRATION");
+  return ok;
+}
+
 void publishConfigAck() {
   StaticJsonDocument<192> doc;
   doc["type"] = "CONFIG_ACK";
@@ -139,12 +414,6 @@ void publishConfigAck() {
   serializeJson(doc, buf);
   mqtt.publish(topicCmdAck().c_str(), buf);
   Serial.println("Published CONFIG_ACK");
-}
-
-// Round to 2 decimals so the JSON stays short - every byte has to go through
-// two SSH hops on the ESP32, and 2 decimals is well within the sensor's noise.
-static inline float r2(float v) {
-  return roundf(v * 100.0f) / 100.0f;
 }
 
 void publishTelemetry() {
@@ -263,9 +532,6 @@ void connectMQTT() {
       Serial.println(" connected");
       mqtt.subscribe(topicCmdSet().c_str());
       publishHello();
-      // Stream straight away at the compiled-in sampleRateHz - a CONFIG on
-      // cmd/<id>/set is now an optional override, not a gate.
-      isRunning = true;
     } else {
       Serial.print(" failed, rc=");
       Serial.print(mqtt.state());
@@ -289,9 +555,28 @@ void mqttTask(void* param) {
   for (;;) {
     if (!mqtt.connected()) {
       isRunning = false;
+      calibrationPublished = false;
       connectMQTT();
     }
     mqtt.loop();
+
+    // Calibrate on the first connection only. A later reconnect just re-sends
+    // the stored readings, in case the broker lost them.
+    if (!calibrationComplete) {
+      calibrateFlexSensors();
+      continue;
+    }
+    if (!calibrationPublished) {
+      calibrationPublished = publishCalibration();
+      if (!calibrationPublished) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        continue;
+      }
+      // Stream at the compiled-in sampleRateHz - a CONFIG on cmd/<id>/set
+      // is an optional override, not a gate.
+      lastSampleMs = millis();
+      isRunning = true;
+    }
 
     if (isRunning) {
       unsigned long intervalMs = 1000UL / sampleRateHz;
@@ -354,7 +639,7 @@ void setup() {
 
   Serial.println("Five flex sensors initialised.");
 
-  // ---- Keep the vibration motor off ----
+  // ---- Vibration motor off until calibration starts ----
   pinMode(VIBRATION_PIN, OUTPUT);
   digitalWrite(VIBRATION_PIN, LOW);
 
