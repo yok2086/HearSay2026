@@ -26,10 +26,18 @@ RESULT_DEVICE_ID = "glove_pair"
 # ---- Must match dataset.py, which prepared the training data ----
 # Frame order: glove_01A (left hand) then glove_01B (right hand), each
 # ax, ay, az, gx, gy, gz, flex thumb..pinky.
-# The stream is cut into consecutive, non-overlapping blocks of WINDOW_SIZE
-# frames (2.56 s at 100 Hz); each block is classified once, then cleared.
 WINDOW_SIZE = 256
 NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
+
+# ---- Sliding window + merging (starting values, tune on the board) ----
+# The last WINDOW_SIZE frames (2.56 s) are classified every HOP frames.
+# A word is published when AGREE_N predictions in a row give the same sign,
+# each with confidence >= MIN_CONFIDENCE. The same word is not published again
+# until a full window has passed, so one sign isn't reported several times.
+HOP = 10                 # frames between predictions (10 -> 10 predictions/s at 100 Hz)
+AGREE_N = 3              # predictions in a row that must agree
+MIN_CONFIDENCE = 0.6     # softmax probability needed to count towards a word
+PRINT_PREDICTIONS = True # print every window prediction (for tuning)
 
 # Replaced with the training values from NORM_PATH when the handler starts.
 FEATURE_MEAN = np.zeros(22, dtype=np.float32)
@@ -41,6 +49,10 @@ MIN_FLEX_RANGE = 50  # ADC counts; same clamp as dataset.py, avoids dividing by 
 # this board's clock, then samples are paired by time rather than arrival order.
 PAIR_TOLERANCE_MS = 8       # a sample with no partner this close is dropped (100 Hz = 10 ms apart)
 OFFSET_WINDOW_MS = 5000     # clock offsets are re-estimated over the last 1-2 windows, to follow drift
+SAMPLE_PERIOD_MS = 10       # 100 Hz, as in the training data
+# A small gap in the paired frames is filled with copies of the last frame so the
+# window keeps its time scale. Anything bigger restarts the window.
+MAX_FILL = 20               # frames (0.2 s) of a gap that are filled
 
 
 FEATURE_NAMES = (
@@ -52,9 +64,15 @@ sample_queues = {
     GLOVE_IDS[0]: collections.deque(maxlen=WINDOW_SIZE * 3),
     GLOVE_IDS[1]: collections.deque(maxlen=WINDOW_SIZE * 3),
 }
-window_frames = []     # paired (22,) frames of the current block
+window_frames = collections.deque(maxlen=WINDOW_SIZE)   # last WINDOW_SIZE paired (22,) frames
+last_frame_time = None
+frames_since_prediction = 0
+frames_since_emit = WINDOW_SIZE
+streak_label, streak_count = None, 0
+last_emitted = None
 clock_offsets = {}     # device_id -> smallest (arrival - millis) seen, for the current and previous window
-unpaired_samples = 0   # dropped since the last block, printed with its result
+unpaired_samples = 0   # dropped since the last prediction
+filled_frames = 0      # filled since the last prediction
 classifier = None
 flex_calibration = {}  # device_id -> (straight, range, gyro offset), from the glove's CALIBRATION message
 waiting_for_calibration = set()
@@ -86,10 +104,10 @@ def store_calibration(device_id, payload):
     clock_offsets.pop(device_id, None)   # millis() restarts if the glove rebooted
 
     # Samples buffered so far used the old scale, and the other glove kept
-    # streaming while this one calibrated, so restart pairing and the block from here.
+    # streaming while this one calibrated, so restart pairing and the window from here.
     for queue in sample_queues.values():
         queue.clear()
-    window_frames.clear()
+    reset_window()
     print(f"[calibration] {device_id}: straight={straight.tolist()} range={flex_range.tolist()} "
           f"gyro_offset={gyro_offset.tolist()}")
 
@@ -169,21 +187,75 @@ def publish_result(client, label, class_index, confidence, sample_count):
     print(f"[inference] {label} ({confidence:.3f}) -> {topic}")
 
 
+def reset_window():
+    """Restart the window and the merging state."""
+    global last_frame_time, frames_since_prediction, frames_since_emit
+    global streak_label, streak_count, last_emitted
+
+    window_frames.clear()
+    last_frame_time = None
+    frames_since_prediction = 0
+    frames_since_emit = WINDOW_SIZE
+    streak_label, streak_count = None, 0
+    last_emitted = None
+
+
+def merge(client, label, class_index, confidence):
+    """Turn the stream of window predictions into words (see AGREE_N / MIN_CONFIDENCE)."""
+    global streak_label, streak_count, last_emitted, frames_since_emit
+
+    if confidence < MIN_CONFIDENCE:
+        streak_label, streak_count = None, 0
+        return
+    if label == streak_label:
+        streak_count += 1
+    else:
+        streak_label, streak_count = label, 1
+
+    # Publish once per streak, when it reaches AGREE_N. The same word again only
+    # after a full window, so a brief wobble mid-sign doesn't publish it twice.
+    if streak_count == AGREE_N and not (label == last_emitted and frames_since_emit < WINDOW_SIZE):
+        publish_result(client, label, class_index, confidence, WINDOW_SIZE)
+        last_emitted = label
+        frames_since_emit = 0
+
+
 def add_frame(client, frame):
-    global unpaired_samples
+    global frames_since_prediction, frames_since_emit, unpaired_samples, filled_frames
 
     window_frames.append(frame)
-    if len(window_frames) < WINDOW_SIZE:
+    frames_since_prediction += 1
+    frames_since_emit += 1
+    if len(window_frames) < WINDOW_SIZE or frames_since_prediction < HOP:
         return
+    frames_since_prediction = 0
 
     # TcnDpu.predict expects (22, WINDOW_SIZE), while the frames are (WINDOW_SIZE, 22).
     window = normalize(np.stack(window_frames).T)
-    window_frames.clear()
     label, class_index, confidence = classifier.predict(window)
-    publish_result(client, label, class_index, confidence, WINDOW_SIZE)
-    if unpaired_samples:
-        print(f"[align] dropped {unpaired_samples} unpaired samples since the last block")
-        unpaired_samples = 0
+    if PRINT_PREDICTIONS:
+        print(f"  window: {label:14s} {confidence:.3f}")
+    if unpaired_samples or filled_frames:
+        print(f"[align] dropped {unpaired_samples} unpaired samples, filled {filled_frames} missing frames")
+        unpaired_samples = filled_frames = 0
+    merge(client, label, class_index, confidence)
+
+
+def add_paired_frame(client, frame, frame_time):
+    """Add one paired frame, filling small gaps and restarting the window after big ones."""
+    global last_frame_time, filled_frames
+
+    if last_frame_time is not None:
+        missing = round((frame_time - last_frame_time) / SAMPLE_PERIOD_MS) - 1
+        if missing > MAX_FILL:
+            print(f"[warn] {missing} frames missing, restarting the window")
+            reset_window()
+        elif missing > 0:
+            filled_frames += missing
+            for _ in range(missing):
+                add_frame(client, window_frames[-1])
+    last_frame_time = frame_time
+    add_frame(client, frame)
 
 
 def pair_samples(client):
@@ -201,7 +273,7 @@ def pair_samples(client):
             continue
         left_queue.popleft()
         right_queue.popleft()
-        add_frame(client, np.concatenate((left_vector, right_vector)))
+        add_paired_frame(client, np.concatenate((left_vector, right_vector)), (left_time + right_time) / 2)
 
 
 def on_connect(client, userdata, flags, rc):

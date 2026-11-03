@@ -1,320 +1,55 @@
-import collections
-import json
+"""
+Reusable DPU inference module for the TCN sign classifier.
+
+Usage from any other Python file on the board:
+    import sys
+    sys.path.insert(0, "/home/xilinx/jupyter_notebooks/tcn")
+    from tcn_infer import TcnDpu, SIGNS
+
+    clf = TcnDpu()                          # loads overlay + model once
+    label, idx, conf = clf.predict(window)  # window: (22, 256) normalised float array
+
+Must run as root with XRT and PYNQ environments sourced.
+"""
 import os
-import sys
-import time
-
 import numpy as np
-import paho.mqtt.client as mqtt
-
-MODEL_DIR = "/home/xilinx/jupyter_notebooks/tcn"
-
-os.environ.setdefault("XILINX_XRT", "/usr")
-
-sys.path.insert(0, MODEL_DIR)
-from tcn_infer import TcnDpu
-
-BROKER_HOST = "localhost"
-BROKER_PORT = 8883
-MQTT_USER = "nathan"
-MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt"
-
-GLOVE_IDS = ("glove_01A", "glove_01B")
-RESULT_DEVICE_ID = "glove_pair"
-
-# ---- Must match dataset.py, which prepared the training data ----
-# Frame order: glove_01A (left hand) then glove_01B (right hand), each
-# ax, ay, az, gx, gy, gz, flex thumb..pinky.
-WINDOW_SIZE = 256
-NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
-
-# ---- Sliding window + merging (starting values, tune on the board) ----
-# The last WINDOW_SIZE frames (2.56 s) are classified every HOP frames.
-# A word is published when AGREE_N predictions in a row give the same sign,
-# each with confidence >= MIN_CONFIDENCE. The same word is not published again
-# until a full window has passed, so one sign isn't reported several times.
-HOP = 10                 # frames between predictions (10 -> 10 predictions/s at 100 Hz)
-AGREE_N = 3              # predictions in a row that must agree
-MIN_CONFIDENCE = 0.6     # softmax probability needed to count towards a word
-PRINT_PREDICTIONS = True # print every window prediction (for tuning)
-
-# ---- Pairing the two gloves ----
-# Each telemetry message carries an incrementing "seq". A small gap means lost
-# messages: the gap is filled with copies of that glove's last sample so the
-# hands stay aligned. Anything bigger, or a glove falling far behind the
-# other, restarts pairing and the window.
-MAX_FILL = 20            # samples (0.2 s) of a gap that are filled
-MAX_QUEUE_SKEW = 50      # samples (0.5 s) one glove may run ahead of the other
-
-# Replaced with the training values from NORM_PATH when the handler starts.
-FEATURE_MEAN = np.zeros(22, dtype=np.float32)
-FEATURE_STD = np.ones(22, dtype=np.float32)
-
-MIN_FLEX_RANGE = 50  # ADC counts; same clamp as dataset.py, avoids dividing by ~0
-
-
-FEATURE_NAMES = (
-    "ax", "ay", "az", "gx", "gy", "gz",
-    "flex1", "flex2", "flex3", "flex4", "flex5",
-)
-
-sample_queues = {
-    GLOVE_IDS[0]: collections.deque(maxlen=WINDOW_SIZE * 3),
-    GLOVE_IDS[1]: collections.deque(maxlen=WINDOW_SIZE * 3),
-}
-window_frames = collections.deque(maxlen=WINDOW_SIZE)   # last WINDOW_SIZE paired (22,) frames
-last_seq = {}                 # device_id -> last telemetry seq
-frames_since_prediction = 0
-frames_since_emit = WINDOW_SIZE
-streak_label, streak_count = None, 0
-last_emitted = None
-classifier = None
-flex_calibration = {}  # device_id -> (straight, range, gyro offset), from the glove's CALIBRATION message
-waiting_for_calibration = set()
-
-
-def store_calibration(device_id, payload):
-    straight = payload.get("straight", [])
-    bent = payload.get("bent", [])
-    if len(straight) != 5 or len(bent) != 5:
-        print(f"[warn] Invalid calibration from {device_id}")
-        return
-
-    straight = np.asarray(straight, dtype=np.float32)
-    flex_range = np.asarray(bent, dtype=np.float32) - straight
-    weak = np.abs(flex_range) < MIN_FLEX_RANGE
-    if weak.any():
-        print(f"[warn] {device_id}: small flex range for finger(s) {np.where(weak)[0].tolist()}, "
-              f"clamped to {MIN_FLEX_RANGE}")
-        flex_range = np.where(weak, np.where(flex_range < 0, -MIN_FLEX_RANGE, MIN_FLEX_RANGE), flex_range)
-
-    gyro_offset = payload.get("gyro_offset")
-    if gyro_offset is None or len(gyro_offset) != 3:
-        print(f"[warn] {device_id}: no gyro offset in calibration, using 0 (old glove firmware?)")
-        gyro_offset = [0.0, 0.0, 0.0]
-    gyro_offset = np.asarray(gyro_offset, dtype=np.float32)
-
-    flex_calibration[device_id] = (straight, flex_range, gyro_offset)
-    waiting_for_calibration.discard(device_id)
-
-    # Samples buffered so far used the old scale, and the other glove kept
-    # streaming while this one calibrated, so restart pairing and the window from here.
-    resync()
-    print(f"[calibration] {device_id}: straight={straight.tolist()} range={flex_range.tolist()} "
-          f"gyro_offset={gyro_offset.tolist()}")
-
-
-def glove_vector(payload, calibration):
-    imu = payload.get("imu", {})
-    flex = payload.get("flex", [])
-    if len(flex) != 5:
-        return None
-
-    values = [
-        imu.get("ax"), imu.get("ay"), imu.get("az"),
-        imu.get("gx"), imu.get("gy"), imu.get("gz"),
-        *flex,
-    ]
-    if any(value is None for value in values):
-        return None
-
-    # flex is raw ADC: 0 = straight, 1 = fist (not clipped), same as dataset.py.
-    vector = np.asarray(values, dtype=np.float32)
-    straight, flex_range, gyro_offset = calibration
-    vector[3:6] -= gyro_offset
-    vector[6:] = (vector[6:] - straight) / flex_range
-    return vector
-
-
-def load_norm_stats(path=NORM_PATH):
-    global FEATURE_MEAN, FEATURE_STD
-
-    stats = np.load(path)
-    if stats["mean"].shape != (22,) or stats["std"].shape != (22,):
-        raise SystemExit(f"{path}: expected 22 means and stds")
-    FEATURE_MEAN = stats["mean"].astype(np.float32)
-    FEATURE_STD = stats["std"].astype(np.float32)
-
-
-def normalize(window):
-    # Normalize a (22, WINDOW_SIZE) window using the training statistics
-    return (window - FEATURE_MEAN[:, None]) / FEATURE_STD[:, None]
-
-
-def publish_result(client, label, class_index, confidence, sample_count):
-    timestamp_ms = int(time.time() * 1000)
-    result = {
-        "type": "RESULT",
-        "device_id": RESULT_DEVICE_ID,
-        "session_id": "glove_pair",
-        "seq": timestamp_ms % 100000,
-        "timestamp_ms": timestamp_ms,
-        "payload": {
-            "event": label,
-            "class_index": class_index,
-            "confidence": round(confidence, 4),
-            "window_size": sample_count,
-            "source_devices": list(GLOVE_IDS),
-        },
-    }
-    topic = f"tele/{RESULT_DEVICE_ID}/result"
-    client.publish(topic, json.dumps(result), qos=0)
-    print(f"[inference] {label} ({confidence:.3f}) -> {topic}")
-
-
-def reset_merging():
-    global frames_since_prediction, frames_since_emit, streak_label, streak_count, last_emitted
-
-    frames_since_prediction = 0
-    frames_since_emit = WINDOW_SIZE
-    streak_label, streak_count = None, 0
-    last_emitted = None
-
-
-def resync():
-    """Restart pairing and the window: both queues, the window and the merging state."""
-    for queue in sample_queues.values():
-        queue.clear()
-    last_seq.clear()
-    window_frames.clear()
-    reset_merging()
-
-
-def merge(client, label, class_index, confidence):
-    """Turn the stream of window predictions into words (see AGREE_N / MIN_CONFIDENCE)."""
-    global streak_label, streak_count, last_emitted, frames_since_emit
-
-    if confidence < MIN_CONFIDENCE:
-        streak_label, streak_count = None, 0
-        return
-    if label == streak_label:
-        streak_count += 1
-    else:
-        streak_label, streak_count = label, 1
-
-    # Publish once per streak, when it reaches AGREE_N. The same word again only
-    # after a full window, so a brief wobble mid-sign doesn't publish it twice.
-    if streak_count == AGREE_N and not (label == last_emitted and frames_since_emit < WINDOW_SIZE):
-        publish_result(client, label, class_index, confidence, WINDOW_SIZE)
-        last_emitted = label
-        frames_since_emit = 0
-
-
-def add_frame(client, frame):
-    global frames_since_prediction, frames_since_emit
-
-    window_frames.append(frame)
-    frames_since_prediction += 1
-    frames_since_emit += 1
-    if len(window_frames) < WINDOW_SIZE or frames_since_prediction < HOP:
-        return
-    frames_since_prediction = 0
-
-    # TcnDpu.predict expects (22, WINDOW_SIZE), while the frames are (WINDOW_SIZE, 22).
-    window = normalize(np.stack(window_frames).T)
-    label, class_index, confidence = classifier.predict(window)
-    if PRINT_PREDICTIONS:
-        print(f"  window: {label:14s} {confidence:.3f}")
-    merge(client, label, class_index, confidence)
-
-
-def queue_sample(device_id, vector, seq):
-    """Add one glove sample, filling small seq gaps so the two hands stay aligned."""
-    queue = sample_queues[device_id]
-    if isinstance(seq, int):
-        prev = last_seq.get(device_id)
-        last_seq[device_id] = seq
-        if prev is not None:
-            gap = seq - prev - 1
-            if gap < 0 or gap > MAX_FILL:
-                print(f"[warn] {device_id}: seq jumped {prev} -> {seq}, resyncing")
-                resync()
-                last_seq[device_id] = seq
-            elif gap > 0:
-                fill = queue[-1] if queue else vector
-                queue.extend([fill] * gap)
-    queue.append(vector)
-
-    left_queue, right_queue = (sample_queues[g] for g in GLOVE_IDS)
-    if abs(len(left_queue) - len(right_queue)) > MAX_QUEUE_SKEW:
-        behind = GLOVE_IDS[0] if len(left_queue) < len(right_queue) else GLOVE_IDS[1]
-        print(f"[warn] {behind} is more than {MAX_QUEUE_SKEW} samples behind (not sending?), resyncing")
-        resync()
-
-
-def pair_samples(client):
-    left_queue = sample_queues[GLOVE_IDS[0]]
-    right_queue = sample_queues[GLOVE_IDS[1]]
-    while left_queue and right_queue:
-        add_frame(client, np.concatenate((left_queue.popleft(), right_queue.popleft())))
-
-
-def on_connect(client, userdata, flags, rc):
-    print(f"Connected to broker (rc={rc})")
-    client.subscribe([(f"tele/{device_id}/raw", 0) for device_id in GLOVE_IDS]
-                     + [(f"sys/{device_id}/calibration", 0) for device_id in GLOVE_IDS])
-    print(f"Subscribed to telemetry and calibration from {', '.join(GLOVE_IDS)}")
-
-
-def on_message(client, userdata, msg):
-    try:
-        message = json.loads(msg.payload.decode())
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        print(f"[warn] Could not parse message on {msg.topic}")
-        return
-
-    parts = msg.topic.split("/")
-    device_id = parts[1] if len(parts) > 2 else ""
-    if device_id not in sample_queues:
-        return
-
-    if message.get("type") == "CALIBRATION":
-        store_calibration(device_id, message.get("payload", {}))
-        return
-
-    if message.get("type") != "TELEMETRY":
-        return
-
-    calibration = flex_calibration.get(device_id)
-    if calibration is None:
-        if device_id not in waiting_for_calibration:
-            waiting_for_calibration.add(device_id)
-            print(f"[warn] Dropping telemetry from {device_id} until it sends its calibration")
-        return
-
-    vector = glove_vector(message.get("payload", {}), calibration)
-    if vector is None:
-        print(f"[warn] Invalid telemetry from {device_id}")
-        return
-
-    queue_sample(device_id, vector, message.get("seq"))
-    pair_samples(client)
-
-
-def main():
-    global classifier
-
-    os.chdir(MODEL_DIR)
-    load_norm_stats()
-    print(f"Loaded training mean/std from {NORM_PATH}")
-    print("Loading TCN DPU model...")
-    classifier = TcnDpu()
-    print("TCN DPU model loaded")
-    # Input shape is (1, 1, frames, 22). A mismatch means this isn't the model dataset.py trained.
-    if classifier.shape_in[2] != WINDOW_SIZE:
-        raise SystemExit(f"Model expects {classifier.shape_in[2]} frames but WINDOW_SIZE is {WINDOW_SIZE}")
-
-    client = mqtt.Client()
-    client.tls_set(ca_certs=CA_CERT_PATH)
-    client.username_pw_set(MQTT_USER, MQTT_PASS)
-    client.on_connect = on_connect
-    client.on_message = on_message
-
-    client.connect(BROKER_HOST, BROKER_PORT, keepalive=15)
-    print("Two-glove TCN MQTT inference bridge running. Ctrl+C to stop.")
-    client.loop_forever()
-
-
-if __name__ == "__main__":
-    main()
+from pynq_dpu import DpuOverlay
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+SIGNS = [
+    "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you",
+    "want", "what", "again", "eat_food", "more", "go_to", "toilet", "fine",
+    "like", "learn", "sign", "finish",
+]
+
+
+class TcnDpu:
+    def __init__(self, xmodel=os.path.join(HERE, "tcn.xmodel")):
+        self.overlay = DpuOverlay("dpu.bit")
+        self.overlay.load_model(xmodel)
+        self.dpu = self.overlay.runner
+        self.shape_in = tuple(self.dpu.get_input_tensors()[0].dims)    # (1, 1, 256, 22)
+        self.shape_out = tuple(self.dpu.get_output_tensors()[0].dims)  # (1, 20)
+        self.inp = [np.empty(self.shape_in, dtype=np.float32, order="C")]
+        self.out = [np.empty(self.shape_out, dtype=np.float32, order="C")]
+
+    def scores(self, window):
+        """window: (22, 256) normalised -> (20,) class probabilities"""
+        self.inp[0][0] = window.T.reshape(self.shape_in[1:])   # (22, 256) -> (1, 256, 22)
+        self.dpu.wait(self.dpu.execute_async(self.inp, self.out))
+        logits = self.out[0][0].astype(np.float64)
+        p = np.exp(logits - logits.max())
+        return p / p.sum()
+
+    def predict(self, window):
+        """window: (22, 256) normalised -> (sign name, class index, confidence 0-1)"""
+        p = self.scores(window)
+        i = int(p.argmax())
+        return SIGNS[i], i, float(p[i])
+
+
+def load_test_data():
+    """Returns (X, y): X (N, 22, 256) normalised windows, y (N,) class indices."""
+    d = np.load(os.path.join(HERE, "test_data.npz"))
+    return d["X"], d["y"]
