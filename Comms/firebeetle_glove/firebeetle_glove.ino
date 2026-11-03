@@ -13,7 +13,7 @@ MPU6050 mpu;
 // MQTT SETTINGS
 // ==================================================
 
-const char* DEVICE_ID = "glove_01A";
+const char* DEVICE_ID = "glove_01B";
 const char* MQTT_USER = "nathan";
 const char* MQTT_PASS = "mqtt";
 
@@ -22,13 +22,29 @@ PubSubClient mqtt(sshClient);
 
 String sessionId = "sess_001";
 uint32_t seq = 0;
-bool isRunning = false;
-unsigned long sampleRateHz = 100;
-unsigned long lastSampleMs = 0;
+volatile unsigned long sampleRateHz = 100;
 
 // Running totals, shown in the serial status line so you can see the real send rate
 unsigned long publishOk = 0;
 unsigned long publishFail = 0;
+unsigned long samplesSent = 0;
+volatile unsigned long samplesDropped = 0;
+
+// ---- Sampling and sending run separately, joined by this buffer ----
+#define SAMPLE_BUFFER_SAMPLES 600     // 6 s at 100 Hz: how long a stall can last before data is lost
+#define BATCH_SAMPLES 10              // samples per message: one message every 100 ms at 100 Hz
+#define BATCH_MAX_WAIT_MS 200
+#define TELEMETRY_BUFFER_BYTES 1100   // ~130 bytes of header + up to ~90 per sample
+#define MQTT_BUFFER_BYTES 1200
+
+struct RawSample {
+  uint32_t t;
+  int16_t imu[6];     // ax, ay, az, gx, gy, gz as read from the MPU6050
+  uint16_t flex[5];   // thumb .. pinky
+};
+
+QueueHandle_t sampleQueue;
+volatile bool samplingEnabled = false;
 
 String topicStatus() { return String("sys/") + DEVICE_ID + "/status"; }
 String topicRaw()    { return String("tele/") + DEVICE_ID + "/raw"; }
@@ -416,59 +432,78 @@ void publishConfigAck() {
   Serial.println("Published CONFIG_ACK");
 }
 
+// The sampling task reads the sensors at a steady rate and only touches this
+// queue, so a stalled send delays samples instead of losing them.
+void sampleTask(void* param) {
+
+  TickType_t lastWake = xTaskGetTickCount();
+
+  for (;;) {
+    vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000UL / sampleRateHz));
+    if (!samplingEnabled) continue;
+
+    RawSample sample;
+    sample.t = millis();   // timestamp at read time, not send time
+    mpu.getMotion6(&sample.imu[0], &sample.imu[1], &sample.imu[2],
+                   &sample.imu[3], &sample.imu[4], &sample.imu[5]);
+    for (int i = 0; i < 5; i++) {
+      sample.flex[i] = analogRead(flexPins[i]);
+    }
+
+    // Buffer full: drop the oldest sample, the newest is the most useful.
+    if (xQueueSend(sampleQueue, &sample, 0) != pdTRUE) {
+      RawSample oldest;
+      xQueueReceive(sampleQueue, &oldest, 0);
+      xQueueSend(sampleQueue, &sample, 0);
+      samplesDropped = samplesDropped + 1;
+    }
+  }
+}
+
+// One sample as [t,ax,ay,az,gx,gy,gz,f1,f2,f3,f4,f5]: accelerometer in m/s^2,
+// gyroscope in degrees/second, raw flex readings 0-4095 (thumb .. pinky).
+int formatSample(char* out, size_t size, const RawSample& s) {
+  return snprintf(out, size, "[%lu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%u,%u,%u,%u,%u]",
+                  (unsigned long)s.t,
+                  (s.imu[0] / ACCEL_SENSITIVITY) * GRAVITY,
+                  (s.imu[1] / ACCEL_SENSITIVITY) * GRAVITY,
+                  (s.imu[2] / ACCEL_SENSITIVITY) * GRAVITY,
+                  s.imu[3] / GYRO_SENSITIVITY,
+                  s.imu[4] / GYRO_SENSITIVITY,
+                  s.imu[5] / GYRO_SENSITIVITY,
+                  s.flex[0], s.flex[1], s.flex[2], s.flex[3], s.flex[4]);
+}
+
+// Sends the next batch once it is full. A batch that fails is kept and retried.
 void publishTelemetry() {
 
-  unsigned long t = millis();   // timestamp at read time, not publish time
+  static RawSample batch[BATCH_SAMPLES];
+  static int batchCount = 0;
+  static unsigned long lastSendMs = 0;
+  static char buf[TELEMETRY_BUFFER_BYTES];
 
-  // ---- Read MPU6050 ----
-  int16_t axRaw, ayRaw, azRaw;
-  int16_t gxRaw, gyRaw, gzRaw;
-  mpu.getMotion6(&axRaw, &ayRaw, &azRaw, &gxRaw, &gyRaw, &gzRaw);
-
-  // Accelerometer -> m/s^2, gyroscope -> degrees/second
-  float ax = (axRaw / ACCEL_SENSITIVITY) * GRAVITY;
-  float ay = (ayRaw / ACCEL_SENSITIVITY) * GRAVITY;
-  float az = (azRaw / ACCEL_SENSITIVITY) * GRAVITY;
-
-  float gx = gxRaw / GYRO_SENSITIVITY;
-  float gy = gyRaw / GYRO_SENSITIVITY;
-  float gz = gzRaw / GYRO_SENSITIVITY;
-
-  // ---- Read flex sensors (raw 12-bit ADC, 0-4095) ----
-  int flexValue[5];
-  flexValue[0] = analogRead(FLEX1_PIN);
-  flexValue[1] = analogRead(FLEX2_PIN);
-  flexValue[2] = analogRead(FLEX3_PIN);
-  flexValue[3] = analogRead(FLEX4_PIN);
-  flexValue[4] = analogRead(FLEX5_PIN);
-
-  // ---- Build and publish the message ----
-  StaticJsonDocument<320> doc;
-  doc["type"] = "TELEMETRY";
-  doc["device_id"] = DEVICE_ID;
-  doc["session_id"] = sessionId;
-  doc["seq"] = seq++;
-  doc["timestamp_ms"] = t;
-
-  JsonObject payload = doc.createNestedObject("payload");
-  JsonObject imu = payload.createNestedObject("imu");
-  imu["ax"] = r2(ax);
-  imu["ay"] = r2(ay);
-  imu["az"] = r2(az);
-  imu["gx"] = r2(gx);
-  imu["gy"] = r2(gy);
-  imu["gz"] = r2(gz);
-
-  // Raw flex readings, 0-4095 (thumb .. pinky)
-  JsonArray flex = payload.createNestedArray("flex");
-  for (int i = 0; i < 5; i++) {
-    flex.add(flexValue[i]);
+  while (batchCount < BATCH_SAMPLES && xQueueReceive(sampleQueue, &batch[batchCount], 0) == pdTRUE) {
+    batchCount++;
   }
 
-  char buf[384];
-  serializeJson(doc, buf);
+  // A part-full batch only goes out after a while, for low CONFIG sample rates.
+  if (batchCount == 0) return;
+  if (batchCount < BATCH_SAMPLES && millis() - lastSendMs < BATCH_MAX_WAIT_MS) return;
+
+  int len = snprintf(buf, sizeof(buf),
+                     "{\"type\":\"TELEMETRY\",\"device_id\":\"%s\",\"session_id\":\"%s\",\"seq\":%lu,\"timestamp_ms\":%lu,\"payload\":{\"samples\":[",
+                     DEVICE_ID, sessionId.c_str(), (unsigned long)seq, (unsigned long)batch[batchCount - 1].t);
+  for (int i = 0; i < batchCount; i++) {
+    if (i > 0) buf[len++] = ',';
+    len += formatSample(buf + len, sizeof(buf) - len, batch[i]);
+  }
+  len += snprintf(buf + len, sizeof(buf) - len, "]}}");
+
   if (mqtt.publish(topicRaw().c_str(), buf)) {
+    seq++;
     publishOk++;
+    samplesSent += batchCount;
+    lastSendMs = millis();
   } else {
     publishFail++;
     static unsigned long lastWarnMs = 0;
@@ -478,22 +513,26 @@ void publishTelemetry() {
       //   len + ~24 > bufSize        -> message too big for the MQTT buffer
       //   connected=0                -> tunnel/MQTT session dropped
       //   heap/maxBlock very small   -> ESP32 out of memory (libssh can't allocate the packet)
-      Serial.printf("Telemetry publish failed: len=%u bufSize=%u connected=%d state=%d freeHeap=%u maxBlock=%u\n",
-                    (unsigned)strlen(buf), (unsigned)mqtt.getBufferSize(),
+      Serial.printf("Telemetry publish failed: len=%d bufSize=%u connected=%d state=%d freeHeap=%u maxBlock=%u\n",
+                    len, (unsigned)mqtt.getBufferSize(),
                     (int)mqtt.connected(), mqtt.state(),
                     (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
     }
+    vTaskDelay(pdMS_TO_TICKS(20));
+    return;
   }
 
-  // ---- Serial status (twice a second, not every sample) ----
+  // ---- Serial status (twice a second, not every batch) ----
   static unsigned long lastPrintMs = 0;
   if (millis() - lastPrintMs >= 500) {
     lastPrintMs = millis();
-    Serial.printf("Accel m/s^2: %.3f %.3f %.3f | Gyro deg/s: %.3f %.3f %.3f | Flex: %d %d %d %d %d | pub ok=%lu fail=%lu heap=%u\n",
-                  ax, ay, az, gx, gy, gz,
-                  flexValue[0], flexValue[1], flexValue[2], flexValue[3], flexValue[4],
+    const RawSample& s = batch[batchCount - 1];
+    Serial.printf("Flex: %u %u %u %u %u | sent=%lu buffered=%u dropped=%lu | pub ok=%lu fail=%lu heap=%u\n",
+                  s.flex[0], s.flex[1], s.flex[2], s.flex[3], s.flex[4],
+                  samplesSent, (unsigned)uxQueueMessagesWaiting(sampleQueue), samplesDropped,
                   publishOk, publishFail, (unsigned)ESP.getFreeHeap());
   }
+  batchCount = 0;
 }
 
 void onMessage(char* topic, byte* payload, unsigned int length) {
@@ -546,15 +585,13 @@ void connectMQTT() {
 void mqttTask(void* param) {
 
   // PubSubClient's default packet buffer is 256 bytes, which is too small for
-  // a telemetry message (~250 bytes of JSON + topic + header) - publish()
-  // would silently return false. 512 leaves comfortable headroom.
-  bool bufferOk = mqtt.setBufferSize(512);
-  Serial.printf("MQTT buffer resize to 512: %s\n", bufferOk ? "ok" : "FAILED");
+  // a batch of samples - publish() would silently return false.
+  bool bufferOk = mqtt.setBufferSize(MQTT_BUFFER_BYTES);
+  Serial.printf("MQTT buffer resize to %d: %s\n", MQTT_BUFFER_BYTES, bufferOk ? "ok" : "FAILED");
 
   connectMQTT();
   for (;;) {
     if (!mqtt.connected()) {
-      isRunning = false;
       calibrationPublished = false;
       connectMQTT();
     }
@@ -572,24 +609,13 @@ void mqttTask(void* param) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         continue;
       }
-      // Stream at the compiled-in sampleRateHz - a CONFIG on cmd/<id>/set
-      // is an optional override, not a gate.
-      lastSampleMs = millis();
-      isRunning = true;
+      // Sample at the compiled-in sampleRateHz - a CONFIG on cmd/<id>/set
+      // is an optional override, not a gate. Sampling carries on through a
+      // later reconnect, so the buffer holds what happened during it.
+      samplingEnabled = true;
     }
 
-    if (isRunning) {
-      unsigned long intervalMs = 1000UL / sampleRateHz;
-      unsigned long now = millis();
-      if (now - lastSampleMs >= intervalMs) {
-        // Step by the interval (not to "now") so loop/publish jitter doesn't
-        // stretch every period; resync only if we've fallen a whole period behind.
-        lastSampleMs += intervalMs;
-        if (now - lastSampleMs >= intervalMs) lastSampleMs = now;
-        publishTelemetry();
-      }
-    }
-    // 1 ms tick: at 100 Hz the old 5 ms sleep alone ate half of each 10 ms period.
+    publishTelemetry();
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
@@ -646,6 +672,15 @@ void setup() {
   // ---- Network ----
   connectWiFi();
 
+  sampleQueue = xQueueCreate(SAMPLE_BUFFER_SAMPLES, sizeof(RawSample));
+  if (sampleQueue == NULL) {
+    Serial.println("Could not allocate the sample buffer!");
+    while (1);
+  }
+
+  // Calibration reads the same sensors, but only before samplingEnabled is set.
+  // On core 1, away from the WiFi stack, and above the send task.
+  xTaskCreatePinnedToCore(sampleTask, "SampleTask", 4096, NULL, 6, NULL, 1);
   xTaskCreate(mqttTask, "MqttSshTask", 24576, NULL, 5, NULL);
 }
 

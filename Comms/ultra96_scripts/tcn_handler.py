@@ -35,9 +35,10 @@ NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
 # each with confidence >= MIN_CONFIDENCE. The same word is not published again
 # until a full window has passed, so one sign isn't reported several times.
 HOP = 10                 # frames between predictions (10 -> 10 predictions/s at 100 Hz)
-AGREE_N = 3              # predictions in a row that must agree
-MIN_CONFIDENCE = 0.6     # softmax probability needed to count towards a word
+AGREE_N = 1              # predictions in a row that must agree
+MIN_CONFIDENCE = 0.2     # softmax probability needed to count towards a word
 PRINT_PREDICTIONS = True # print every window prediction (for tuning)
+PRINT_SAMPLES = False    # print every sample's glove timestamp (about 200 lines/s, for gaps.py)
 
 # Replaced with the training values from NORM_PATH when the handler starts.
 FEATURE_MEAN = np.zeros(22, dtype=np.float32)
@@ -48,7 +49,7 @@ MIN_FLEX_RANGE = 50  # ADC counts; same clamp as dataset.py, avoids dividing by 
 # Two-hand alignment, same idea as logger.py: each glove's millis() is put on
 # this board's clock, then samples are paired by time rather than arrival order.
 PAIR_TOLERANCE_MS = 8       # a sample with no partner this close is dropped (100 Hz = 10 ms apart)
-OFFSET_WINDOW_MS = 5000     # clock offsets are re-estimated over the last 1-2 windows, to follow drift
+CLOCK_DRIFT_PER_MS = 0.0002 # how fast a clock offset may creep up (0.2 ms per second)
 SAMPLE_PERIOD_MS = 10       # 100 Hz, as in the training data
 # A small gap in the paired frames is filled with copies of the last frame so the
 # window keeps its time scale. Anything bigger restarts the window.
@@ -70,7 +71,7 @@ frames_since_prediction = 0
 frames_since_emit = WINDOW_SIZE
 streak_label, streak_count = None, 0
 last_emitted = None
-clock_offsets = {}     # device_id -> smallest (arrival - millis) seen, for the current and previous window
+clock_offsets = {}     # device_id -> (estimated arrival - millis, when it was last updated)
 unpaired_samples = 0   # dropped since the last prediction
 filled_frames = 0      # filled since the last prediction
 classifier = None
@@ -112,39 +113,27 @@ def store_calibration(device_id, payload):
           f"gyro_offset={gyro_offset.tolist()}")
 
 
-def board_time_ms(device_id, timestamp_ms):
+def update_clock_offset(device_id, newest_timestamp_ms):
     # The network can only delay a message, never deliver it early, so the
     # smallest (arrival - millis) is the best estimate of the offset between the
-    # clocks. The spacing then comes from the glove's own clock, without network jitter.
+    # clocks. It only creeps up slowly, to follow clock drift without following
+    # a glove that is seconds behind. Only the newest sample in a batch is fresh.
     now_ms = time.perf_counter() * 1000
-    transit_ms = now_ms - timestamp_ms
-    offset = clock_offsets.setdefault(
-        device_id, {"current": float("inf"), "previous": float("inf"), "rotate_at_ms": 0.0})
-    if now_ms >= offset["rotate_at_ms"]:
-        offset["previous"] = offset["current"]
-        offset["current"] = transit_ms
-        offset["rotate_at_ms"] = now_ms + OFFSET_WINDOW_MS
-    else:
-        offset["current"] = min(offset["current"], transit_ms)
-    return timestamp_ms + min(offset["current"], offset["previous"])
+    transit_ms = now_ms - newest_timestamp_ms
+    if device_id in clock_offsets:
+        offset, updated_ms = clock_offsets[device_id]
+        transit_ms = min(transit_ms, offset + (now_ms - updated_ms) * CLOCK_DRIFT_PER_MS)
+    clock_offsets[device_id] = (transit_ms, now_ms)
+    return transit_ms
 
 
-def glove_vector(payload, calibration):
-    imu = payload.get("imu", {})
-    flex = payload.get("flex", [])
-    if len(flex) != 5:
-        return None
-
-    values = [
-        imu.get("ax"), imu.get("ay"), imu.get("az"),
-        imu.get("gx"), imu.get("gy"), imu.get("gz"),
-        *flex,
-    ]
-    if any(value is None for value in values):
+def glove_vector(sample, calibration):
+    # sample is [t, ax, ay, az, gx, gy, gz, f1, f2, f3, f4, f5], from one telemetry batch.
+    if not isinstance(sample, list) or len(sample) != 12 or any(value is None for value in sample):
         return None
 
     # flex is raw ADC: 0 = straight, 1 = fist (not clipped), same as dataset.py.
-    vector = np.asarray(values, dtype=np.float32)
+    vector = np.asarray(sample[1:], dtype=np.float32)
     straight, flex_range, gyro_offset = calibration
     vector[3:6] -= gyro_offset
     vector[6:] = (vector[6:] - straight) / flex_range
@@ -309,14 +298,21 @@ def on_message(client, userdata, msg):
             print(f"[warn] Dropping telemetry from {device_id} until it sends its calibration")
         return
 
-    vector = glove_vector(message.get("payload", {}), calibration)
-    timestamp_ms = message.get("timestamp_ms")
-    if vector is None or timestamp_ms is None:
+    samples = message.get("payload", {}).get("samples")
+    if not samples or not isinstance(samples, list):
+        print(f"[warn] Invalid telemetry from {device_id} (old glove firmware?)")
+        return
+
+    vectors = [glove_vector(sample, calibration) for sample in samples]
+    if any(vector is None for vector in vectors):
         print(f"[warn] Invalid telemetry from {device_id}")
         return
 
-    print(f"[sample] {device_id} timestamp_ms={timestamp_ms}")
-    sample_queues[device_id].append((board_time_ms(device_id, timestamp_ms), vector))
+    offset = update_clock_offset(device_id, samples[-1][0])
+    for sample, vector in zip(samples, vectors):
+        if PRINT_SAMPLES:
+            print(f"[sample] {device_id} timestamp_ms={sample[0]}")
+        sample_queues[device_id].append((sample[0] + offset, vector))
     pair_samples(client)
 
 
