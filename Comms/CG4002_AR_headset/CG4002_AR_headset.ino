@@ -2677,12 +2677,12 @@ void dispatchAudioCommand(String command) {
   else if (command.equalsIgnoreCase("eat_food")) playAudioPhrase(EAT_FOOD_AUDIO_BASE64, EAT_FOOD_AUDIO_SAMPLES, "Eat food");
   else if (command.equalsIgnoreCase("more")) playAudioPhrase(MORE_AUDIO_BASE64, MORE_AUDIO_SAMPLES, "More");
   else if (command.equalsIgnoreCase("go_to")) playAudioPhrase(GO_TO_AUDIO_BASE64, GO_TO_AUDIO_SAMPLES, "Go to");
-  else if (command.equalsIgnoreCase("toilet")) playAudioPhrase(BATHROOM_AUDIO_BASE64, BATHROOM_AUDIO_SAMPLES, "Bathroom");
+  else if (command.equalsIgnoreCase("toilet")) playAudioPhrase(TOILET_AUDIO_BASE64, TOILET_AUDIO_SAMPLES, "Toilet");
   else if (command.equalsIgnoreCase("fine")) playAudioPhrase(FINE_AUDIO_BASE64, FINE_AUDIO_SAMPLES, "Fine");
   else if (command.equalsIgnoreCase("like")) playAudioPhrase(LIKE_AUDIO_BASE64, LIKE_AUDIO_SAMPLES, "Like");
   else if (command.equalsIgnoreCase("learn")) playAudioPhrase(LEARN_AUDIO_BASE64, LEARN_AUDIO_SAMPLES, "Learn");
   else if (command.equalsIgnoreCase("sign")) playAudioPhrase(SIGN_AUDIO_BASE64, SIGN_AUDIO_SAMPLES, "Sign");
-  else if (command.equalsIgnoreCase("finish")) playAudioPhrase(DONE_AUDIO_BASE64, DONE_AUDIO_SAMPLES, "Done");
+  else if (command.equalsIgnoreCase("finish")) playAudioPhrase(FINISH_AUDIO_BASE64, FINISH_AUDIO_SAMPLES, "Finish");
   else { Serial.println("Unknown command. Try hello, see_you_later, me, yes, no, help, please, thank_you, want, what, again, eat_food, more, go_to, toilet, fine, like, learn, sign, finish."); }
 }
 

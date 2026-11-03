@@ -26,24 +26,21 @@ RESULT_DEVICE_ID = "glove_pair"
 # ---- Must match dataset.py, which prepared the training data ----
 # Frame order: glove_01A (left hand) then glove_01B (right hand), each
 # ax, ay, az, gx, gy, gz, flex thumb..pinky.
+# The stream is cut into consecutive, non-overlapping blocks of WINDOW_SIZE
+# frames (2.56 s at 100 Hz); each block is classified once, then cleared.
 WINDOW_SIZE = 256
-STILL_FRAMES = 10
-NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by dataset.py
-GYRO_RANGES = ((3, 6), (14, 17))
-FLEX_CH = list(range(6, 11)) + list(range(17, 22))
-
-# Training windows hold one take each, so the live stream is cut into takes.
-# STARTING GUESSES, tune on the board: dataset.py doesn't define these.
-MOTION_THRESHOLD_DPS = 30.0     # a hand rotating faster than this is moving
-FLEX_CHANGE_THRESHOLD = 0.25    # flex change over STILL_FRAMES that counts as moving
-END_STILL_FRAMES = 30           # still for this long (0.3 s) ends a take
-MIN_TAKE_FRAMES = 40            # anything shorter is treated as a twitch
+NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
 
 # Replaced with the training values from NORM_PATH when the handler starts.
 FEATURE_MEAN = np.zeros(22, dtype=np.float32)
 FEATURE_STD = np.ones(22, dtype=np.float32)
 
 MIN_FLEX_RANGE = 50  # ADC counts; same clamp as dataset.py, avoids dividing by ~0
+
+# Two-hand alignment, same idea as logger.py: each glove's millis() is put on
+# this board's clock, then samples are paired by time rather than arrival order.
+PAIR_TOLERANCE_MS = 8       # a sample with no partner this close is dropped (100 Hz = 10 ms apart)
+OFFSET_WINDOW_MS = 5000     # clock offsets are re-estimated over the last 1-2 windows, to follow drift
 
 
 FEATURE_NAMES = (
@@ -55,9 +52,9 @@ sample_queues = {
     GLOVE_IDS[0]: collections.deque(maxlen=WINDOW_SIZE * 3),
     GLOVE_IDS[1]: collections.deque(maxlen=WINDOW_SIZE * 3),
 }
-recent_frames = collections.deque(maxlen=STILL_FRAMES)
-current_take = []
-still_run = 0
+window_frames = []     # paired (22,) frames of the current block
+clock_offsets = {}     # device_id -> smallest (arrival - millis) seen, for the current and previous window
+unpaired_samples = 0   # dropped since the last block, printed with its result
 classifier = None
 flex_calibration = {}  # device_id -> (straight, range, gyro offset), from the glove's CALIBRATION message
 waiting_for_calibration = set()
@@ -86,15 +83,32 @@ def store_calibration(device_id, payload):
 
     flex_calibration[device_id] = (straight, flex_range, gyro_offset)
     waiting_for_calibration.discard(device_id)
+    clock_offsets.pop(device_id, None)   # millis() restarts if the glove rebooted
 
     # Samples buffered so far used the old scale, and the other glove kept
-    # streaming while this one calibrated, so restart pairing from here.
+    # streaming while this one calibrated, so restart pairing and the block from here.
     for queue in sample_queues.values():
         queue.clear()
-    recent_frames.clear()
-    reset_take()
+    window_frames.clear()
     print(f"[calibration] {device_id}: straight={straight.tolist()} range={flex_range.tolist()} "
           f"gyro_offset={gyro_offset.tolist()}")
+
+
+def board_time_ms(device_id, timestamp_ms):
+    # The network can only delay a message, never deliver it early, so the
+    # smallest (arrival - millis) is the best estimate of the offset between the
+    # clocks. The spacing then comes from the glove's own clock, without network jitter.
+    now_ms = time.perf_counter() * 1000
+    transit_ms = now_ms - timestamp_ms
+    offset = clock_offsets.setdefault(
+        device_id, {"current": float("inf"), "previous": float("inf"), "rotate_at_ms": 0.0})
+    if now_ms >= offset["rotate_at_ms"]:
+        offset["previous"] = offset["current"]
+        offset["current"] = transit_ms
+        offset["rotate_at_ms"] = now_ms + OFFSET_WINDOW_MS
+    else:
+        offset["current"] = min(offset["current"], transit_ms)
+    return timestamp_ms + min(offset["current"], offset["previous"])
 
 
 def glove_vector(payload, calibration):
@@ -129,17 +143,6 @@ def load_norm_stats(path=NORM_PATH):
     FEATURE_STD = stats["std"].astype(np.float32)
 
 
-def fit_window(frames, length=WINDOW_SIZE):
-    # Centre-pad with repeated first/last frames, or centre-crop if too long
-    count = frames.shape[0]
-    if count >= length:
-        start = (count - length) // 2
-        return frames[start:start + length]
-    before = (length - count) // 2
-    after = length - count - before
-    return np.pad(frames, ((before, after), (0, 0)), mode="edge")
-
-
 def normalize(window):
     # Normalize a (22, WINDOW_SIZE) window using the training statistics
     return (window - FEATURE_MEAN[:, None]) / FEATURE_STD[:, None]
@@ -166,57 +169,39 @@ def publish_result(client, label, class_index, confidence, sample_count):
     print(f"[inference] {label} ({confidence:.3f}) -> {topic}")
 
 
-def reset_take():
-    global still_run
+def add_frame(client, frame):
+    global unpaired_samples
 
-    current_take.clear()
-    still_run = 0
-
-
-def is_moving(frame):
-    for start, end in GYRO_RANGES:
-        if np.linalg.norm(frame[start:end]) > MOTION_THRESHOLD_DPS:
-            return True
-    if recent_frames:
-        return np.abs(frame[FLEX_CH] - recent_frames[0][FLEX_CH]).max() > FLEX_CHANGE_THRESHOLD
-    return False
-
-
-def finish_take(client):
-    # Keep STILL_FRAMES of the still frames that ended the take, as training
-    # takes also have a short pause around the sign.
-    extra_still = max(0, still_run - STILL_FRAMES)
-    frames = current_take[:len(current_take) - extra_still]
-    reset_take()
-    if len(frames) < MIN_TAKE_FRAMES:
+    window_frames.append(frame)
+    if len(window_frames) < WINDOW_SIZE:
         return
 
-    # TcnDpu.predict expects (22, WINDOW_SIZE), while the frames are (T, 22).
-    window = normalize(fit_window(np.stack(frames)).T)
+    # TcnDpu.predict expects (22, WINDOW_SIZE), while the frames are (WINDOW_SIZE, 22).
+    window = normalize(np.stack(window_frames).T)
+    window_frames.clear()
     label, class_index, confidence = classifier.predict(window)
-    publish_result(client, label, class_index, confidence, len(frames))
-
-
-def add_frame(client, frame):
-    global still_run
-
-    moving = is_moving(frame)
-    if current_take:
-        current_take.append(frame)
-        still_run = 0 if moving else still_run + 1
-        if still_run >= END_STILL_FRAMES or len(current_take) >= WINDOW_SIZE:
-            finish_take(client)
-    elif moving:
-        current_take.extend(recent_frames)   # the pause before the sign
-        current_take.append(frame)
-    recent_frames.append(frame)
+    publish_result(client, label, class_index, confidence, WINDOW_SIZE)
+    if unpaired_samples:
+        print(f"[align] dropped {unpaired_samples} unpaired samples since the last block")
+        unpaired_samples = 0
 
 
 def pair_samples(client):
+    global unpaired_samples
+
     left_queue = sample_queues[GLOVE_IDS[0]]
     right_queue = sample_queues[GLOVE_IDS[1]]
     while left_queue and right_queue:
-        add_frame(client, np.concatenate((left_queue.popleft(), right_queue.popleft())))
+        left_time, left_vector = left_queue[0]
+        right_time, right_vector = right_queue[0]
+        if abs(left_time - right_time) > PAIR_TOLERANCE_MS:
+            # The earlier sample's partner was lost or never sent.
+            (left_queue if left_time < right_time else right_queue).popleft()
+            unpaired_samples += 1
+            continue
+        left_queue.popleft()
+        right_queue.popleft()
+        add_frame(client, np.concatenate((left_vector, right_vector)))
 
 
 def on_connect(client, userdata, flags, rc):
@@ -253,11 +238,13 @@ def on_message(client, userdata, msg):
         return
 
     vector = glove_vector(message.get("payload", {}), calibration)
-    if vector is None:
+    timestamp_ms = message.get("timestamp_ms")
+    if vector is None or timestamp_ms is None:
         print(f"[warn] Invalid telemetry from {device_id}")
         return
 
-    sample_queues[device_id].append(vector)
+    print(f"[sample] {device_id} timestamp_ms={timestamp_ms}")
+    sample_queues[device_id].append((board_time_ms(device_id, timestamp_ms), vector))
     pair_samples(client)
 
 
