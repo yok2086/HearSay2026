@@ -36,7 +36,7 @@ NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
 # until a full window has passed, so one sign isn't reported several times.
 HOP = 10                 # frames between predictions (10 -> 10 predictions/s at 100 Hz)
 AGREE_N = 3              # predictions in a row that must agree
-MIN_CONFIDENCE = 0.5     # softmax probability needed to count towards a word
+MIN_CONFIDENCE = 0.6     # softmax probability needed to count towards a word
 PRINT_PREDICTIONS = True # print every window prediction (for tuning)
 PRINT_SAMPLES = False    # print every sample's glove timestamp (about 200 lines/s, for gaps.py)
 
