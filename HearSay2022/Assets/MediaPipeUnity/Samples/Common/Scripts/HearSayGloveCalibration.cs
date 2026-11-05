@@ -5,11 +5,10 @@ namespace HearSay
     // Guided glove calibration on the ASL translation screen.
     //
     // Pops up by itself the first time the Ultra96 connects in a session (and from
-    // the "Calibrate glove" button any time after). Follows the team's 6 steps:
+    // the "Calibrate glove" button any time after). Follows the team's steps (the "return to straight" check is left out):
     //   1. Ready            "Put on both gloves and relax your hands."   1 short buzz
     //   2. Straight hands   glove saves straight readings                1 short buzz
     //   3. Make fists       glove saves bent readings                    2 short buzzes
-    //   4. Return straight  fingers must come back near straight         1 short buzz
     //   5. Complete         glove starts using the new values            1 long buzz
     //   6. Failed           shows which sensors failed, Try again        3 short buzzes
     // Each step is a CALIBRATE command on cmd/<glove>/set; the glove buzzes, waits
@@ -17,7 +16,7 @@ namespace HearSay
     // Drawn inside HearSayRoles' OnGUI (1000 x 650 layout), so it works in VR too.
     public sealed class HearSayGloveCalibration : MonoBehaviour
     {
-        private enum Step { Closed, Intro, Ready, Straight, Fist, Check, Saving, Complete, Failed }
+        private enum Step { Closed, Intro, Ready, Straight, Fist, Saving, Complete, Failed }
 
         private static readonly string[] FingerNames = { "Thumb", "Index", "Middle", "Ring", "Pinky" };
         private const int SettleMs = 2500;          // time to get into the pose after the buzz
@@ -63,7 +62,6 @@ namespace HearSay
                 case Step.Ready: Send("ready", 1500); break;
                 case Step.Straight: Send("straight", SettleMs); break;
                 case Step.Fist: Send("fist", SettleMs); break;
-                case Step.Check: Send("check", SettleMs); break;
                 case Step.Saving: Send("save", 0); break;
                 case Step.Failed: Send("fail", 0); break;
             }
@@ -72,7 +70,7 @@ namespace HearSay
         private static string StepName(Step s) => s switch
         {
             Step.Ready => "ready", Step.Straight => "straight", Step.Fist => "fist",
-            Step.Check => "check", Step.Saving => "save", _ => null,
+            Step.Saving => "save", _ => null,
         };
 
         private void Send(string stepName, int settleMs)
@@ -140,7 +138,7 @@ namespace HearSay
                 Go(step switch
                 {
                     Step.Ready => Step.Straight, Step.Straight => Step.Fist,
-                    Step.Fist => Step.Check, Step.Check => Step.Saving, _ => Step.Complete,
+                    Step.Fist => Step.Saving, _ => Step.Complete,
                 });
                 return;
             }
@@ -155,7 +153,6 @@ namespace HearSay
             Step.Ready => "no reading or a very noisy reading (check the wire).",
             Step.Straight => "reading was not steady (keep the hand still).",
             Step.Fist => "did not bend enough (check the sensor sits on the finger).",
-            Step.Check => "did not return to its straight reading.",
             _ => "could not save the calibration.",
         };
 
@@ -173,9 +170,9 @@ namespace HearSay
             {
                 case Step.Intro:
                     Title(autoOpened ? "Calibrate your gloves before starting?" : "Calibrate the gloves");
-                    Body("Takes about 20 seconds. The person wearing the gloves:\n" +
+                    Body("Takes about 15 seconds. The person wearing the gloves:\n" +
                          "1. Relaxes both hands\n2. Straightens all fingers and holds still\n" +
-                         "3. Makes a comfortable fist\n4. Opens the hands again\n" +
+                         "3. Makes a comfortable fist and holds it\n" +
                          "The gloves buzz at the start of every step.");
                     bool connected = mqtt != null && mqtt.IsConnected;
                     if (!connected)
@@ -195,9 +192,6 @@ namespace HearSay
                     break;
                 case Step.Fist:
                     Instruction("Make a comfortable fist with both hands and hold.", "Two short buzzes · measuring bent fingers");
-                    break;
-                case Step.Check:
-                    Instruction("Open both hands and straighten your fingers again.", "One short buzz · checking the sensors return");
                     break;
                 case Step.Saving:
                     Instruction("Saving the calibration…", "");
@@ -231,8 +225,8 @@ namespace HearSay
 
         private string StepCounter() => step switch
         {
-            Step.Ready => "  ·  STEP 1 OF 4", Step.Straight => "  ·  STEP 2 OF 4",
-            Step.Fist => "  ·  STEP 3 OF 4", Step.Check => "  ·  STEP 4 OF 4", _ => "",
+            Step.Ready => "  ·  STEP 1 OF 3", Step.Straight => "  ·  STEP 2 OF 3",
+            Step.Fist => "  ·  STEP 3 OF 3", _ => "",
         };
 
         private string GloveSummary()
