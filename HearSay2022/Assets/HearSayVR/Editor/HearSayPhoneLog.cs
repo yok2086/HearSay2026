@@ -49,6 +49,28 @@ namespace HearSay.Editor
             }
         }
 
+        [MenuItem("HearSay/Debug/Check phone network")]
+        public static void CheckNetwork()
+        {
+            string adb = Path.Combine(AndroidExternalToolsSettings.sdkRootPath, "platform-tools", "adb");
+            string script = "echo '== active network =='; dumpsys connectivity | grep -E 'Active default network|NetworkAgentInfo.*(WIFI|CELLULAR|VPN)' | head -5; " +
+                "echo '== wifi =='; dumpsys wifi | grep -m1 'mWifiInfo'; " +
+                "echo '== stujump ssh banner =='; (sleep 4) | toybox nc -w 6 stujump.comp.nus.edu.sg 22 | head -c 80; echo; " +
+                "echo '== https test =='; (echo -e 'HEAD / HTTP/1.0\\r\\n\\r\\n'; sleep 3) | toybox nc -w 5 www.google.com 80 | head -1";
+            var info = new ProcessStartInfo(adb, "shell \"" + script.Replace("\"", "\\\"") + "\"")
+            {
+                RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false,
+            };
+            using (var process = Process.Start(info))
+            {
+                string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+                process.WaitForExit(30000);
+                Directory.CreateDirectory("Builds");
+                File.WriteAllText("Builds/phone-network.txt", output);
+                UnityEngine.Debug.Log("HearSay: phone network check:\n" + output);
+            }
+        }
+
         [MenuItem("HearSay/Debug/Save phone screenshot")]
         public static void Screenshot()
         {

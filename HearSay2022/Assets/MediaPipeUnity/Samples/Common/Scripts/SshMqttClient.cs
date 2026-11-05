@@ -157,6 +157,7 @@ namespace CG4002.Comms
                 throw new InvalidOperationException("This client already has a running connection.");
             try
             {
+                int failures = 0; // back off 3 s, 6 s, 12 s ... 30 s so stujump doesn't block us
                 while (!cancellation.IsCancellationRequested)
                 {
                     try
@@ -180,6 +181,7 @@ namespace CG4002.Comms
                                     secrets.ultra96Username, secrets.ultra96Password, key))
                                 {
                                     await Task.Run(() => ultra.Connect(), cancellation).ConfigureAwait(false);
+                                    failures = 0;
                                     using (var brokerPort = new ForwardedPortLocal("127.0.0.1", 0, "127.0.0.1", 1883))
                                     using (var whisperPort = new ForwardedPortLocal("127.0.0.1", 0, "127.0.0.1", WhisperRemotePort))
                                     {
@@ -223,7 +225,9 @@ namespace CG4002.Comms
                         lock (gate) lastError = error.ToString();
                         SetStatus("Disconnected: " + root.GetType().Name + ": " + root.Message + " (retrying)");
                     }
-                    try { await Task.Delay(3000, cancellation).ConfigureAwait(false); }
+                    failures++;
+                    int waitMs = Math.Min(30000, 3000 << Math.Min(failures - 1, 4));
+                    try { await Task.Delay(waitMs, cancellation).ConfigureAwait(false); }
                     catch (OperationCanceledException) { break; }
                 }
                 SetStatus("Stopped");

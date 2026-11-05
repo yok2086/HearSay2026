@@ -63,6 +63,7 @@ namespace CG4002.Comms
             try
             {
                 secrets.Validate();
+                int failures = 0; // back off 3 s, 6 s, 12 s ... 30 s so stujump doesn't block us
                 while (!cancellation.IsCancellationRequested)
                 {
                     string hop = "stujump";
@@ -87,6 +88,7 @@ namespace CG4002.Comms
                                     secrets.ultra96Username, secrets.ultra96Password, key))
                                 {
                                     ultra.Connect();
+                                    failures = 0;
                                     using (var serverPort = new ForwardedPortLocal("127.0.0.1", (uint)port,
                                         "127.0.0.1", (uint)port))
                                     {
@@ -110,7 +112,9 @@ namespace CG4002.Comms
                         SetStatus("Tunnel down at " + hop + ": " + root.GetType().Name + ": " + root.Message + " (retrying)");
                     }
                     finally { ready = false; }
-                    try { await Task.Delay(3000, cancellation).ConfigureAwait(false); }
+                    failures++;
+                    int waitMs = Math.Min(30000, 3000 << Math.Min(failures - 1, 4));
+                    try { await Task.Delay(waitMs, cancellation).ConfigureAwait(false); }
                     catch (OperationCanceledException) { break; }
                 }
                 SetStatus("Stopped");

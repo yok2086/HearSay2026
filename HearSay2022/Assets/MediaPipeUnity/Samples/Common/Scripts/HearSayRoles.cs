@@ -226,11 +226,17 @@ namespace HearSay
                     (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
                     DeafRole = true;
+                    // HearSay Demo decides the role from this saved value (1 = Deaf user /
+                    // live captions); without it the scene opened in partner mode, no captions.
+                    PlayerPrefs.SetInt("HearSay.VrRole", 1);
+                    PlayerPrefs.Save();
                     SceneManager.LoadScene("HearSay Demo");
                 }
                 if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
                     (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
+                    PlayerPrefs.SetInt("HearSay.VrRole", 2); // 2 = Conversation partner / ASL
+                    PlayerPrefs.Save();
                     EnterPartnerRole();
                 }
                 if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
