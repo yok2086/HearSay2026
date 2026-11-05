@@ -188,7 +188,25 @@ namespace CG4002.Comms
                                         lock (gate) whisperLocalPort = (int)whisperPort.BoundPort;
                                         try
                                         {
-                                            await ReceiveAsync(jump, ultra, (int)brokerPort.BoundPort, cancellation).ConfigureAwait(false);
+                                            // Keep the SSH tunnel (and so the Whisper API) up even when the
+                                            // MQTT broker is down or rejects us: retry MQTT on its own.
+                                            while (!cancellation.IsCancellationRequested && jump.IsConnected && ultra.IsConnected)
+                                            {
+                                                try
+                                                {
+                                                    await ReceiveAsync(jump, ultra, (int)brokerPort.BoundPort, cancellation).ConfigureAwait(false);
+                                                }
+                                                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
+                                                catch (Exception mqttError) when (jump.IsConnected && ultra.IsConnected)
+                                                {
+                                                    var root = mqttError.GetBaseException();
+                                                    lock (gate) lastError = mqttError.ToString();
+                                                    SetStatus("SSH connected (Whisper ready); MQTT failed: " + root.Message + " (retrying)");
+                                                }
+                                                await Task.Delay(3000, cancellation).ConfigureAwait(false);
+                                            }
+                                            if (!cancellation.IsCancellationRequested)
+                                                throw new Exception("SSH connection to the Ultra96 was lost");
                                         }
                                         finally { lock (gate) whisperLocalPort = 0; }
                                     }

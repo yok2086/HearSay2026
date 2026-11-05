@@ -30,6 +30,25 @@ namespace HearSay.Editor
             Screenshot();
         }
 
+        [MenuItem("HearSay/Debug/Open VR app on phone")]
+        public static void OpenApp()
+        {
+            string adb = Path.Combine(AndroidExternalToolsSettings.sdkRootPath, "platform-tools", "adb");
+            var info = new ProcessStartInfo(adb,
+                "shell monkey -p com.DefaultCompany.HearSay2022.vrtest -c android.intent.category.LAUNCHER 1")
+            {
+                RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false,
+            };
+            using (var process = Process.Start(info))
+            {
+                string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+                process.WaitForExit(20000);
+                Directory.CreateDirectory("Builds");
+                File.WriteAllText("Builds/phone-open.txt", output);
+                UnityEngine.Debug.Log("HearSay: open app on phone: " + output);
+            }
+        }
+
         [MenuItem("HearSay/Debug/Save phone screenshot")]
         public static void Screenshot()
         {

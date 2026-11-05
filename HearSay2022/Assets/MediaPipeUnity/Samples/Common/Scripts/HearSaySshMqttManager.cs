@@ -211,7 +211,8 @@ public class HearSaySshMqttManager : MonoBehaviour
         get
         {
             int port = client != null ? client.WhisperApiPort : 0;
-            return IsConnected && port > 0 ? $"http://127.0.0.1:{port}/inference" : null;
+            // Only needs the SSH tunnel, not MQTT, so captions work even if the broker is down.
+            return port > 0 ? $"http://127.0.0.1:{port}/inference" : null;
         }
     }
     public string LastCommandError { get; private set; }
