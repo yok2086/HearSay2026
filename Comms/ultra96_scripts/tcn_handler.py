@@ -132,7 +132,6 @@ def glove_vector(sample, calibration):
     if not isinstance(sample, list) or len(sample) != 12 or any(value is None for value in sample):
         return None
 
-    # flex is raw ADC: 0 = straight, 1 = fist (not clipped), same as dataset.py.
     vector = np.asarray(sample[1:], dtype=np.float32)
     straight, flex_range, gyro_offset = calibration
     vector[3:6] -= gyro_offset

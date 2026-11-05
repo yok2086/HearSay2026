@@ -3211,7 +3211,14 @@ bool readMicrophones(
 // RESET SOUND EVENT
 // ==================================================
 
+#define EARLY_MIN_VOTES 3     // frames of timing data before trusting a direction
+#define REPUBLISH_MS 500      // refresh rate while someone keeps talking
+unsigned long lastDirectionPublishMs = 0;
+bool directionSentThisEvent = false;
+
 void resetSoundEvent() {
+
+  directionSentThisEvent = false;
 
   soundEventActive = false;
 
@@ -3228,8 +3235,6 @@ void resetSoundEvent() {
 }
 
 
-// ==================================================
-// PROCESS COMPLETED EVENT
 void publishDirectionTelemetry(const char* direction) {
   if (!isRunning || !mqtt.connected()) {
     return;
@@ -3262,6 +3267,28 @@ void publishDirectionTelemetry(const char* direction) {
 }
 
 
+void publishDirectionIfReady() {
+  if (speechFrames < MIN_SPEECH_FRAMES || validTDOAFrames < EARLY_MIN_VOTES) return;
+  if (directionSentThisEvent && millis() - lastDirectionPublishMs < REPUBLISH_MS) return;
+
+  const char* direction = nullptr;
+  if (leftTDOAVotes > rightTDOAVotes && leftTDOAVotes > centreTDOAVotes) {
+    direction = "LEFT";
+  } else if (rightTDOAVotes > leftTDOAVotes && rightTDOAVotes > centreTDOAVotes) {
+    direction = "RIGHT";
+  }
+  if (direction == nullptr) return;
+
+  Serial.print("SOUND DETECTED ON ");
+  Serial.println(direction);
+  publishDirectionTelemetry(direction);
+  directionSentThisEvent = true;
+  lastDirectionPublishMs = millis();
+}
+
+
+// ==================================================
+// PROCESS COMPLETED EVENT
 // ==================================================
 //
 // Serial output is intentionally limited to the
@@ -3269,6 +3296,11 @@ void publishDirectionTelemetry(const char* direction) {
 // ==================================================
 
 void processSoundEvent() {
+
+  // Left/Right was already reported during the event.
+  if (directionSentThisEvent) {
+    return;
+  }
 
   // Reject short events/noise.
   if (
@@ -3546,6 +3578,9 @@ void processMicrophone() {
         }
       }
     }
+
+
+    publishDirectionIfReady();
 
 
     // ==================================================
