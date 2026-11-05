@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HearSay
@@ -90,6 +91,16 @@ namespace HearSay
 
             // VR only: the split view is always on, whatever is touched.
 
+            // Buttons drawn last frame, in reading order (rows top to bottom, then left to right).
+            shownButtons.Clear();
+            shownButtons.AddRange(frameButtons);
+            frameButtons.Clear();
+            float rowTolerance = Screen.height * 0.05f;
+            shownButtons.Sort((a, b) =>
+                Mathf.Abs(a.Value.center.y - b.Value.center.y) < rowTolerance
+                    ? a.Value.center.x.CompareTo(b.Value.center.x)
+                    : a.Value.center.y.CompareTo(b.Value.center.y));
+
             TrackHead();
 
             if (SingleTap())
@@ -100,7 +111,19 @@ namespace HearSay
         }
 
         [Tooltip("No-gyroscope phones: degrees of pointer movement per degree of sideways head tilt.")]
-        public float tiltToTurn = 1.8f;
+        public float tiltToTurn = 2.2f;
+        [Tooltip("No-gyroscope phones: degrees of looking up/down to move to the next button.")]
+        public float degreesPerButton = 8f;
+
+        // No-gyroscope phones can't sense turning left/right, so the circle steps
+        // through the buttons on screen in reading order as you look up and down.
+        private bool stepMode;
+        private int stepIndex = -1;
+        private string stepKey;
+        private bool hasSnap;
+        private Vector2 snapTarget;
+        private readonly List<KeyValuePair<string, Rect>> frameButtons = new List<KeyValuePair<string, Rect>>();
+        private readonly List<KeyValuePair<string, Rect>> shownButtons = new List<KeyValuePair<string, Rect>>();
         private bool gyroSeen;
         private Vector3 gravity;
         private float baseTilt;
@@ -124,6 +147,7 @@ namespace HearSay
                 Debug.Log($"HearSay VR sensors: gyroSupported={SystemInfo.supportsGyroscope} gyroEnabled={Input.gyro.enabled} " +
                           $"attitude={Input.gyro.attitude} rate={Input.gyro.rotationRateUnbiased} accel={Input.acceleration} " +
                           $"useGyro={useGyro} orientation={Screen.orientation} offset={headOffset} " +
+                          $"step={stepMode} buttons={shownButtons.Count} index={stepIndex} key={stepKey} " +
                           $"compass={Input.compass.enabled} raw={Input.compass.rawVector} heading={Input.compass.magneticHeading} ts={Input.compass.timestamp}");
             }
             if (!useGyro && SystemInfo.supportsAccelerometer)
@@ -142,17 +166,35 @@ namespace HearSay
                     if (recenter) { baseTilt = tilt; recenter = false; }
                     // Small dead zone so head movement and shake don't nudge it sideways.
                     float t = Mathf.DeltaAngle(baseTilt, tilt);
-                    t = Mathf.Sign(t) * Mathf.Max(0f, Mathf.Abs(t) - 3f);
+                    t = Mathf.Sign(t) * Mathf.Max(0f, Mathf.Abs(t) - 2f);
                     right = Mathf.Clamp(t * tiltToTurn,
                         -degreesAcrossScreen * 0.5f, degreesAcrossScreen * 0.5f);
                     // Lying flat (e.g. on a desk) has no meaningful sideways tilt: stay centred.
                     float upright = new Vector2(g.x, g.y).magnitude;
                     right *= Mathf.Clamp01((upright - 0.2f) / 0.3f);
                     up = pitch;
+                    stepMode = true;
+                    if (shownButtons.Count > 0 && upright > 0.6f)
+                    {
+                        // Looking level = middle button; each degreesPerButton down = next one.
+                        int n = shownButtons.Count;
+                        float position = ((n - 1) * 0.5f * degreesPerButton - pitch) / degreesPerButton;
+                        int keyIndex = stepKey == null ? -1 : shownButtons.FindIndex(b => b.Key == stepKey);
+                        if (keyIndex >= 0) stepIndex = keyIndex;
+                        // A little hysteresis so it doesn't flicker between two buttons.
+                        if (stepIndex < 0 || stepIndex >= n || Mathf.Abs(position - stepIndex) > 0.65f)
+                            stepIndex = Mathf.Clamp(Mathf.RoundToInt(position), 0, n - 1);
+                        stepKey = shownButtons[stepIndex].Key;
+                        Rect r = shownButtons[stepIndex].Value;
+                        snapTarget = new Vector2(r.center.x - Screen.width * 0.5f, Screen.height * 0.5f - r.center.y);
+                        hasSnap = true;
+                    }
+                    else { stepKey = null; hasSnap = false; }
                 }
             }
             else if (useGyro)
             {
+                stepMode = false; hasSnap = false;
                 // Absolute phone orientation (sensor fusion), so turning follows the
                 // head 1:1 without drift from adding up rotation speeds.
                 Quaternion q = Input.gyro.attitude;
@@ -189,7 +231,7 @@ namespace HearSay
             if (invertHorizontal) right = -right;
             if (invertVertical) up = -up;
             float pixelsPerDegree = Screen.width / degreesAcrossScreen;
-            Vector2 target = new Vector2(right, up) * pixelsPerDegree;
+            Vector2 target = hasSnap ? snapTarget : new Vector2(right, up) * pixelsPerDegree;
             headOffset = Vector2.Lerp(headOffset, target, 1f - Mathf.Exp(-pointerSmoothing * Time.unscaledDeltaTime));
             headOffset.x = Mathf.Clamp(headOffset.x, -Screen.width * 0.5f, Screen.width * 0.5f);
             headOffset.y = Mathf.Clamp(headOffset.y, -Screen.height * 0.5f, Screen.height * 0.5f);
@@ -215,12 +257,25 @@ namespace HearSay
             dwell = 0f;
             if (!Active) return false;
             var self = Instance;
-            Vector2 local = GUI.matrix.inverse.MultiplyPoint3x4(self.GazeGuiPoint());
-            if (!guiRect.Contains(local)) return false;
+            string key = title + guiRect;
+            if (Event.current != null && Event.current.type == EventType.Repaint)
+            {
+                // Remember where each button is on screen (for the no-gyroscope stepping).
+                Vector2 p0 = GUI.matrix.MultiplyPoint3x4(guiRect.min), p1 = GUI.matrix.MultiplyPoint3x4(guiRect.max);
+                self.frameButtons.Add(new KeyValuePair<string, Rect>(key, Rect.MinMaxRect(p0.x, p0.y, p1.x, p1.y)));
+            }
+            if (self.stepMode)
+            {
+                if (key != self.stepKey) return false;
+            }
+            else
+            {
+                Vector2 local = GUI.matrix.inverse.MultiplyPoint3x4(self.GazeGuiPoint());
+                if (!guiRect.Contains(local)) return false;
+            }
 
             focused = true;
             self.focusSeen = true;
-            string key = title + guiRect;
             if (key != self.focusKey)
             {
                 self.focusKey = key;
