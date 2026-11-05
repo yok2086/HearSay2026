@@ -9,7 +9,7 @@ BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
 CA_CERT_PATH = "/Users/NathanTan_1/HearSay2026/Comms/mqtt/mosquitto_certs/ca.crt"
-WATCHDOG_TIMEOUT_S = 20
+WATCHDOG_TIMEOUT_S = 10
 PRINT_EACH_TELEMETRY = True
 # ------------------------
 
@@ -43,6 +43,13 @@ def handle_telemetry(device_id, msg):
         print(f"[{device_id}] telemetry seq={msg.get('seq')} payload={msg.get('payload', {})}")
 
 
+def handle_calibration_status(device_id, msg):
+    # Calibration can outlast the watchdog, and these show the glove is alive.
+    set_state(device_id, "RUNNING", "calibrating")
+    payload = msg.get("payload", {})
+    print(f"[{device_id}] CALIBRATION {payload.get('stage', '?')}: {payload.get('message', '')}")
+
+
 def on_connect(client, userdata, flags, rc):
     print(f"Connected to broker (rc={rc})")
     client.subscribe("sys/+/status", qos=1)
@@ -66,6 +73,10 @@ def on_message(client, userdata, msg):
         handle_hello(device_id, payload)
     elif msg_type == "STATUS":
         handle_status(device_id, payload)
+    elif msg_type == "CALIBRATION_STATUS":
+        handle_calibration_status(device_id, payload)
+    elif msg_type == "HEARTBEAT":
+        set_state(device_id, "RUNNING", "heartbeat")
     elif msg_type == "TELEMETRY":
         handle_telemetry(device_id, payload)
     elif msg_type == "CONFIG_ACK":
@@ -77,7 +88,7 @@ def on_message(client, userdata, msg):
 
 def watchdog_loop():
     while True:
-        time.sleep(5)
+        time.sleep(1)
         now = time.time()
         with devices_lock:
             for device_id, info in devices.items():

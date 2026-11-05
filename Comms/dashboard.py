@@ -48,6 +48,10 @@ def device_worker(device_id, q):
         elif msg_type == "HELLO":
             safe_print(f"[{device_id}] online (HELLO), waiting for inference results...")
 
+        elif msg_type == "CALIBRATION_STATUS":
+            result = payload.get("payload", {})
+            safe_print(f"[{device_id}] CALIBRATION {result.get('stage', '?')}: {result.get('message', '')}")
+
 
 def get_or_create_device_queue(device_id):
     with device_queues_lock:

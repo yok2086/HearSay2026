@@ -83,6 +83,28 @@ void publishHello() {
   Serial.println("Published HELLO");
 }
 
+// The mic only publishes when it hears speech, so without this the coordinator's
+// watchdog would mark it STALE during silence. Not retained, so the stored
+// HELLO / Last Will on this topic stays as it is.
+#define HEARTBEAT_MS 5000
+
+void publishHeartbeat() {
+  static unsigned long lastHeartbeatMs = 0;
+  if (!isRunning || millis() - lastHeartbeatMs < HEARTBEAT_MS) return;
+  lastHeartbeatMs = millis();
+
+  StaticJsonDocument<192> doc;
+  doc["type"] = "HEARTBEAT";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+
+  char buf[192];
+  serializeJson(doc, buf);
+  mqtt.publish(topicStatus().c_str(), buf, false);
+}
+
 void publishConfigAck() {
   StaticJsonDocument<192> doc;
   doc["type"] = "CONFIG_ACK";
@@ -3676,6 +3698,7 @@ void mqttTask(void* param) {
     }
     handleSerialCommand();
     speakPendingInference();
+    publishHeartbeat();
     processMicrophone();
     vTaskDelay(pdMS_TO_TICKS(5));
   }

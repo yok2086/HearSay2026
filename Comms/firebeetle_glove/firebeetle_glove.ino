@@ -13,7 +13,7 @@ MPU6050 mpu;
 // MQTT SETTINGS
 // ==================================================
 
-const char* DEVICE_ID = "glove_01A";
+const char* DEVICE_ID = "glove_01B";
 const char* MQTT_USER = "nathan";
 const char* MQTT_PASS = "mqtt";
 
@@ -220,6 +220,27 @@ void printReadings(const char *label, const int readings[5]) {
 }
 
 // ==================================================
+// CALIBRATION PROGRESS MESSAGES
+// ==================================================
+
+// Shown by coordinator.py and dashboard.py. Not retained: these are live prompts,
+// so a script started later shouldn't see an old one.
+void publishCalibrationStatus(const char* stage, const char* message) {
+  StaticJsonDocument<320> doc;
+  doc["type"] = "CALIBRATION_STATUS";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+  doc["payload"]["stage"] = stage;
+  doc["payload"]["message"] = message;
+
+  char buf[320];
+  serializeJson(doc, buf);
+  mqtt.publish(topicStatus().c_str(), buf, false);
+}
+
+// ==================================================
 // CALIBRATION PROCESS
 // ==================================================
 
@@ -242,6 +263,7 @@ void calibrateFlexSensors() {
     Serial.println("Calibration starting.");
     Serial.println("Vibration: one short pulse.");
 
+    publishCalibrationStatus("START", "Calibration starting");
     vibrateShort();
 
     // ---- Straighten fingers ----
@@ -250,6 +272,7 @@ void calibrateFlexSensors() {
     Serial.println("Keep all fingers straight and relaxed.");
     Serial.println("Recording straight-hand readings in 4 seconds...");
 
+    publishCalibrationStatus("STRAIGHT", "Straighten all fingers and hold still");
     calibrationWait(CALIBRATION_PREP_DELAY_MS);
 
     Serial.println("Recording straight-hand readings...");
@@ -269,6 +292,7 @@ void calibrateFlexSensors() {
     Serial.println("Make a comfortable fist with all fingers.");
     Serial.println("Vibration: two short pulses.");
 
+    publishCalibrationStatus("FIST", "Clench all fingers into a fist and hold");
     vibrateTwice();
 
     Serial.println("Hold the fist steady.");
@@ -311,11 +335,14 @@ void calibrateFlexSensors() {
       Serial.println("Restarting calibration...");
       Serial.println();
 
+      publishCalibrationStatus("FAILED",
+                               "A clenched reading is below its straight reading, restarting calibration");
       calibrationWait(1000);
       continue;
     }
 
     calibrationComplete = true;
+    publishCalibrationStatus("SUCCESS", "Calibration completed successfully");
 
     Serial.println();
     Serial.println("======================================");
@@ -559,6 +586,9 @@ void connectMQTT() {
   // path from secrets.h / ssh_client.h.
   mqtt.setServer("ultra96", 1883);
   mqtt.setCallback(onMessage);
+  // The broker publishes the Last Will (OFFLINE) after 1.5x this with nothing
+  // heard, so about 9 s after a glove dies.
+  mqtt.setKeepAlive(6);
 
   while (!mqtt.connected()) {
     Serial.print("Connecting to MQTT broker via SSH tunnel...");
