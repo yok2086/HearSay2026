@@ -180,10 +180,12 @@ namespace HearSay
                 }
                 else
                 {
+                    // The port-8080 test server is optional: live captions (Ultra96 Whisper) and
+                    // ASL results (Ultra96 MQTT) work without it, so don't present this as an error.
                     connection = tunnelled
-                        ? "Reset failed through the SSH tunnel. Check HearSayDummyServer.py and run_hearsay_pipeline.sh (8080 reverse forward) are running, then select your role to retry."
-                        : "Reset failed. Check the server address and restart the updated Python server, then select your role to retry.";
-                    connectionExpanded = true;
+                        ? "Ultra96 reachable over SSH. Optional test server (port 8080) is not running - you can still open live captions or ASL translation."
+                        : "Optional test server not reachable - you can still open live captions or ASL translation.";
+                    resetServerUrl = statusUrl; // don't keep retrying it on every role press
                 }
             }
             resetInProgress = false;
@@ -258,7 +260,7 @@ namespace HearSay
                 }
                 else
                     GUI.Label(new Rect(60, 520, 880, 45), resetInProgress ? "Clearing previous commands…" :
-                        (resetServerUrl != null ? "Ready. Waiting for new terminal commands." : connection),
+                        (resetServerUrl != null && !connection.Contains("Optional") ? "Ready. Waiting for new terminal commands." : connection),
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
             else if (calibration != null && calibration.IsOpen)
