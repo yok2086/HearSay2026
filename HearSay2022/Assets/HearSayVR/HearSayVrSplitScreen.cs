@@ -114,6 +114,8 @@ namespace HearSay
         public float tiltToTurn = 2.2f;
         [Tooltip("No-gyroscope phones: degrees of looking up/down to move to the next button.")]
         public float degreesPerButton = 8f;
+        [Tooltip("No-gyroscope phones: looking less than this far down selects nothing (rest).")]
+        public float restDegrees = 10f;
 
         // No-gyroscope phones can't sense turning left/right, so the circle steps
         // through the buttons on screen in reading order as you look up and down.
@@ -174,22 +176,28 @@ namespace HearSay
                     right *= Mathf.Clamp01((upright - 0.2f) / 0.3f);
                     up = pitch;
                     stepMode = true;
-                    if (shownButtons.Count > 0 && upright > 0.6f)
+                    // Looking level (or up) = rest: nothing selected, so the user can look
+                    // around a screen with only one or two buttons without pressing them.
+                    // Each degreesPerButton below the rest zone selects the next button.
+                    float position = (-pitch - restDegrees) / degreesPerButton;
+                    if (shownButtons.Count > 0 && upright > 0.6f && position >= 0f)
                     {
-                        // Looking level = middle button; each degreesPerButton down = next one.
                         int n = shownButtons.Count;
-                        float position = ((n - 1) * 0.5f * degreesPerButton - pitch) / degreesPerButton;
                         int keyIndex = stepKey == null ? -1 : shownButtons.FindIndex(b => b.Key == stepKey);
                         if (keyIndex >= 0) stepIndex = keyIndex;
                         // A little hysteresis so it doesn't flicker between two buttons.
-                        if (stepIndex < 0 || stepIndex >= n || Mathf.Abs(position - stepIndex) > 0.65f)
-                            stepIndex = Mathf.Clamp(Mathf.RoundToInt(position), 0, n - 1);
+                        if (keyIndex < 0 || position < stepIndex - 0.25f || position > stepIndex + 1.25f)
+                            stepIndex = Mathf.Clamp(Mathf.FloorToInt(position), 0, n - 1);
                         stepKey = shownButtons[stepIndex].Key;
                         Rect r = shownButtons[stepIndex].Value;
                         snapTarget = new Vector2(r.center.x - Screen.width * 0.5f, Screen.height * 0.5f - r.center.y);
                         hasSnap = true;
                     }
-                    else { stepKey = null; hasSnap = false; }
+                    else
+                    {
+                        // Resting: pointer sits in the middle of the view, nothing is pressed.
+                        stepKey = null; hasSnap = true; snapTarget = Vector2.zero;
+                    }
                 }
             }
             else if (useGyro)
