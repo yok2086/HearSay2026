@@ -113,9 +113,9 @@ namespace HearSay
         [Tooltip("No-gyroscope phones: degrees of pointer movement per degree of sideways head tilt.")]
         public float tiltToTurn = 2.2f;
         [Tooltip("No-gyroscope phones: degrees of looking up/down to move to the next button.")]
-        public float degreesPerButton = 8f;
+        public float degreesPerButton = 14f;
         [Tooltip("No-gyroscope phones: looking less than this far down selects nothing (rest).")]
-        public float restDegrees = 10f;
+        public float restDegrees = 12f;
         private float basePitch;
         private bool hasBasePitch, recenterPitch;
 
@@ -192,7 +192,7 @@ namespace HearSay
                         int keyIndex = stepKey == null ? -1 : shownButtons.FindIndex(b => b.Key == stepKey);
                         if (keyIndex >= 0) stepIndex = keyIndex;
                         // A little hysteresis so it doesn't flicker between two buttons.
-                        if (keyIndex < 0 || position < stepIndex - 0.25f || position > stepIndex + 1.25f)
+                        if (keyIndex < 0 || position < stepIndex - 0.35f || position > stepIndex + 1.35f)
                             stepIndex = Mathf.Clamp(Mathf.FloorToInt(position), 0, n - 1);
                         stepKey = shownButtons[stepIndex].Key;
                         Rect r = shownButtons[stepIndex].Value;
