@@ -181,9 +181,16 @@ namespace HearSay
                     // Looking level (or up) = rest: nothing selected, so the user can look
                     // around a screen with only one or two buttons without pressing them.
                     // Each degreesPerButton below the rest zone selects the next button.
-                    // "Level" is however the user naturally holds the phone: taken from the
-                    // first upright reading, and again whenever they tap to re-centre.
-                    if (upright > 0.6f && (!hasBasePitch || recenterPitch)) { basePitch = pitch; hasBasePitch = true; }
+                    // "Level" is however the user naturally holds the phone (reset by a tap
+                    // when nothing is selected).
+                    // The first upright reading is usually taken mid pick-up (phone still
+                    // pointing down), so "level" also follows the phone up to the highest
+                    // comfortable angle it is held at (capped a little above level).
+                    if (upright > 0.6f)
+                    {
+                        if (!hasBasePitch || recenterPitch) { basePitch = pitch; hasBasePitch = true; }
+                        else if (pitch > basePitch) basePitch = Mathf.Min(pitch, 5f);
+                    }
                     recenterPitch = false;
                     float position = (basePitch - pitch - restDegrees) / degreesPerButton;
                     if (shownButtons.Count > 0 && upright > 0.6f && position >= 0f)
