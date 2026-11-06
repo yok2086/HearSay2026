@@ -116,6 +116,8 @@ namespace HearSay
         public float degreesPerButton = 8f;
         [Tooltip("No-gyroscope phones: looking less than this far down selects nothing (rest).")]
         public float restDegrees = 10f;
+        private float basePitch;
+        private bool hasBasePitch, recenterPitch;
 
         // No-gyroscope phones can't sense turning left/right, so the circle steps
         // through the buttons on screen in reading order as you look up and down.
@@ -165,7 +167,7 @@ namespace HearSay
                     float tilt = Mathf.Atan2(g.x, -g.y) * Mathf.Rad2Deg;
                     // Level = centre (like up/down). A tap while not looking at a button
                     // re-centres on the current tilt.
-                    if (recenter) { baseTilt = tilt; recenter = false; }
+                    if (recenter) { baseTilt = tilt; recenter = false; recenterPitch = true; }
                     // Small dead zone so head movement and shake don't nudge it sideways.
                     float t = Mathf.DeltaAngle(baseTilt, tilt);
                     t = Mathf.Sign(t) * Mathf.Max(0f, Mathf.Abs(t) - 2f);
@@ -179,7 +181,11 @@ namespace HearSay
                     // Looking level (or up) = rest: nothing selected, so the user can look
                     // around a screen with only one or two buttons without pressing them.
                     // Each degreesPerButton below the rest zone selects the next button.
-                    float position = (-pitch - restDegrees) / degreesPerButton;
+                    // "Level" is however the user naturally holds the phone: taken from the
+                    // first upright reading, and again whenever they tap to re-centre.
+                    if (upright > 0.6f && (!hasBasePitch || recenterPitch)) { basePitch = pitch; hasBasePitch = true; }
+                    recenterPitch = false;
+                    float position = (basePitch - pitch - restDegrees) / degreesPerButton;
                     if (shownButtons.Count > 0 && upright > 0.6f && position >= 0f)
                     {
                         int n = shownButtons.Count;
