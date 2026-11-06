@@ -81,7 +81,7 @@ else
 fi
 
 echo ""
-echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
+echo "=== 2. Starting DPU inference script on Ultra96 ==="
 
 # Inference using sensor data
 # INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
@@ -124,7 +124,7 @@ echo "Tunnel opened in background (Mac ${LOCAL_PORT} -> Ultra96 broker)."
 sleep 1
 
 echo ""
-echo "=== 4. Launching coordinator.py & dashboard.py in tmux ==="
+echo "=== 4. Launching coordinator.py & dashboard.py & stats.py in tmux ==="
 
 tmux kill-server 2>/dev/null || true
 sleep 0.5
@@ -135,16 +135,18 @@ tmux new-window -t "$TMUX_SESSION" -n dashboard \
   "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
 tmux new-window -t "$TMUX_SESSION" -n stats \
   "cd $LOCAL_DIR && $PYTHON_BIN stats.py; echo 'Press enter to close...'; read"
+
 # Keyboard pipeline test: relay window
 # tmux new-window -t "$TMUX_SESSION" -n keyboard \
   # "cd $LOCAL_DIR && $PYTHON_BIN keyboard_relay.py; echo 'Press enter to close...'; read"
+
 tmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""
 echo "=== All set ==="
 echo "Broker + inference: running on the Ultra96"
-echo "Tunnel: running in the background on your Mac"
-echo "coordinator / ble_bridge / dashboard / stats (speed + latency): running inside tmux session '$TMUX_SESSION'"
+echo "Tunnel running in the background"
+echo "coordinator / dashboard / stats running inside tmux session '$TMUX_SESSION'"
 echo ""
 echo "Now power on the FireBeetle."
 echo ""

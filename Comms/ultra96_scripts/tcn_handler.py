@@ -20,11 +20,11 @@ MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
 CA_CERT_PATH = "/home/xilinx/mqtt/mosquitto_certs/ca.crt"
 
-GLOVE_IDS = ("glove_01A", "glove_01B")
+GLOVE_IDS = ("glove_01L", "glove_01R")
 RESULT_DEVICE_ID = "glove_pair"
 
 # ---- Must match dataset.py, which prepared the training data ----
-# Frame order: glove_01A (left hand) then glove_01B (right hand), each
+# Frame order: glove_01L (left hand) then glove_01R (right hand), each
 # ax, ay, az, gx, gy, gz, flex thumb..pinky.
 WINDOW_SIZE = 256
 NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
