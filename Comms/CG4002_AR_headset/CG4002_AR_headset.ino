@@ -83,6 +83,28 @@ void publishHello() {
   Serial.println("Published HELLO");
 }
 
+// The mic only publishes when it hears speech, so without this the coordinator's
+// watchdog would mark it STALE during silence. Not retained, so the stored
+// HELLO / Last Will on this topic stays as it is.
+#define HEARTBEAT_MS 5000
+
+void publishHeartbeat() {
+  static unsigned long lastHeartbeatMs = 0;
+  if (!isRunning || millis() - lastHeartbeatMs < HEARTBEAT_MS) return;
+  lastHeartbeatMs = millis();
+
+  StaticJsonDocument<192> doc;
+  doc["type"] = "HEARTBEAT";
+  doc["device_id"] = DEVICE_ID;
+  doc["session_id"] = sessionId;
+  doc["seq"] = seq++;
+  doc["timestamp_ms"] = millis();
+
+  char buf[192];
+  serializeJson(doc, buf);
+  mqtt.publish(topicStatus().c_str(), buf, false);
+}
+
 void publishConfigAck() {
   StaticJsonDocument<192> doc;
   doc["type"] = "CONFIG_ACK";
@@ -1673,120 +1695,130 @@ const char GO_TO_AUDIO_BASE64[] PROGMEM =
 "//7//37//v9+////fv///////////////////37/fv////7////+/v///////////v//fv9+//7+/37/fn7///////////////7/"
 "/v//fn5+//9+/v9+//7////+/37//35+/////v///37////////////+/v//////fv///////////////37///7///4=";
 
-// Spoken phrase: Bathroom
-#define BATHROOM_AUDIO_SAMPLES 8275
-const char BATHROOM_AUDIO_BASE64[] PROGMEM =
-"//7+/v//////////fv/+fv5+///////+/////37//v//////////fv///////////////////v7//v//fv////9+/37///9+//7/"
-"/////n7//////37//////v////7//v5+///+fv5+/n7+fv59/X79fv5+/n7+7+/z+vb47fHcYFDN60vmcl/nanvm2NXQzMXDvry6"
-"t7W0v7qyu8LK2udxS0Q+Ojo4Njc3Oj04QENPT0dVaeZo8XL73d59XNblb2Rf9+TeWVvw4ut3fmzj33Npbel1eWRpdvVlc+Pa0M1r"
-"SuTBw8q7w9GvnZ+eoapOSLkzJh4gGihjPklI7krdt8tRTftV/8x6X/vV3mNob3XYZmn32u1v/WHv7v1zc2b66ub0315WZeBpXtxe"
-"+MjAUkF+Ttu9vUvAoKKepLI6zsgsIh4jJtrxOUbXzOrORz1413th2O7cz/BeYHFbZ293/+93bnb/+u/ydHv37+zZ4ufd4V1SX05s"
-"2m1O1bzRzlpBWbvLQ7isoaKsSk+7NCUgKjTR+DndwNZESUJZzW5m1snk6vZaZV5bXHhwePr9dXh4/Pr2+Xt29PP43tra3tl563FK"
-"SXflTuLMv7rnPUm7ZVa/rJ+jvTi+diYfJjpnyzv4udw8O0pSzvdpyMblZfxXWltUXnp5bvb5/3txcPnw+n58d/zveura2OLY4/zm"
-"UkVT3VZczMe5xkc7xsZHybOhn6s/ZrstHx8wRchKQbvERzdGSt3UXtHDz2B+X1VeV1ho+G789/17fG929+36+n52dO167dfT29TV"
-"eNxXP0bgYUzKxbS4TjLltkPTsZ6Zn1k7sDEbGSY5zWo0u7dRLztDashc2L3EamlmTVlTUVx7bnjufXlzb2199e719vt1ce376NjS"
-"2tPS/d1ZP0TmZ0vLw7S2UjJ7tEXZsZ6Znmg4rzQcGSQ3z/UyvbVYLzlCZMdb273CcmdmTVhSUFxxa/fn73dzaG51+vPn6/N+Z2Lv"
-"6OrSzdHPyvvaYDs79O9BzL2vrWctRqxLbK2bkZe8LKxAFxEaLf7ILMSs5CwvPEu/aPO5uupYckhPT0pSbGlr3+HuemNeZ3v/7uLh"
-"8XFmYHnk8ODPzdbMz+/TTjlA3lNJv7ystEEr0bE8wqmWkptDO6snFBIfMMZWL7GwSys1PGnCWcy4v2JfWkhYTk5Xb2B06uXh8Wlc"
-"YWl+7uDc3npjX2l13ObfzsrUzcju0lE2OuVfQb63q65EKWesO86olY+W7C6oLRMPGizM2Su2q20qLjVOvlvYtrp+XF1FVVBLVGhd"
-"YO7p4uB2Xlthavfo4N7obmBobPXd5+DPztzPzPDcSzlA2lVJvLesuD4tzrI6x6mXlJxEO6wqFxMfMsFiL7WxWi0yN17CWda6vv9q"
-"WkpeVU5Wal5m+e7l43RfXmdv9+vf2+JrXmlx79vj3M3N3c7K+uBINz/WU0W4sqq2PSvPrjbMp5WQmkw0qSwVEBwuv90suK75LC4x"
-"Tb5c47q64G1dR1xWTFFnXV/97+bffV9cYWz+7OPd5HxganP44d/o1M/b3srh8F89PWbeQc+0sK/xMjqvdD60oJWYqy2/vh8WGChG"
-"tzhBr7xALTM30c1Wy7vEd35OT2ZVUlxmW2dx+OfkfmNeYW5+7d/c4P5kYHLv59vf4dPR39jH5+9MOT7s8T++rqywTi5DrEdDrZuR"
-"l7Ipsc8bEhYnUbQwSq27PSsuM8vPUcS5wvprR05nVVVkYldjZ3Lr3ur/YVpcafrn3N7rdGdhcfDo39ns6Nna58/K83VEPEjWVE22"
-"sK6/PjDdsjp7rJuXnuEvrUgdFhwt1b4v27DCOy8vOsfpXsW8x+xlR1NlWl9vZlpcXmrw5eTrdWRbX2vp3dri9mhgZG/o3dvZ4/ne"
-"2t/Uw91lSDpA7e5Cu6yttkgvQq5MPa6dlJqwKrm8HxYWJUeyOD6wtlMuLC3kzFbPvL3W7khIX1xdb3dbW1pfcuvl4+9oW1hddObc"
-"3OT9aGVpeubd3t3pfeTd49jG4V1JPkfs70e9ra+7SDRIsU0+s5+YnbYtvr4lGhopSrU+P7e6aDMvLnHNV9vCwNHhTktnYF9veF9e"
-"XF9v8Onk7m5fXV5v69vb3u9rYmdy69vb3N317t/g6MnLW00+QFrVTfCrrLHoODbBujHUp5iYoUc1rD4dFhwtxLsw6LS9Ri4qMM7l"
-"W82/wc3qRU9oXmV+blxeWVtu9unj7G1cWltq7t/d3etuaGl29N7c3uDtdu7h5drI4VBJQUxz3kzFrK+8UDo+u800xKianao8Q645"
-"IBogMr/DNNu5v00zLDPX+l/TxcTL5UhQXmNu8/5sZVpZYXPv5ur5bF9bX2/m3Nng8nBkZXHq3dTZ6O52be3e3MzGXEZBQ1Lp9Fex"
-"qLDLPjhOs004tJ+XnrEu17ItHRghOLT3Nca4v0UvKDbXYHzRw8LF70ZOWF976Pd4aVhSW2f14uHteGNZWGL54Nre6n1rY2h+5dvW"
-"3fD+b2j039rPymNHRkhY/uBfuKu0zUI9Srr2Nr6mm6CvOE2wOyQbIjS9xjjfvr5sOSswemxr3s7HxtJOTldecO3t+nhgV1hfcO/l"
-"5/JxYlxdbO3c2t/tcmdiavjd1tbd9nZua/ve1c7KZ0VDRlb112m6qrLHRDtCvdM3xKmcn61CP7JDJhwhMdC/Omy7vfY5Ly9Yak/q"
-"ysDI0lZNWFxi/OTm8G5bV1hi/ufg6PZoXlpeb+zf3eLucGZjbPbh2tve925lZ3zk3trR2V5ORUlj09nkvLm80Uk9T8H3VMKwp6u6"
-"RV6/Py0nLz/n6ELavchZPjw+WFZP5MnF0t9fVVhYXH3h3uPyZVtaXGb45t/h725gXmBs8ODd3eh3Yl5gbOvb19ff+GFcWmbq1tPU"
-"1u1dUEVHXs/Oz8HEwtFOPkvK1+vEuayvvU9ex0UyLTZBWWNK2b/LXUZIRExOTujLx9Lb811VUlVl7N3c3/BpXFlbZPvl3t/qeWNe"
-"XWR2dHl0d/N57+ry8/p6ff5seHF79/119O327Xp38XFq8m9u+nLw7Xzt+fP+fPFv+HNv9m9t+Pn27/jv+/RzdXx39nl493x99nP1"
-"dvL1/fxp7Hjvd2/7/PZ7+H7sffV4eHP4b2//de999nno93j2dPr+c/T4e3tz83v/9fh7/H5p8n127nv8fHr27f347fhsdfpt93Xz"
-"dXt8dHz17fPrb3fzfX71aPD/bv78+vn7ePP5eHr6e3f99/n9ePRz9fr1+W/2d/9+a3bsbe35duX5eXVxefN2+3b99m76ffbt/fr4"
-"/Xh5+3V793d4dXrpe/76+vvy/XDzeff+bPJ+bvJv/vL57/pz9vl++3JwdP758Gx98uv2+Ph5fXj7+3b//3L+a/N6+fh+83ft/f32"
-"/Pn1c3n9aPv2dfp4+fF5fvL8e/p9+/R2/f7/+3h+df/88nv+fnP4c/v47/7ufXZ+ce55/HR4b/bue/d79fZx9/dw9Hj7/nf0cfFz"
-"+v5463z8fPls+v77fX35e/z1/3T7/fP9eXz4b/n2fnj9ff169X359m3mb33wb/z6cX5++351/Hfp83l+/HjzcXTrdvj7dXz2dnz8"
-"+2zw+/3zdfT4fX37e/B4d3Pybu/+eO5++3P0c/V+eXby/nv8/Xrxe3f5evX+8G77+XX3dXXtcv3zefn9/P31dHZ6+/70dn3v/H17"
-"93N7/e77bPFxevf58fxy/vB783N8/Xd5ffTyeHd6ffV8+/3+/H187Hb09Hb8b3L89ft9+35z/njr9nd5+Hh29Hrq/3H+fPf+fHl7"
-"+Hx59fr98Xj5/23xfP9yb+3qfHl99O9u7G70d2vsa+v6ZfF29/J87f/qfnp88nlrdG/y/G7w/fj1dHfz/W/qd3v38PXq/PfsavRr"
-"Y2JOXObc0tvl3e92fWdlbWdgZ27m9fn8d/Hv9+vkePd7fGvwbGd8+PXr+fnfanVmbmtyd/nv7eXs6n7+/nZ0+HR9cm5tfHd86Ph1"
-"+/j47Hx58fR5enT97/Rvfvds+nt0fv7+9P95/PzydG1z+Ovp6+3n3dfX4H1kYGZqYVlTVmng0c/W6vHn2Nd0TD9BTevVyMW/t6+p"
-"p6m0x3HzcEMxKCcqMTlCREtT78i/wddfUmJ8+FxPT1zv2NTZ5PDs5eX5ZlpZXGVrbm92/PHu8fh+dXBvdv3y7+7r4dvY3e9rZGp5"
-"emVeXXrUyMbI2N7PxsLOZE5f2MG/wcrJw7ivrrfcUVbR1VE0Li84QUdKQ0NEYtHH11lHS1leVEdAP0NLVlxbWFxz49rc6fx89u/z"
-"e2tobXV+/n7+9u/w/m5naW92bWZndeTUz9HU0cnFxc7ialpXZWRVQzpFc8C9wL+7ta2rqKu+5EvY1UszJyorLjY7Pzw5Stq+u8jL"
-"083Ly8vacVJOVltaU09RVl5pbG5scn748vr/eHV6/ff2fnxycnV97+zp6ufd1c3LzM7Z4NjT1VZBPj5MQUxGPT5NuKyxuberpKmf"
-"q71CQ7JNNyAjJyM0OS8pMNm6yL/MwsG3s85nU+52VElAP0lTV1NUYHrm6+7x7u3v+P95/H3+/Xl1a2pnbWtqZf3jzsrIz8q+uL7M"
-"8G1R3+4yKypuPkdJPU6tmqHGppufmKeyH7mqKiEYIBozNxwcScu90r7NwqKvwlLN135bPjQ6SkpBQUxZ8+Xpe+Hd3e7ufP7+7n5v"
-"fn3/bW1dXmN+aGh82M3Cw8rHurbB1+ZaUdc9LydIQjtRPk3CnqC5rZukm6SrLkSnLygbIxwlPSUdNM/Byr+316qst27m0l1URDk2"
-"P0ZEQUtScO3k7+He2+Po+fXz8/lvdW98Z2RcXl5pY2rv0svFxcW+t7jI2Nl7Vnw2LipPQDRIP3i7n6S7rJujnaasNj+qMysdIx0j"
-"PisfLlPPwLu2abSuscXX51NfaEg7PD9ISk9OVGXt59/n4uPf4+3x+/16dm1pX2RiZmBndOva1NfPycPAwsnu4dHkTEU4NzdjSTRC"
-"TMW8qKzBtaClpKu2VDewTTYoJiMkPj0qLT1Hyr+02s68u7vAzF9SX2hPTUZGSFRdYWFrcPfp5ebt7PP5/fd9e3t9cm9taGZsfO/s"
-"5eXe1crHydDT2uPS4lA+Pj9BQlo4N0rVurqst8OuoaentLtDTLdCOSknIyg+Pi42PEHWv7TMyMTHxL/I6F1dWlJaUU5OVVpka3Vy"
-"+/z49vf3fnx3dHf++fX7+H54eXx6fX72+e7l3drV1dnd19bj52FORUxQTUVLPD9dzb3GucDGsqmsrbzET1DATkExLSotPkg7QUNB"
-"cc68xsbJ1NbLzdjtbl9VXFxcXF9hZ2t3e/7++/z79vX7fHt1ev31+fz9dm90dXT99vT27e7t6ODd29ra7GtfVVZXYVdLRkpFXtjJ"
-"xcy/yMC1r7S3wchuXNBORzs3MzM7R0NETEVOWtzMzc3Q3uvg2dTX3OtnXFtfa/3v8nloZGVtfe/s9nhsZ2l19+vn6e3v7u/s7PH8"
-"d3BubGlkZWl49+34bmVr+t3W09/36t/Iv7q9wcTDvra1ucDb6ljf7V5KOjY0O0FEQT46PUNUaG1sVVVZbPHm6/1ucv7t5uTm6uzv"
-"8/14b21ra2ppaGhsc/vu6ejo6uvr7O3y/HhwbmtpZWVodfzv9XNoa/3h2NXc8eXhysG7u7/Awr64tLi9091e8+NcTzw4NDk+QT8/"
-"OzxBTGFjbllVWWf66en1dnT77ubk5urr7e/4fHBraWloaGdmaW549+3o5ufn6Ojp7PD9d29ta2lmY2Rsdvv4dWpoduzc2Njr49/P"
-"w726vr/Avrq0t7rJ1/1k3F1VPzk1Njw/Pz88Oz9HWV1qX1ZbYXvv6e//ePfu5uTk6ers7O/6dmxoZmZlZWRlaG139+3o5eXl5ubm"
-"6e33em9sa2poZWRmbnX6/3Bqb/vj29fd6NvYx8C7vL6+vry2trm+0dhf53dUSTs4NTk9Pj4+Oz5CTltdZ1haXm357O32evvx6uTk"
-"5unq7O31fnBrZ2ZlZGRkZmpwfvLr5uXk5OXm5+vw/XZubGppZmRlanB6/XVtbXzt3tvZ593azsS/vL++vr26trq8ytPwbOVWUD87"
-"ODg9Pj8/Pj1DSVhaZ15bXmV49e7z/H727+nn5+nr7O7z/Hdua2loZ2dnaGtvevfu6ujn5+fo6Ozv+npxbmxraGdoanF2fndvbnrz"
-"5N/c5eLa1cjEvsDAwL+9uru9xdPZaOlfVEk+PDo9P0BAQT9ESFFaX2hdYGRw//Dx9f758+3p6ens7e/z+ntxbWloZ2dnZ2pscn32"
-"7uvo5+fn6Ons7/d9dnBubGtqamtvdHp5dHF3+u3m4+Dq3dvPycXCxcLCwL69v8HO1Ot2+VVTRUA+PUBCQ0VERUpNWlxoZWNna3j8"
-"9PX4+/Tx7Ovq7O3v8fb7e3Jua2ppaWlpa25zfP7//37//37//////////v////////7///////////////7///5+fv//fn7///9+"
-"//5+fv////7///////////7//v//fv///37///////7/////fv///////35+//9+//7+/37/fv9+//7+/v//fv9+//5+/37//37/"
-"//////////////7////////////////+/////////35+/n7/fn7//37/fn7//v/+///////////////////+fv///37+fv7//v//"
-"/v/+////////fn7//////37///////9+/////37///////7+/37//v////7//37//////37////////////////+///////////+"
-"fv////7/////////fv9+fv////////////7+///+/////////v///v///v//fn7//////////v7////+fv/////////+////////"
-"fv7///7+fv//fv//fv////////////////////////////7/fn7//////n7////////+//7/fv///////////v9+//9+//7/////"
-"/v///v////7////+/////////v//////////fv/////+/v/+///+/////////n7/fn7//////////v/+////////fv///37/fn7/"
-"//7/////fv9+///+/////37//37//////v//fn7+/35+////////fv///37//////35+///////////////////+//7//37//n7/"
-"/////37///7///7///5+/n7+fv//////////////fv7//////37/////fn7/////////////fn7+fv///v//////fv///37//37+"
-"////////fv///37/////fv/////////+/37//v7//v///////////////37/fv///n7/fv9+/v////7/////fv///v/////////+"
-"//9+/37+/37///9+//////////7//////////////37+/37/fv/////+////fv////////9+//////7+//7//35+//////7///5+"
-"/n7//////////v7//v7/fv////7////////////+fv/////////+fv//////fv7+////////fv////////9+/v////7/fv/+////"
-"/37//////v7/////fv//fn7///9+/37/////////////fv/+///+//7///9+////fv//fv7//v/+/////v/+/////35+////////"
-"///////+//////////////////////////9+//7/////////fv9+///+//5+//7+fn7+//7///7///9+fv/+//9+/////v7/////"
-"/37+//7+/v/+///////+//9+///////+/v///37+/////////37+//////////7////+/v///////37///9+///////+///////+"
-"///+/////////n5+//////7//////////v/+fv////7//v//////fv///v////////////////7///////////7///9+////fv//"
-"fn7/fv9+fv7///////7//v///////////37////////////+//9+////fv/////////+/37////////+//////////5+//7///5+"
-"//////9+/////v9+///+/////v///////37//v/////+//////////9+fv7//////37//v/+////fv//////fn7+////fv///37/"
-"/v7///////7//37//37////////+////////////fv///////////v///37///7//v///37//////v//////////////fv/+fv//"
-"/37//v//fv9+//////7////////////+//9+fn7////+/37//////37////////+/////v/+//9+/v/////////+//7/////fv//"
-"/37///////////7///////9+//9+fv9+/////v/+/v////9+/////35+//9+////////fv/+///////+/////v9+////fv/////+"
-"//7//////v///n7//////////37+/37//////////v//////////////fn5+///////////////+/////////v9+//7//n5+///+"
-"/////////////v7//v/////+//////5+/////////n7//v////9+/v/////+////fv7//37///7+/////v9+//////9+///////+"
-"//////7//////////37///7///7///9+/n7//////37////+//7//////////////37////////+//9+/v////9+fv7+/37+////"
-"/37/fv/////+fv/+/v/+//////7///////7//////37/////////fv/+fv/+//9+////////fv//////////////////////////"
-"////////////fv7////+//9+/v9+///+//7///9+////fv////////9+/v/////+//////////////////////////9+/v9+////"
-"//9+/n5+/v9+/37//v9+/37//37//////v//fv///////////////37//////v////////////9+/////////37////+////////"
-"//9+/v///37+//////9+/37////+//7/////////////////////////////fn5+/37//n7+//9+//////////7///////9+/37/"
-"////fv///37/fn7//////37/////fv5+///////+/v//fv/////+/v7+/v//fv//fv7/////fv///35+//9+//9+//////7/////"
-"////////////////////fv///37//n7////////+///////+/////////v///37/fv///////////v9+fv9+/////v7//v7+////"
-"//9+/////////v///////37///////9+///+/v7///9+//////////5+/////v////////9+//7/////////////fv//////////"
-"//////////////////////////////5+fv//fv///////////////////////37//37//v///////n7/fv////////7////+//7/"
-"/v9+//////////9+//////////////////9+//////////////7////+//////7//v///37//////////35+/35+fv////9+////"
-"/////v/+//5+/37//////////v//////fv////////7//v/+//////////7/fv/////+///+/////////v///v9+////////fv//"
-"fv////////7///9+fv////////9+//7+fv///v///35+/v////////5+/v///////////////v///37/fv7+/////////v//////"
-"///+/////v9+/v/+/////////////////37/fv/+//7/////fv////5+/v////////9+/v///////////v7/fv7/fv//////////"
-"///////+/v////////////7/////fv//////fv///37//37//n5+/37//v7//37//////////37/////////////fv/+/v9+/37/"
-"//7/fv////7///////////7//37/fn7+///////+/////////////////37//////v////5+//7//v////////7//////v//////"
-"////////fv///37///9+//////5+fv///v//fv/+/////37////////////+/////35+////fn7+/////v//////fv9+/n7/////"
-"//////9+/v////7///9+//9+//7//////v7//37//37+/v///37/////////fv////////////7//v//////////fv/////+fv//"
-"fv9+fv////7///9+/////v7///////5+//////9+//7/////////////////////fv//fv///v////9+fv/+fv9+fv9+fv/+/v7+"
-"fv9+//9+//////7//37///////////////7//////////////v//fv///////////v/+////////fv/+/////37//////v//////"
-"/////v////////7///////9+/v//fn7/////fv9+/////v7///7//v//fv/////+//7///9+//9+////fv//fv9+/37+/////37/"
-"//9+fv7//////v///////v7///////////9+/////////////////v////9+/////////v///v///////v///v//////////////"
-"///+/35+//9+///+/////////////37//37/fv////9+//7//v///////////37/fv//fv///////v7+///+/////37////+/v/+"
-"//9+/////////////////////v9+fv7+//7///////9+/////v////////////////////7+fv/////////////+/////37///7/"
-"/v////////5+/////////v//////fv///w==";
+// Spoken phrase: Toilet
+#define TOILET_AUDIO_SAMPLES 8643
+const char TOILET_AUDIO_BASE64[] PROGMEM =
+"////fv///v///////////37///////7////////+///+//7////+//////////////7////////+//9+//9+//9+////////"
+"//7/////fv///n5+///+fn7////////////+//9+///+/////v9+///+fv/+//////9+fv///v//////////fv7//v/////+"
+"//////9+/////37///////9+///////////+/////37///5+/n7/////////fv///v///////35+/37//37//37//n7+////"
+"/v////9+///+///+//7//////37+/n7/fn5+/v//fv////////9+///////+/35+///////+/37////////+//////////7/"
+"////fv/+////////fv7///9+//7///////////9+/////////////v////5+/////////////////v///v9+////////fv//"
+"fv7//n7+/////////////v9+/////v9+fv9+///+fv////////7+/37/fv//fv///////////37//v///35+////////////"
+"fv///////37+fv5+/n7+fv5+/n7+fv5+/n7//v/+fv19/Xz8e/t6+3r6evl5+Xn69uv5T9Ls693u4vDf6eH2333gceBmbeLz"
+"z1bcz+zY1fJN/OPc/X7gb9fr6W7t9OPf6N9m7On02N/d2Nr1WdXt6ODt6HX16PTp+e7p9ep+6ezl6+zo2+7v7d/68vb76Pnw"
+"7PX843bt7uZ05ej36+fs7ulj52n2dOnY99Tj4eHg4fjg8eTtfefi6+Tpet564ODj7vPr5u724eD64+/u4+7f+dx42l/r7er9"
+"5+Hw2+/peWP32uvQ7elr59zf/9Vx/u/s7uXvYtDm7/HYdNNj9flf5XbV/VvifG/Rc+Xa4u3hX27r6evr4m/kct387PDk2eXn"
+"59ji/+XZ3eVh6Wpc9djqY97p4+DY3dhq2tT783z99Olh2m7U+OHl5t3sYejnT2V93WvZ19D239XNZ+/dYXx2+W7i4dxv79zm"
+"fnHe2nfp6vPjfWzc3e5i3t7v/ffn8W1a3dnn7+Th3lv60t3739zj4Wff9e3m7Obc7N7r29xqcnH5Yf532Pb48Hrud+7j4mRl"
+"de9t2956/Hn58ePe3/hlWlhdd2Vj7+LKvcTP4VJYbVxLRFLetamttLpa/dk6NCwnM1vPv8Xadt7TYlZCOkRVZtja6t3b2t3x"
+"YVlbY3Xz8vh9dXB769/b3fNkXWBdXl1Pac/IvLza5PNi2nNENz1ru6WirrDLRMROLy4hIzj7u7K+7FB9XWRoPDpBRP/K0M7Z"
+"6+jne2JaWF996Of1aGNs6dfV2+d7bWxaR0dKVMG5vLjNY8LFxtE6KShEu6CVnaqpQGG7KykeFB01zaaksWI/Ojb9WD1CNTdt"
+"1b+5xNR9Vk1PU1t+3drd/V5cXHPe1M7Lz/ZQQTk+bty5tM7MzvOxrbvaLiAfOrWfkpeoom0+siwkHxAWKE6lnKK8QC4lPVNM"
+"3EExPkTetbO2xFo9OTpI/ce/wM5fQjo9TM+5sLK/TTAsLjq/tbazWD/Eu6WaqdUmFhMitp2NipmWoi6vKxQZCwsbLqaSk5/d"
+"KhcdLju0uz45KyzcsaWirl8tIyQw36+nqrtNMCouRb+rpqzEPCkmL0m7qrjDXi9cr6mZnr8wGRMZTaeVipGalU14yhUaEQoV"
+"Js6Zk5mwQR0ZKS7Yr9lNOis+zbGoq75GLigsPsuyrLDFRC4qLke+q6arwD8pJS5Iwam0zmsuP62nmJi2NhkQFDSmlomMmpLB"
+"O68YFxQIDh5Dm5CUpWIfFSApTK7AW0MrM/e5qaizbzMpKTNnuKytt+88Ly8797itrLbhOSwsOmW8rsPoTDF3rKean8kuGhUa"
+"XKaXjJSemUhkvhoeFQwVJGeclZmsTx8ZJixwsMjtSS49/76urrp4Oi4uOFnCtLK62UIyLzZRwa+rrsJMMSsvSte0r+lZOy/A"
+"p5+WomcjFRIcvZ6QipadnDDD1RkfEAoVIc2YkpesRRsYIijdr8XOTTA/aMGvr7rjPzAvNkrPubS4xl8/OTlD/cK3tLnOTzs0"
+"OVXYv7f7SEM21qmmm6HgLBoXHd6il42XqaE8Ta8lKRwOFB8+oZiarO8oHSwuRcJuVG5J7MfHyM/rXVtRTk1QWu3Vzc/caFFN"
+"T1/i0M3P2ODh2fNrTT87TWrTtsDTt8W3obfNNBsZKLycjo2gpbsmqmQkJQ4NGzirm5y4Q0UpRWoyOTIyWsG9vsv8Xt7k7WNN"
+"SE1g8t3Y3ebqbWdfW19x5tTMzdx2XlD352VTQjtRwLGurMxMw0zKyy0nLEqnlJGhqsUprPkpJRITJM2uqq9MSLlm1EkpLDZY"
+"0b/UZtvP0cv0VFRWWV9fZvbg2t/naV1YXG3m3NzY2NPO3U9LQUbp605hW8Oso67gXihGwz88NzGslY+cpskkpmAlHQ8VK7G6"
+"ycRMvqTYRS0mMk7dRV7+07u+3nVhYWBYTlBj7t7e3+jxc2phYWNt7djP197s+PH4TD1EU3a7zuLDt621vSsrTUnRxzLcn5aZ"
+"qLAks7onIhUbLLfWOta/tqbqMTM6TD5NNlLBxsfS59/a/lNQV1tpbPnm3+bt/HZoYF1m+OTd2NrP0fVXU05VUUg71re+r87L"
+"u63bKi8tR6rPOaudkp+hMDSgKSIVGSZ6widNq62uxi9AVVktM0NOvtfh1cHM8m5bWV1SVG787e3m4OPobWRkZ21yefbb1Nve"
+"4/frY0RIV/1Wd9XWq7fi98nMTDspL66vSK+umZ+jPi2hLSUYIS9B7iXdp7DV7lTpWEErPdlLa3HJysjebtz1VlZcYGVk+vbe"
+"6+nofXpgbmRib3fe3tvf1NdyXG1QT0s/+svAUruuu8BUP3HWMSRWouiquJ+ZobAdoEcgGxw6J1IiW6W3Xsu5yFE/NEXtNERl"
+"0O7f0tPN63H+cVxdY3Z79enj6/V9dm1nbvr18enq521fa2RPW2Xk3NjZx7P35s3PUz04O9xiL8ijtqi3n6WjVi+lKikeKy4s"
+"LSe6wkzKtry8bPPg2jw+ZUROSVn/5m3k1N/s4+/2b2hsbGtsfn3x5+nq6ex3dWFfaF1Z6dze2sTGxMhpwN9KOVZHNj032bhO"
+"wqCopbCfqqJWM6cmKyApKyUjKdA6OsO/vrvjsr3ab9P4SFFCV0tGUWJYZX747+b67uv97n74fv56cnlvanhrefrv59XY2szI"
+"19nU4vFMTUpaND9aP1dN2bK/xKenqrSltKhgOq0qMyksLygmMFIyPtPWyMbassjRy83dXl1UX0pNVVlTX2d3dPfx7PH37/b4"
+"efv/d3Fvdm9scH7y9eTZ0tbSycri0d7dVUxIUkEwXkJIU1W7sdCtpKavqaivqiu0XicxJDIoJiZHOzFfzdW+37u13cjNzGhj"
+"Ul9RR1FWVFlebn1z8PXs+/P3+/h5/vt3fXd1e250ePR96+Ha19rTytjf1+XyTlBLXDhAX0JYUd22wceqqq23qbirXz6wLTcs"
+"LzMrKjVUNkLX2cvL27bL1c7P32FfWGRNT1laWGFle3n/9/H2+vV9+/18/v95/nlzfG51fPr+6OLa1trQytff1ubuTU9LXDg9"
+"Y0FYT+W1vsmqqau3qLWr2DauLjMsLTQqKTBVNT3a2MzH4rXG18zO2WJiVWhNTVZZWF1jcnv++/Dx+/R++H3+fv/9fHt8enlv"
+"ef9+/O3g393b09He5NHwdlVeWE9BQ+1ETmbiv8XUr66zvK+zub04u0o2Ny48NDAuS0w/WXvTwHfMxMrW6eTu61BbXFtXV1tq"
+"amxw+/j3/f/6e3x4enr9ffv4+Pj6/338d3R5+O3x7t/V2tza09TbXuf+X01IT1JZPWHb3cnQwK21uLqutrrMP75DPDQvOjk0"
+"LkZOTm1U1sDRz9rL09VgYPpeXFFWXWheY2r6+/x4/H1+cW9vb3BueHf++/f08fTv8vR+/379eW9+7+ns6+TX2N7o3eXcYlZf"
+"W1tLTE3t6GLXzr63wb68tb/B61bNRkY4OD1BPjlJTv3gZd7Pys3Z4+rYeWlZWF9hXFpfav7/eXzy8PD/enN4cHFub3N3fP76"
+"9e/t7vDz9PN+cm11en10e+vd3Nzf2tTT4n11ZnxVTEpNWVxfVNzKw7zFvbu2vcbUWtlORzw3Oz9FPUdJZ9Xa1tjOzMrU7vFs"
+"e2haU1RaX2ZjZm387+zz+Pz5+f13cm9zd3x9/v379/Lx9f17e/59dW1tevHr7O3k2tbW3eXr4O5rWExQUldPT1RwzM3DycK8"
+"ubrKy1zgYUlCNzs8SUJJS1XTz8rR1NHNzeH6WVthXVlRUllreHtzdfPo5+58dXn8fHZucHz9/Xv+9+3y+n388/ZxZ2Ru/fZ2"
+"d/La0M7X29bXzOZlT0tRUE4+SUb0xdK/y7m2rrjGx0nJSkU5LTU3Sz9TRWXDyLrL0NHPzeNmSE5NWFtPUFZs6eDp8vTo5ej7"
+"b2pwef56dHJ3/PL0+Hv88+jr/GtjaHJxZFtdfdnR0tbeyMjCz3JSVGRKUzQ6QkrA48XPuLCqq863PchuOkAlLy5GSFZMTr3F"
+"r73PzmvN4mhFP0BMZFpbUF/j0tHd9fno3ut2XmNv9/VubWzy7Oz9ee/m3ul0ZGFra1tQTVV309XP1Me8trvE3U3NTm5ALUA7"
+"yb3GyL+sq5y/tOs2rC5OKB0vLU5AQTjUuritYNtvVM8+OTM2Pk1PS1n+z8fN1uTm5u5xX2JidXx+/P19/Xt8enz86eHd4vNu"
+"dWpmUUhJVPDN2MzMvK+0ud70VcVaNjcpYrm+tM2xpJijsL4srkkvJRghL1QxOj56prG/10PY7FgvLzU+blBMX9LGxNd4bvpm"
+"XU9RXHzu6uHe3uTvaWBcXV9vavHbz8/V53Hf32NIP0vYzs/ry7ynrr7cSsrOUiImPtqlr2ykmpCcpTs4py0hEhUePk4hNbiq"
+"obhGRtHGLi4pOW/7SETcx8n4UFXwfl1OVWbzb3p+5t7g6ez5cmtoYWBsffP0fOvZz95zd9rQ41NET8vG7PjPr62q+UXPyXIr"
+"JyrbpK90p56SmqdBNKgzIxMYIjhWJDC1qKm+S03gxC8sLz91ZE9H2cbTZ1hZ+f1fVGJydmhmb/rr8vrs5+77bWhofnpsdfPm"
+"4/Jy79vW6HLy1tTvT0ZkxtXm972wrLFFaM7MPysqN7Wmzrykm5WlsSu8vioeFSApZDInXq6qr+9NVMhWLDA0V2toSVnMy+Ja"
+"Ul72fWBccvn1bWZkbHV5fvHu7vL/cm5wb3348u7m5+z+cv7m3/N66tjY9lRObMvf6PG/trG8TPDT1j8wMEe0reK3qp6drcQx"
+"t20uIR4rMmoxMtG0tsFkZHvQRTQ9SGxXWlrl0OFlX2x4bGRmeu/6cnF1dW5uc3z2+fb6/Xt4dXh5+vbv7vX0+Pd+eX7v5ejz"
+"fu7rdF9kcdzW29vOwdDgZ1tpXk1FXcrIysG/tbvA91/WST84PkVGTk1t0s/e5OHga1tVVV9eX2X97vf6/f99dXJ1e3x9ff99"
+"e3p6ent+fv78/P////7/////fn5+/37+//////////////9+fv7//37//////n7///////////////////9+/v9+/v9+fn7/"
+"/////v/+//9+///+/////n7//v9+fn7/////////fv/+//7///////7//v/+/v9+/v//fv7//37///9+/////37//n7+/37/"
+"//////////5+/n7///////7+//////////9+/////////37/////////fv////////////9+//5+/////////37//v7///5+"
+"//7//////37///////////////////7//////////37//v//fv////7//v7/////////////fv/////+fv/////////+////"
+"//////7//////////v/////+///+//7////+fv///v/////////+/////v9+/////////37///////////////////7/fv/+"
+"///+//7////+fv9+/n7/fv9+///+///+fv5+/n39ff18+nji1NrmcfNvb2Nv3Ojc5/X5+dfZ19LS087NztTW2up0eu/23t7O"
+"z9jU1drc3d3l7e/m4e7e4+Tv3+j66O715N7o3dnm8/z0ZWjf7OXg2d7g4uHpbevm3eHV1dvW4t3R4+nY2dzh3d/h7f7m4ezw"
+"6N7ncuntdX7f1uTd9uLi/GvY5H7b4dnp9+ni/eji4uLY3dvh73bf9OPZ5uPd33vhan19//rgff7c8eLZ6+Xz6eh63uDUfXrg"
+"ZP1rd97c73jd6u3m2+pjamr7eHvbdObP4N7LztrQ4OHfZOvP3XHe1uZbY8zf82Ld1PBZb990WVbW7+7c1c3nXezu7fVp2s3f"
+"5NLVe97f6eVh7fP42Oxr5udt39fe1vra2dzp3+ne2v3+5+Ht2uHV5uDj3Xn7aFzu+eJv3t/d4ura2OLb79vU7O3s33Hr19Hc"
+"2+Hf7evo8GfrcO7d6tPZ2t7gd+Hx3d7k7N3i4ebp4Obe7uPY2N/b6edsfuXe6Nre39r62dHX3dxv/+7m3Ong3d7W1tjU2d/r"
+"8ufp6dvX2ezv9eH6/d7V2eTb2t73/uz3afLn2Nrd3t3f6+Pb3d7a2tbd3fV7/Hz8ffx8/X39ff1+/n7+//5+/////37+//9+"
+"/37+//5+////fv9+//7/////////////////fv///37/////////////fv//fv////////7///////9+//9+//////9+///+"
+"fv/+//7//35+//////9+///+/////35+/37//37////+/37///7+fn7/fv7///////9+///+////////////////////fv//"
+"fv////////7/fv////9+fv///n7///9+/37///9+/37/////fv//fv7////////+/v/+////////fv7////+///////////+"
+"//7///////////9+//9+/37////+////fn7///7/////fv/////+/////v//fv7////////+fv9+////////////fv//////"
+"/37+/////v9+///+//7///////////7////////+/37///////7///7///7///////7///////9+//7///////7///9+////"
+"///////////+/35+/v9+///////////+///////////////////+/v5+////fv//////fv9+////////fv//fv/////+fv//"
+"fv7+///+/37//////v//////////////////fv////////////////7//////////////v///////37/fv///37//v9+////"
+"////fv////////////9+fv9+////fv9+fv//fv7/////fv////////////9+fn5+/////37+//////////7//////////n7/"
+"//9+//////9+fv/+/37/fv//fv////9+//7////////+/v//////////////fv///v///////37/fv////9+fn7//v////9+"
+"/37//////v7////+fv////7///7//v//////fv///v7+/37///7///////7+fv//////////fn7/fv///////v////////9+"
+"//9+/////37//v//////fv/////////+fv/////////////+//////9+/v////////7//////////v///v//fn7/////fv5+"
+"/////////////////////n7+/37////////////+fv7/////////////fv//fn7/fv/////+/37/fv/////+//////7+////"
+"/////////v////////////////7///9+//////7////+/////////v9+//9+/////v////9+/v///v//fv///v7///9+/v9+"
+"///+/////////////37/fn5+//////7///////7//////v//////fv7///9+fv//////fv/////+fv////9+/////////37/"
+"/37/////fn7//v////7///////////////////////////////9+//////////7////+//////////7+fv///v//fv//////"
+"//7//37//////////37/////////fv//////fv///v////9+/v////7////////+fv7/fv/////////+/////v//fv//////"
+"//9+///+/v9+///+//9+///////+//7+///////+/////////////////////37///////9+////////fv///////37/////"
+"////fv/+//5+/37/fv//////fv///v///////v//fv//////fv//////fn7/////fv7/fv///37///7/////////////////"
+"//9+///+///+/////v////////7//v/////+///+/37///////9+/v///37////////+//7///////////9+///+////////"
+"fv///37///////////////5+/37/fv//////fv////9+////fv9+///+fv///////////37//37///////7+fv//////////"
+"/v9+////////////fv///37//v9+//////////////7//////v7////+/v///////////////////v//fn7//v////7/////"
+"//7///////9+////////////fv////////7/////fv//fn7//////v////7+/////////v/+/37////////+/////v//////"
+"/v////7///////7//v////9+/v9+///////+fv9+//5+/v9+//9+////////////fv///////v7//37////+///////+////"
+"/37+/////v9+///+///////+//9+/////////////v///v////7///////9+//7+//7//////v///////v9+fv///n7+/35+"
+"/////v////////9+/////////37+//////////9+//9+///+/////37//v//fv9+fv///////37/////////////fv9+////"
+"//9+//////////////7////+fv//fv9+/////v///37//////////////v///37/fv/////+////fv7+//7///7//37/fv7/"
+"/v///////////v///////////37////+fv////////////9+/////////////37/fn7///9+fv////////////7/////////"
+"///+//9+//////7/////fv//fv5+/v/+/////37//v7+///////+/37//v9+fv9+fv///////v/+/37+/v//////fv//fv7/"
+"//////9+fv///////v///v///////37//n7/fv////////7////+/v///37//37///9+//7///9+//7///7//////v///37/"
+"//9+/v////9+/////v////////////9+//7/fn7///////9+fv/+/////37////+fv////////////////////9+///+/35+"
+"//7+fn7////////////+////fv///v///37////+fv///37/fv7+fv7/fv///////v5+fv///v///////////v//////////"
+"fv///////37/////////fv////////////////9+fv/+//9+//7//37+////fv////7+///+/v///37////////+fv9+////"
+"/////v///v//fv////////7////////+/////////35+/////////////////////////////////////v5+/v//////fv//"
+"//9+//7////+/37///9+/////////37+//////////9+//5+/////37+///////+//////////////////9+fn7/////////"
+"/////////////37//37//////////v//fv/////////////////////////+//7////////////+////fv9+/n7///9+////"
+"fv9+////fv//fv///37///////9+/////35+//7////////+/37/////fv9+///+//////////9+/////n7//////////37/"
+"//////7//v////7///9+///+fv//fv9+///////////+//9+/37//////37///////7///7//37////+/////////35+/v//"
+"fv///////////v///////////n7/////////////fv7//n7//////////v//fv////9+/v///////37//////37///7/////"
+"//////////7+fv9+/////n7////////////////////+/v///v9+//////5+////////////////////////////fv//////"
+"/////v///////////////37////+/////37+////////fn7+///////+fv/////////+fv7///9+///+/37/fv//////////"
+"/////37///////////////9+/v////5+////fv/////+/v/////+////////////fv/+/////v///////v7/////////////"
+"/////////v/////////+///////+/////v///37//////v/+///////////+/v9+fv7////+/////////////v/////+////"
+"/37///7//////////v///////37///7/////fv9+//9+//7//////37+/////37//v/+//////7+/v/+/////n5+/v////5+"
+"/v///v////9+fv7////////+///+////////////fv///37/fv////7/fn7//////37//////v///////////37//37///9+"
+"/////37//////////35+////////////fv////////7///7+/////v////////////9+/////////////37///////9+////"
+"/////37+////////////////fv/+/////37///7/////fv///35+/v////7+/v////9+////////fv///v//////////////"
+"/////////v/////////+/////////n7//n7///9+fv///////////37////////+//9+/////37+/////////v///////v//"
+"fv///v///////37////+/v7/fv////7//////////////////37//////////37///5+//////9+/v//////fv7/////////"
+"/37///9+/37+/37///////////9+fv//fv7//////n7//////////37//////v7//v//////////fv/////////////+///+"
+"//////////9+fv9+//9+fv///37//////n7//v////7////////+fv///37//////37//n7////+//7//////////v//fv9+"
+"//7/";
 
 // Spoken phrase: Fine
 #define FINE_AUDIO_SAMPLES 7884
@@ -2210,100 +2242,120 @@ const char SIGN_AUDIO_BASE64[] PROGMEM =
 "/////v////9+//5+/n5+/v//////////fn7+fv////////9+/35+/////////////37//v///////////v//////fv////5+fv//"
 "///////////////+///////+/////v/////////////////////+////fv/+//////////////8=";
 
-// Spoken phrase: Done
-#define DONE_AUDIO_SAMPLES 6794
-const char DONE_AUDIO_BASE64[] PROGMEM =
-"/v////////7////////+//7//////////////37///////////////////7/////////////fv/////+///+//9+///////+/37/"
-"//////////////////////9+////fv/////+//////9+/37///5+/37+ff59+fLoafXod+Dy2WTuz/fd6uPe4t7d3NzZ09DGw8+/"
-"ur+5uLa7v7e5wt1j5FtKOjZCODY5PTs6Q0JQR0lYV2VValxoXFzvXl5fZ3N1aGRm63ZudHfz72zt6+lp3+vv2/bm39zw03TY3+HW"
-"1tPSycq/wr69ure6uLu7vMTT7fVPQj47OTs3ODk9PkNBQk9NVVhaUXteYl9ebWdgYP9sZG9sfP5m9/V+ev/u4nv76N/l/erT5XHe"
-"2Nfs5tHM1c/Gw7+/vbu3uLq6urzAzP71XkU+Ozo6Ojc5PD4/QUVKTlBTV1xeX19gYmRjZWZoamxtb3J2eXz++vj08u/t6+nn5+Tl"
-"4+Hf4NzY0dDX1MzO+mVp58S/y7mspqmuz1rVOSskJC1BV0Zev7u6yE5SYWJIQkVQ4d5wcu7f3/tmZv31/nh3e377+Pf/dnvn4/1f"
-"XnH79ltU28HAw9jYysBsNTc5VsXa3a6fm6Cp+F3NLSIcHSpNfkX2urewzT4/SlpHQz1N0M7f/Wfx3OtkX3Hz5/Z3bX377/xwaHvu"
-"3+tnYfLgb1hMU8y/y87bw7u8TDA6Pm/NT+WpnJqhrUfZ4ygfGR0u1NVN0r+3r284N0JXVU09V8zIzvhUYunnbGBn+t7pd2dx7+X0"
-"ZV3/397sYnDazmhGQUrWutPnz7mtr9YrM0NL2UI8q5eRmZ9zRLcpHBMSHn207dvFwKq9MywtP2LaQUPdxL3IVEhU/OhyW17r3e5j"
-"Xnjh5HZgbOXc+2x+08rPTD1HYNHGTlzBrauzbyxEc0lQMTmnlJCbokVPticcEhEfx63FxfTiq8c3Kyg38L9WU2fXvL9nSEdV7+Bv"
-"Xv/472RfaODd6G798N11XO7KwMpmOT321uBpNX6uoqi3RyvHzTcwIjmZi4yXny7TtR0WCgscr6GutT1HrOk4JiEuzLHP2UZVwL3Z"
-"UT5DX9fd62hkX1xZXvbe3N7j5O9hXVvVwsHiUj9Ky8lNRjFWrqSqv+00vrg0LCEunY2MmJ44Ta4iGg0MGrmgq7A+N7bfPywkLeOw"
-"xc5LR8u/0mBDQ1zc4XNuZfVsWFJf4s/T6W/s6PBrV+fFvtJdPkDTwFVKMD2woqS40S/QsDcrICafjImUm0Q4qCQYDAkUy56prUky"
-"s8o8KyAqaa7AzU1EzLzOXkI/V9rddGlk+HhbTlf41tPhef3l7vxbZdLCyu9KP17D5lA9NMaqpbPFPEGyWS8qIruUjJOduCytPh0U"
-"DBM1pKmvzjLGukc1JipAtrzSb0Lpv8l7TEJQ69t+cGZ6+mJVWHjY0Nz8euLt8lxf1L/G6Eo8UMLXTz4vzKmhrr8+OLHtLikfz5OK"
-"jpqtKK5cHBMKDiqjpa3AMNCySTUjJjq2t9P5QPa9w/xKP03s2XlqZf/tZVJSatzT2/tx7OjtZ1rmyMTZXEBIz8pbTjRNsqervW8y"
-"x744MCUyn4+Om6M2XLAlHA8OHbqkr7ZFQLLcPSwmM9Szzd5KUcjB3FVESnDX5Wxha+3+Yk9WatjO0/R2d93k+1ha2cPF5kw9UMTR"
-"WD8v26yhrb1AM7jYMSwgU5eMjpupKbjHHhcLDiWopa+7N+WvUjclJTi6s9DqQV3AxfROQE/s1vdtX3HufltVU2Hw2tfb6nJ75+f2"
-"ZVviysjfW0JPy81YSjNZsqetvVcyxMo3MiY8no+Qnqcw2bclHQ8RIbSns7lAU7F7PCooNsi0z9tJU8rG5lhITnrb9Wxlb+18aFdc"
-"YHHt3djV5/1s7uXsbVjzzMbXX0RKzcdZSzBJsqWpu2UvzcA2MSU0no6Om6QwfLAkHA4OHrWlsbZATq/jOyklM8ixzdtIUMjE5FRH"
-"Tv3Y8mRlcul+ZFVaYm/25t7Y4vprfufm9lxv2MrTekpH6MlrWDk/vauqu9s0Xr4/NywuqpWRnaVFQK8tIRUSHsyptrlWR7XNQC8p"
-"NeK2zd9SUM7H31lLUHfd72Zpc+n5aVpdanL77uLY3O5tbOvn52Bg48vM4FFCWcriYkA2zq6nssQ5Or5WODAow5mPmKG+Lq9NIhkP"
-"GDmpr7jOPry3RzQoLky4wOplS9rD1F5NTG3e4GdnbujqbVlYXHJ7/Pbg29zuamf06OVxYfvUzttmSFHX3G1POne4q7PBRjbN9j47"
-"LV2hlpqmtTK/zCohFhovsrK/yEnMtlc7LS9HwL/xe1HnyNNfUk9r4OZiYGrt4vJlW2Bofv989uLc2+tpYHbk3eVdYuLNz+JNRnLQ"
-"+HI9QcOurLndMk3MRT8wM62ZlaCpRkOxMiUZFiLQrb6/Zlyyyz4vLDrZutt+V1/LynlTTVvr3XpdZnrm63dgXmBkbH756Obg4et0"
-"aW7s5ONpZPjW095cSl3Y7PhKQNK3r7vPO0DOUEY8NL2fm6St7zy3QSwfGyRcs8HG5la6xUg4Lzx2v9h2YF/SzO5aU1zx4/pgZ3Tp"
-"6vppZWNpa3v96+jj4ub8amf85t/1YWnh0dbxTUzu2/JrP1u/r7PCTjNo9EZKNlGom52ptDrQxy4nGx0uwbzSynDEsd9CMzVH2tRO"
-"WV7dydNmXGDv5/RgYXDz7n1wcHZwbWl69+vv9vv09P11dvHj43xpZ/rr7FpOYOHPx+h60MK+zlgzPFlb3W1at6WgqbHkScFDLyYg"
-"KUDdV13bz7a47lBFUl97S0RSa97cdmX85OT7Z15se/l+fv7z9n14eHj+9/n0fnpzffz8//3x4OX+Z2Bv5N11c+fTxMLgfG7m42Q/"
-"MkFb1L7Jxq6ko6y1ZV3MPC4lIys8ST1F9My3utjp7tjkckpGVGBjX1dd+OXudW9v/v5wa3R6fXhwbHB5e//9+vXu8fb8/Pfu7/x9"
-"+/P0+m1y6trb4+zw4NbwYlpbdnx+ZtPFv7ixsK+vsLK3xXX0RTcyMC4uLy43PDxAT1pZZ2nv5nx94tvj3tjT0tXX1djl+HVpXFVS"
-"UVBPUFVaXmZ4697Z1M/Nzs7P0Nfg8H1pWlFSU09OUVheXFlr+W1g8+fe1tbEu7i4rqutq62usbja/Vo4MS4tKy0rLjg4O0RVVVxl"
-"cOLvde3Z3N/Y0s7Q1NPT2+x9bV5WUE9OTk5PVVpfbPXk3NfSzs7Oz8/U3On2dF9VU1VST1FXXl9YZPl3YXjm4tbYyby5ubGrraut"
-"rq+2zHNxPDIuLSwsLC03OTpAUldaZ2vm6Hn33Nvh29XP0NTV09rp/29iWFJPT05OT1VaX2r55d3Y08/Oz8/P09vn83dhVlNVUk9Q"
-"Vl1gWGD7/2Jv5uTX2My9ubm0rKyrrK2us8J19EIzLi0sKywsNDk4PUxYVmRm7uR8fN/Y4NvUzs7R0tDT3u98altTT05OTU1QVltg"
-"ce7f2tXQzc3Ozs/T2+r9b15TT1FQTk5TW2BZXv/2Z2vm5NjXz7+5ubasrKysra6yvfnvSjUvLS0rLSsyOTg8SVhVYGN85H5v6Nng"
-"3tbPzc/Qz8/Z5/V0YFVPTk1MTE1QVVpid+rd2NPPzMzNzs/S2+p7bF5UTk9QTk5TWmJdXHvucWjq5NvV1MO7ubiurK2rra6xud/5"
-"VTgwLi0rLSwvOTk7RlZUXWJt5/xs9Nvf4dnRzc7Qz87V3+39aFlRT05MS0xOUlhea/Xi2tXPzcvMzc7P1d/1cWVaT05PT05PVV1k"
-"W2Py72p04+LW186+ubm1rKysrK6vs8B48EU0Ly4sLC0sNDk5PUxXVWBh/ulxbujb5d7Xz87P0M7P2eTveWJXUU9NTEtNT1JXX2z0"
-"49rU0M7MzM3P0dXe729lXFNOT1BPT1NbZmRefOr4a+7h3tfZyr67vLStr62vsLO4znF3PjUxMC4vLi86PDxDVFlZY2P49mhs6uLt"
-"4drS0NLQzs/X3uTxa1xXU09NTE1OUFNaYnL05NvV0c/Ozs7Q1dnd6XhlXlpTT1BUVFNXYGx0Z3zl6Hb44uPb3tXFvr+7srGxsbO0"
-"ucN+7087NjQzMTMxOT8+Qk9eW2JgbfVqYXLt+/fn3NfX1tLP09nc3+t5Z19bVlJQT09QUlZbYm33597Z1NLR0dLT1drf5e53ZV5c"
-"WVRRVllaWl9sfXxu7+Lrde/j59/i1MbCw7y0trS2t7m9z3H3STw4NzU2NjY/Q0NJWmJgaGN7+2dje/J8+Ove29vb1tTY3N7g6f1u"
-"aGFcV1ZVVVRVWFxfZ3Tz59/b2NbV1tbX2N3j6e98aWBeXVlVWFxdXGBtef9y+OTqd/nk6+Tm2crGx7+4ubi5ury/0HP1TT87Ozk5"
-"OTlCR0dMXGRkaWV7+mlmfPL99+zg3N3d2dfa3uDj7H5taGJdWVhYV1dZW19mbn3+fv//////fv/////+/v7///////7///9+////"
-"/////n7///7///9+//////9+/////////v9+/////37+////fv////9+/37+//////////9+///////+fv////9+///////+//9+"
-"//////////7+fv///////////v////7//37/fv///////37+/////////////////37//37//v5+///////////////+//7////+"
-"/////v//fv///37//n7//37///7///7+/37//v////////////7//v//fv/////////+///////+///+/37///9+////////fv//"
-"////fv///37///////////7/fv//fv////////////7+/n7//37//////////37/fv///37//v//////////fv//fv//////////"
-"////fv/+fv///v/////+/v9+/37///////7///9+/v7////+////fv///////////37///////9+/v/+//9+/////v///v////7/"
-"//////////////7//v7///5+///////+//7//v////9+///+/37+//7/fv7//////37+//7//n7//////v/+/////37////+////"
-"////////fn7/fv///v///37/////fv9+/v////////5+fn7/////fv///v///////////////37//37//n7/////////fv///37/"
-"//////////////5+fv7///////7+///+/////37///9+////fv//////fv///37/fv//fv9+/37///7///////7/////fv/+/37/"
-"fv/+/v////7/fv7///7+fv///v////9+fv7/fv///37+fv///////37//v/////////+/37//v////////////7///7/////fv9+"
-"fn5+///////+//9+/////////37///////////9+///+///////+/v7+////////fv///v///n7+/////////////////v//////"
-"//////9+////fv//////fv//////fv9+///////////+//9+//////////9+/v9+fv///////v9+/////v///37///////////9+"
-"//////////////9+/v////////9+///+fv9+/v/+/v/////////////////////////+/v///v////7/////fv9+/////v9+////"
-"fv///////v/////+///+fv////////9+//////9+/v////////7+/////n7//////////////////////////v///37/////fv9+"
-"fn7+//////////////9+/v/+//////9+//7/fv///////37/fv//////////fv9+/////35+/v////////7/////////////////"
-"fv/////+//7///7////////+/v////7+///+//7//v///////////////v////////7////////////+//7///7////+/////n7/"
-"/////n7/fn7////+////fv9+//////9+////////fv/+///////////////+///////////////+/////////////37//37//v//"
-"/////////v9+///////+//9+////fv5+////////fv/+/////////v/////+/37////////+///+/v/////////+fv7//////v//"
-"/v/////////////////+/////////37////+//////////9+/37////+/n7///7///////7+/v//fn5+////////fv//////////"
-"/37//////////////////////////////////n7////+/v////9+/////v//fv/////////+/35+///+////fv/+//////////9+"
-"/n5+//////////9+////////fv//////////////fv///37///////7/fv////////5+/////v///////////v//////////////"
-"/37+//7///////7///////////////9+//////7///////////9+//////////7///////7+/37//////37///////9+/v//////"
-"///+//////////////9+////////fv///////v///n7+/v///v9+///+fv7//////////37//v///////n5+////fv//////////"
-"////fv///37/////fv//////fv////7///////7+///////////////////+///+//7//////n7////////+////////fv//fv//"
-"/////37///7////+////fv9+/////v///////v///v/////////////+//////////7///9+fv//////fv////7////+/v9+////"
-"/////v///n7///////////9+/v///v7///7//37///////5+/37//v//////////////////fv//fv//fn7/////fv///35+////"
-"//5+/////v7////+////fv///v//fv///////37//v//fv7///7//v///////37///7//v7+////////fn7+fn7//v7+//9+////"
-"//////9+/////////v////9+//9+//////7+//7//v////7///////////////5+/v7//////v7//37////////////+fv/+//7/"
-"//////7//v////7+/////////v/+//////5+////fv///35+/v/////+/37//////////v7///////9+//7//v//////fv/////+"
-"//9+//////7//v///37//v/+/v////////9+//9+///+/37+/v////////9+//9+//////////////7+/n5+/////37///9+/v//"
-"/v9+//////7///////7+//////////7+//5+//////7////+fv////7//////v////////////////7////+/////////37/fn5+"
-"/////v9+////////fn7+//9+//9+////fv/+////////fv////////9+fv/////+fv/+/v/////////+/////////37//37+////"
-"/n7///////////////9+///+//////9+fv7/////////////fv///35+///////+fv////////7/fv////9+/v////9+fv/////+"
-"fv///n7//37///////////9+/////////////v5+///////+///+//9+/////37//////v////9+////////////fv//fv7///9+"
-"/v7//n7//n7///////7///////9+/////////////////////////////v////7//////37/fv9+//9+////////////////////"
-"/n7+//////////////////9+/37//////35+///+///////////+/v////////////7+fv///////////v/+/////v///////37+"
-"/////////v/////////+///+////////fv///37+///+fv//////fn5+//9+/v9+//9+/37///////9+/////37/////////////"
-"/////37/////////fv//fv///37///7///////7+////fv/+////fv///v///v7/////////fv////9+/n7///7///7+//7/fn7/"
-"//7//37//n7///7//////n7///9+/v///////////////////////37//////////v////////9+//7//37+//9+fn7/////////"
-"////fv/////+/////v///v//fn5+//////////7+/37//v/////////+fv7///7/fv/////////+//9+//////////9+///+////"
-"fv//////fv/+/v9+//9+fv/+//////7//v//fv///////////v7/////fv////7////+///////////+/////37/fv/+////////"
-"//////////7//////v//fv7///9+fv/+////////////////////////////////////fv////7//////37//35+//////7///9+"
-"/v/////+//9+/////////////n7//////////////37///7/fv////7//37+/n7///7/////////////////////////////////"
-"/////v9+/v//fv/////+/37/fv7///9+fv//////fv7///9+//9+///////////+////fn7//v/+/////////v////9+//////7/"
-"/37///////////7///////////////7////////+////////fv/+/n7///////////////7//////37/fv////5+/////v//fv//"
-"//7/////fv////////////9+//9+//7+///+fv7///////7+////fv7//35+////////////fv////9+fv/+//9+fv9+//////9+"
-"/v//fv9+////////fn7//37//////37///////////5+/v/+//9+/////v8=";
+// Spoken phrase: Finish
+#define FINISH_AUDIO_SAMPLES 7946
+const char FINISH_AUDIO_BASE64[] PROGMEM =
+"fv7////+/////v9+////////////fv//fn7+/v9+///+fv///37/fv/+/////v////9+/v/////////////////+////////"
+"/v7///5+///////+/v7+fn7////+/////37///9+//////7//37////+/v/+fv5879/k3t7d3tzc493d3uLk4+Dm6Ofh6Org"
+"397d2N/e4ufa4O7n89zofuLx4OPr3+He3tvd59nf4ODm29/v4enn4/Lf7+/k5+Lg693d5ODj3+vg5ujr8efy6evy6N3j39zx"
+"5Nzk4uDl4erx6eLt5PDs4OTm7N3m4+De4N7i7+Di4+7r6vXt6vXi5ujk497j3d/f3+Tt5eft7fj16Ozt5d/b4+XZ3ODe4uzn"
+"7Ovv9PH44Hvl3+fg3dvi397j4/h97PPs9uhw5+7d4/Df59zn3uDj6OTu4erv6fbe6Ozn7+Xl7PDq7OHp7dvd2+bc2+Xg5N/f"
+"9Od+++T45XJv3+zf3+Te3tbl1+Da3+Dc6+bt3ezf7O7f7e3qd+Xz9Ov17ubg39vr1tnT2N3R3t3a9O7q/upuafP67+Pj3Ovk"
+"3+jhdm/h7+zZ5tra7NnS3djf3trt6v7s73De+mri7e3a6OrZ3d/X3ezb5eNs7l/uzn3g59vU1tvV093t6enqd/N07u926P7b"
+"3dbr3ff12tbc6t7v3ebtXt3xYen49dzU+NnZ4tjb39vtfeLv6nvy2ejf4+fc8frf6/zjdnzy/Pzh/frS1ePh2t7P393b6d/o"
+"fHTeeejr++Tdeebb5+bm1/fk2Nnfzdnv3Nzm4vNaakZQfObX2dzNy9DTzsbX1uju+N38+N594+X6fd3o4ero7O3j4N/05t7Z"
+"5+b19t9+5XX85fZ75fxm1+/b2u/e19nr2+Tk6ezf7N356uT27/ntfdrm9evg4+fZ597c3e3h3+vV5uTh397a0uDi093z3fbo"
+"29z33eXd2dvf6t7q4Hzq+3rp7Px5fd3Z4dnX49jW393q4fDY6Xra3uXb1erh5/js5+t04N145d7n1tlr4NHd6O3l39bi8OTm"
+"/+zrcufs7u3n5OPe4ejl59/Y3NfZ2NfZ3ebs5eP57Ozn6eDc3tnc4N3d6Ofr/271/Pjp8e/h2+ze5fHg4H19ZFJLSk1QWW/a"
+"yMTGvL3F2NReST83PTw4PezO4rOurKmtq62vT959LS0rLCctLTlrSdi4tru4tcLHc1JPPjk7Qz9IXOLSy8jEx8/ieVxOR0dL"
+"Tldz1sbCwrq7wtXPWkc9Mzs5NDvfzd+urKmmqqiqrkXMUikqKCkjKyk6bkbLs7O5tLPBxl5OSzs2OUA9SV/bzsbEv8PM3nRU"
+"Rj49QENNX9K/ubyysbjKyPw9OiwvMCwtUL5+rKGim6CeoZ9rVMEhIR4fGx8hJm8//62rrq6ptrvhREo1Li43NTtN68m/u7e4"
+"vcbWYUxBPDk8QEha28O3ubSusr/Myj89LiswLCo2v9u/n6ObnJ2enqs0ti8dHh0cGiIeO18+tKmqr6isu75ISz0vLDI1Mz9b"
+"18a9t7O2u8DMb0Y9ODIwNDtCVNm9sLCvqKu2yLxAOCwiKyYiKMbI2ZqclZOWlpecLbM0FRcUFRAbFy3UNq+foqijpbi4Pzw6"
+"KSYrMC06T9jAubOur7K3vMtzSz06NTIwNzxDVta+r7Kup6q2vrg/PCoiKSMfKL9nw5ickpOUlZSgK6wlExUTEhAbFz/ZPqae"
+"oKifqbvBNDsxJyUtMS9AYMy/urSws7a6vc3dWUk7NzQwLjE5PUzkvq6urKOkrruvRjkqHiYfHB/L13CWmI+OkJCSmCitLQ8T"
+"DxENGRQvxjapnZ6moKS6uzY3NCYkKzAuPVjOv7y3sbS4ur3H1fFjT0U+PTo3Nz0/SGLQu7K2q6itvbXHOzslKCgiIDm7QKaZ"
+"m5GWlJiV2UK0GBgUFhIXGx7HQ9ejoaeqpLe7ZjM/LyorNjU6UOjIwr+7u7/FyczY5fp5ZldMR0Q+Ojg9P0NU2b6zta2nqre5"
+"tz09KSQpIR8puky5l5uQk5KVk6Usqx8UFRMSERsXRuA+p5+jqqOsvckyPDMpKDE2Nkp2yb+/vLq/yc/Y+HVndn3x7Or/X1VP"
+"RT49Q0BIXdi/ubquq7C/t8s9PigsKyUlP75Cp5yclJmWm5htTrsaGhcZFRsdIMhF16alqa2ou75aND8xLC05OUBb2sO/wL2+"
+"yNbiallTT1xp8d7RzdHZeF1NQDo8PjxHaM+7uLOpqrS8slQ+MyYsJSIn1tpjm52WlJaVmJwvtjUWGBQXEh0ZMMk8sKOkq6ir"
+"v786OTotKi85OEhpzMC9vbq9yNfpX09MTlFe/uHU0c7U42taS0E9QEFFT+jKu7y0rbC+vr5DQi8sLyopNr5cuJ2hmZybnZy2"
+"ObQkHRwcGhshH15PTK6qrLGrt7/TPEY6Ly85PD5R88zFwr++xc/d+ltRTVFUYPvc0M7L0NxuWUtAPD1BQkz8zLu5t62uuMe8"
+"UTw1KS8sKS7Lw9+en5uZnJudoDa9QhweGhwYHx0u8Te/q6uwrK29vElCRDItMTo4Qljcx8O/u77H0N9mUktJTE9ae9vUzszN"
+"1eJlVUtCPkFGSVbky727urG0vs/ETj05LTYxLzXPv9+mo6Gdop+kpELT7yIlHyIdJCEsbDnntLG1s6+9uutNWj42Nj06Pklb"
+"5dPOx8THzNHb72ZcWVhcYG7t39zb3OL2Y1dQTUpKT15+58vBvbu9vbvJeltoODU3MTw6PlO6t7+ko6SgpqSqqUvo1ikqJCYg"
+"JSMlPTM58si/v7W7tLjNxs3uTk5IREA+QEdIS1JfcfPi29XT09XV2d/q+W1kXFlWV1ZZXmv55tvQy8jIxsTJztXmfVpIRERD"
+"OUBGSF1m18S1ubeqra2sr7C3uVfk/jc3MDEtLywsOjc3RVJ4683PxL7HxcXI0drscWJYTk5OTk1PVFleZnL+7uvq6O32+H5+"
+"e/jv7eTd3NnZ2tvg6nJkXlROTE1PT05QWWBoZm7r2t3d0MrDwL+8tbS3tre4vcfq+1xDOzc3NjczNz0/QURMVF5bW3Xr6evf"
+"18/P0c/MzdDW2t3pdGFcV1NPT09SVFheaHjx5d3Y1dPR0NLW297ofGVdWVZQTU5TU1FVXWt0bnjh193a0crDwsG8tri5ubq7"
+"wdBz8k9BOzo5OTg2PUFCQ0pRWFxWYPn0/e3c1tLU0s7N0dbY2+T9aWFcVlFRUlRVWF1ndvjo3dfU0tHPz9Ta3+f6ZlpWVFBM"
+"TE9TUlRZafj+d+TU2NbRy8LAwb61t7i4urq/y27sVUA7OTk4ODU8QUBBSFFTV1Ncfnlv89vW1NTPy8zP09PY4vxtY1tUUE9Q"
+"UFJWXGNv+urf2tbT0tLS09jf7P1uX1ZRU1FOTVJaYFxd8d3ydNrZ1tjmy8DEz7q4u7u/urzER9LmOzw9Pzg8NEtUPEl4dk5i"
+"Y/Z6UHba+mba09jU1s3O2d7b521gXlxVUFJZWFZebX7+797V1tnRztLb3+DsY1VZWk1LVVdqXV3Rz2j+w3dmZ1LTVkf0smbM"
+"q7WqtrGvqTxUsystLjMpMCo4zDRcvsDzycXq0kRMbUM+TmRVeOPNx8zLyMvb7XNgU0tMTU5OVWV4797Sz87OzdDc9m1cTUVH"
+"SUhLX+vIy8a2t8fNvFZJPDA9MC04uV/Fn6ebn56fnMQ3riMeHR4bHSEhzENdq6iusqm8vm06STYtLjw6PVToysTDvbzDzdDh"
+"YVVNS0tNTl557dTLysjJzNrzTklAOjY6P0JV37+wsq+mqbS9tz87KiApIR8ky9/smZuTkZSUlpsssTEUFxMVEBwYL8g7rJ+g"
+"qKOmvLs9OjorKC03Mj9e1ca/vbq9xMvU/V9PT01MT1NeY/fn3dbQzs/Q1N70WU9KQT0+REVPeMy6ubesrbXAuV89NycsKSUm"
+"WMhKoZ6blpqYnJs9z+QZHBgaFh4dKMU/wKamrKypvr5OOkIzLS88OUNX3srGxb7AydLb8mFXUVVTVltka217/vPr6ODX1tTS"
+"0troa1lQRz9BR0ZNbdXAvLyvrrbFueQ+PCouLCgpWsNMo5+dmJyanp1A1d8cHhsdGB8eKs48yauqr66tvr1QP0k3MDQ9O0RU"
+"78/LysPEy9TZ7W1eWVhZXFtmaGx2fv3y6+nh293Z3N3q/V9YUUtHSk9SX9/NwL6/trjD2MhTPjwvODUyOcrE2qanoqCkpKar"
+"O8FIJCcjJR8pJDdePM23try1t8PBXFpXPzs/RT9KVWvr3dXNztHW2OPxcmpgXl1dYWJpcf/06eTf3t3e4OnyeGlcV1ZTUVVd"
+"bu/j0MbLyMTH0t72UVY+PUdCQEzN3sW0uK2vs7S0w0/PRTU2NTMvOjlHX1TTx8nMxMXh2e9iV09PT1JTXWl4+OHh3uHf5+rz"
+"/Hhvb2pvanZr+Grm3md48fLyVtBZ79ZQ0ljs8eda3+dd3HBTz+9X3GPne/pXxk953mt7Ws17W23ITFzW2VLt3+9yVdh9cmvM"
+"T3fd/k7N20rSX+7eUurEPuPFT0u8Sl7Z9tk9tkdTydo70MFE42nGR13N+U/NbvPnSdHaXkq+bkfW7+pTz1j+ylBZ5M1P/Oni"
+"bVDDTlTBUlfN6krf2OdS99VPy07RUdv25+0/ulpM78FHU8NaX9zmUvXIS1nJYnJbxklmvja850zqXsZK5GbIPsNfXs9X40/K"
+"bOhCukdo0m5a0mtv20zNSLo80e9u+u34Vso/vV5abt39Xl/AXEPHelTdyjzE7k7Z3mhRzG5vWsxNz3FJu0xI1ro03bw+3uTi"
+"UOj12uBCyNRCzl/43PJPz+RO5WPQXOr7enH22Uvvv0Vs0lrPSt3STNT7fVnc3lDMVGfV50/VYt7pRL1OaN51bnTLQtXMTV7O"
+"zzKxXzm2TF7k1U7MStPTStha2eVkZGLBTEW5UUrUyEHqxULpvjx8vD1uvUxMwU3t93HVW2vbd1/dWtzmXWvKSfPFP/u+TkS7"
+"U1ba4EvIXWjQTdxlyj/FamHbbFPIZ0fH5l5IukVu6dvdR9nXaFbMW1/ZXM9TYchVac5JdMFE2+FncPx90EnZ10/TSr1KUsld"
+"bN1sfeNnb95g+dlU399Z3txGyV1v2uJO3OBPz0zFTOXkbutKw1hc3NtaUcBNePLl+U7BUlzn0Ejfz1h3acdD199qdnzfT8FH"
+"V8FzRc/LQtN2/txtXevaWvPn+G5m2X5Y5c5MaMhL1W5p5mneYvB35VrbeOtjX8tPbdjbTmfIVkzCZ0zM50vZ0UnQdW54a85S"
+"ddt+8kvEXVjUZupbzk/XaVfJX1b9w0BtuzvYzFNQwVZHuDzky1lZzFhUxE971mJOw09s3nDgV9vpW+9u2utQ399tU8lT5Wzz"
+"7mnqaM1Ieb9JSb1VV85rVM1YaM9V4nJv2l793Ffo5XR4c+Fn8H7wbnfhaNtS2Hlu/uFn/N5V2PJmXsdOdffb/VjYaupmb+nV"
+"UHXe5V727HL7evXmZGjUb1TOZlXJUOrj+FLU2knV21J+0V5h3uRT1nRdzl9Rz/BX4+Rk8ela2PlgbN3kWXrj4Fhuz15o7Nli"
+"Uc3hSdzJSHXKUl3LU/Ts3E3U30rLTs1R0lXm0UXJYXH743Nq31/jfVrV/29n2mhj2md9+uzkWOd+6Wd41UnFVF/Y8mVdyk/s"
+"6F3SWvF9+dxP0lvQS9PnUcxIy13dVefXT93peFzVaV3X81TZ203Z31Hd32JcylhbzFfra91f699Qz1r74Xpd5NlS4/z9ff5+"
+"fv59/Xz8fPx8/Hz8fP18/X79fv5+/v///37+//5+/37/fv5+/n7+//7/fv////////9+//9+/////35+/////////n7//37/"
+"/////////////v//fv9+//9+//7+/////37+/v///37//37///7//n7/fv////////5+fv/+///////////////+/37/////"
+"///////////+fv/+/v7///9+//7///9+//7+////////fv///v7//37///////9+//5+//////9+/////v/+//9+//7/fv//"
+"/v/+/////v/+/////////////n7////////////////+/////37//////////n7/fn7+fv//fv/+/v////7/////fn7/fv//"
+"/////v///////37//v////////9+/////37/fv/////+fn7//////v9+///+//7+/////////v////////9+//7////+//7/"
+"/////////////v////9+/v/+///+/////////37////////////+//////7/fv///////v//fv9+/37///////9+//5+///+"
+"//////7//v////////////////7//v9+////fn7+/v9+///+/////v9+///+/////////n7///5+///////+/////////v//"
+"fv7//37///7/fv/////////////////+//////7///9+////fv/+/v///v7///9+//////////7//37//////////37/////"
+"fn7//////////////v///35+//////////////////7/fv/+///+/////v//fn7////////+//////5+/37+/37/////fv//"
+"/37///9+//7///////////7+fv7///////////////////9+//////9+/////37/fn7////+fv9+/37+//9+//7///////9+"
+"//////////////////7///9+/v///////v///n5+fv9+/v//////////fv///37+//////7//v/+/v//fv//////fv//////"
+"/37/////////////fv9+fv/+fv//fv//fv//////////fv9+///+////////fv9+/////////37/fv5+//////7/////////"
+"fv///v//fv//fv////5+fv9+////////////fv5+//////////////9+/////v//////fv7/////fv///n7+/37+/v/+////"
+"///+/37///7/////////fv7//v///35+/////v7//v7///////////7///////7+///+fv/+///////////////+fv7///9+"
+"/v////7//37+/////37///////7//////////////n7+/////////v///////v/+//////9+//9+/37//v7///7/////////"
+"///////////////+//////7//////v///////v7///////7/////fv//fv///////////////////////37///7///9+////"
+"///////////////+////fv//fv/////////////+fv///////37/////////fv////////7/////////fv7/////////////"
+"//////9+//9+fv///v7/////////////////fv9+//7////+/////v//////fv9+/////37//v///////v/+/37//37+////"
+"fv///v9+/////////////37////////////////////+/v9+/35+//////7+//////7+////////////fv///37+///+/v7/"
+"fv7+//7////+/////v9+/n7////////////+///+//////////////9+/37//////////////37+///+////////////fv/+"
+"/v9+///////+fv///37+////////////////fv7///7////////////////////////+fv7//v////5+////////////fv/+"
+"///+/37///////7+//7//v///////v9+//9+/v///37//////37/////fv9+//9+//9+////fv9+/////37//35+/37//v7/"
+"fv9+//////9+//////7+//7//v//fv7+//////9+///+/v9+fv///////v///37+///+/////v///37/fv7//37/////fv//"
+"/////////////////////v///////v9+//9+//9+//////7//v///v/////+fv7/fv///v////5+////fv/+/v//////////"
+"////fv7////////////+///+fn7///////////7//v/+/37///7//v////////7//37/fv/+fv///////37/fv////////7/"
+"/////////v////9+///+fv/////////+///+fv/+/////v////////9+/////37/fv///v///////n7+///////////+////"
+"//7//v7+//9+//7///5+/37//37/fv/+/n5+////fv/////////////+//7//n7///7/fv/+//////////////7//37/////"
+"fv//////fv///////35+fv//fv////////////9+////fv//////////fv///////37//n7///////////9+/////37//v//"
+"//7///////9+//7//////v/////+///+///////+/////////////v//////fv////////////9+fv7///////////7/////"
+"/////v7/fv/////////+//////////5+/37+/////////////v////////////9+/////////37///7//37////+/n5+/v//"
+"////fv///n5+//9+/////v9+fv//fv///37///5+//////////7+//7/////fv//fn7//37//v//fv7+//////////9+////"
+"//7///9+//////////////////9+//9+/35+//////7+fv7+/v///////37//////////v7//37//////////n5+//9+////"
+"//7//v////5+/v5+////////fv///n7//////v//fv/////+/////////v////9+///+////fn7/////fv7/////////fv9+"
+"/////37//////37//v///////37/fv///v7////////////////+fv//////fv///37///////////////9+///////+////"
+"/v//fv////9+/n7///7/////fv////////////7+//9+/////v////7//////v////7/////fv////////////////////7/"
+"/37/fv////5+fv7+/////37////////+/////37/////////fv/////+/v///////v////////7+/v9+///+/v/+//////5+"
+"/////////37//////37///////////9+/////n7//////////////////////////v//fv////9+///////////////+////"
+"fv/////////+/35+fv/////+//7/////////fv///////n7///////9+//////7//37////+/37///////7////+/////37/"
+"/v//fv//fv////9+//////////9+/v///////v//fn5+///////////////////+////fv5+/37///7//v///v///////37/"
+"/////////////v9+/n5+/////////////////////n7/fv/+//7///9+//9+//////9+///+/37////+////////////////"
+"//9+//7/////////fv7/fv////7///5+//////9+/37///////9+///+//////////////////7///9+//////////9+////"
+"/37//////v///37//v//////////fv/+/////////////37////////////+/35+fv7///9+//////7//v9+/v7//n7///7+"
+"//////7//v///////////v9+fv////5+///+/37/fv///37///7//////v7///////////////9+///////////////////+"
+"/////37//v////5+////fv///35+//////7//v//////////fv5+///+fv//////fv7+/////v////////7+//////////5+"
+"////fv////9+fv////7+///+///////////+/////////37//37////////+//////7//////////////////n7+fv9+////"
+"/////37///7/////fv7///7///////////////7////+/v9+/v7/////fv////////////////5+/37//37/fv///37//37/"
+"/v///n7+///+/v7//37+/v7+///+fv9+/////v7//v///n5+//7/fv/////+/////v///////////////v///v///v5+/v//"
+"/////v///v7+/37+//7///9+////////fv///37///////7+//////9+fv9+//////9+/v9+/v5+/////35+/v//////////"
+"/v7+/////////37+//7//////v///v//fv/+//////9+////fv9+//9+/////37//////////////37/////fv///////v//"
+"////////fv/////+///////////+//////////7///9+fn7///////9+//////5+/37//v//fn5+///+/v////////7///7/"
+"///+//////////7//////v7/fv9+//9+fv8=";
 
 
 // ==================================================
@@ -2647,12 +2699,12 @@ void dispatchAudioCommand(String command) {
   else if (command.equalsIgnoreCase("eat_food")) playAudioPhrase(EAT_FOOD_AUDIO_BASE64, EAT_FOOD_AUDIO_SAMPLES, "Eat food");
   else if (command.equalsIgnoreCase("more")) playAudioPhrase(MORE_AUDIO_BASE64, MORE_AUDIO_SAMPLES, "More");
   else if (command.equalsIgnoreCase("go_to")) playAudioPhrase(GO_TO_AUDIO_BASE64, GO_TO_AUDIO_SAMPLES, "Go to");
-  else if (command.equalsIgnoreCase("toilet")) playAudioPhrase(BATHROOM_AUDIO_BASE64, BATHROOM_AUDIO_SAMPLES, "Bathroom");
+  else if (command.equalsIgnoreCase("toilet")) playAudioPhrase(TOILET_AUDIO_BASE64, TOILET_AUDIO_SAMPLES, "Toilet");
   else if (command.equalsIgnoreCase("fine")) playAudioPhrase(FINE_AUDIO_BASE64, FINE_AUDIO_SAMPLES, "Fine");
   else if (command.equalsIgnoreCase("like")) playAudioPhrase(LIKE_AUDIO_BASE64, LIKE_AUDIO_SAMPLES, "Like");
   else if (command.equalsIgnoreCase("learn")) playAudioPhrase(LEARN_AUDIO_BASE64, LEARN_AUDIO_SAMPLES, "Learn");
   else if (command.equalsIgnoreCase("sign")) playAudioPhrase(SIGN_AUDIO_BASE64, SIGN_AUDIO_SAMPLES, "Sign");
-  else if (command.equalsIgnoreCase("finish")) playAudioPhrase(DONE_AUDIO_BASE64, DONE_AUDIO_SAMPLES, "Done");
+  else if (command.equalsIgnoreCase("finish")) playAudioPhrase(FINISH_AUDIO_BASE64, FINISH_AUDIO_SAMPLES, "Finish");
   else { Serial.println("Unknown command. Try hello, see_you_later, me, yes, no, help, please, thank_you, want, what, again, eat_food, more, go_to, toilet, fine, like, learn, sign, finish."); }
 }
 
@@ -3181,7 +3233,14 @@ bool readMicrophones(
 // RESET SOUND EVENT
 // ==================================================
 
+#define EARLY_MIN_VOTES 3     // frames of timing data before trusting a direction
+#define REPUBLISH_MS 500      // refresh rate while someone keeps talking
+unsigned long lastDirectionPublishMs = 0;
+bool directionSentThisEvent = false;
+
 void resetSoundEvent() {
+
+  directionSentThisEvent = false;
 
   soundEventActive = false;
 
@@ -3198,8 +3257,6 @@ void resetSoundEvent() {
 }
 
 
-// ==================================================
-// PROCESS COMPLETED EVENT
 void publishDirectionTelemetry(const char* direction) {
   if (!isRunning || !mqtt.connected()) {
     return;
@@ -3232,6 +3289,28 @@ void publishDirectionTelemetry(const char* direction) {
 }
 
 
+void publishDirectionIfReady() {
+  if (speechFrames < MIN_SPEECH_FRAMES || validTDOAFrames < EARLY_MIN_VOTES) return;
+  if (directionSentThisEvent && millis() - lastDirectionPublishMs < REPUBLISH_MS) return;
+
+  const char* direction = nullptr;
+  if (leftTDOAVotes > rightTDOAVotes && leftTDOAVotes > centreTDOAVotes) {
+    direction = "LEFT";
+  } else if (rightTDOAVotes > leftTDOAVotes && rightTDOAVotes > centreTDOAVotes) {
+    direction = "RIGHT";
+  }
+  if (direction == nullptr) return;
+
+  Serial.print("SOUND DETECTED ON ");
+  Serial.println(direction);
+  publishDirectionTelemetry(direction);
+  directionSentThisEvent = true;
+  lastDirectionPublishMs = millis();
+}
+
+
+// ==================================================
+// PROCESS COMPLETED EVENT
 // ==================================================
 //
 // Serial output is intentionally limited to the
@@ -3239,6 +3318,11 @@ void publishDirectionTelemetry(const char* direction) {
 // ==================================================
 
 void processSoundEvent() {
+
+  // Left/Right was already reported during the event.
+  if (directionSentThisEvent) {
+    return;
+  }
 
   // Reject short events/noise.
   if (
@@ -3518,6 +3602,9 @@ void processMicrophone() {
     }
 
 
+    publishDirectionIfReady();
+
+
     // ==================================================
     // END EVENT
     // ==================================================
@@ -3611,6 +3698,7 @@ void mqttTask(void* param) {
     }
     handleSerialCommand();
     speakPendingInference();
+    publishHeartbeat();
     processMicrophone();
     vTaskDelay(pdMS_TO_TICKS(5));
   }

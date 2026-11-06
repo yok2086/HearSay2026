@@ -258,7 +258,7 @@ public class HearSaySshMqttManager : MonoBehaviour
     // ---------------- Glove calibration support ----------------
     // Used by HearSayGloveCalibration ("Calibrate glove" on the ASL translation screen).
 
-    public static readonly string[] GloveIds = { "glove_01A", "glove_01B" };
+    public static readonly string[] GloveIds = { "glove_01L", "glove_01R" };
     public bool IsConnected => ConnectionStatus == "Connected over SSH";
     public string LastCommandError { get; private set; }
 
