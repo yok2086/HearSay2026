@@ -12,8 +12,9 @@ namespace HearSay
     {
         public static bool DeafRole { get; private set; }
         public static string SessionServerUrl { get; private set; }
+        // Optional mqtt:// address of the local MQTT demo publisher. Empty = Ultra96 MQTT only.
         private string address;
-        private string connection = "Waiting to connect";
+        private string connection = "Ultra96 MQTT. Choose your role.";
         private string translation = "Waiting for a sign…";
         public static string CurrentTranslation { get; private set; } = "Waiting for a sign…";
         private bool partner;
@@ -24,27 +25,13 @@ namespace HearSay
         private HearSayPartnerHands partnerHands;
         private HearSaySshMqttManager partnerMqtt;
         private HearSayGloveCalibration calibration;
-        private static string resetServerUrl;
-        private bool resetInProgress;
-        private const float TunnelTimeoutSeconds = 60f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void SetLandscape()
         {
-            resetServerUrl = null;
             Screen.autorotateToPortrait = false;
             Screen.autorotateToPortraitUpsideDown = false;
             Screen.orientation = ScreenOrientation.LandscapeLeft;
-            Application.quitting += ServerTunnel.Stop;
-        }
-
-        // A loopback address means the server is reached through the phone's SSH
-        // tunnel (stujump -> ultra96 -> Mac, see run_hearsay_pipeline.sh).
-        public static bool EnsureTunnel(string url)
-        {
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || !uri.IsLoopback) return false;
-            ServerTunnel.EnsureStarted(uri.Port);
-            return true;
         }
 
         [Serializable]
@@ -63,21 +50,11 @@ namespace HearSay
             Debug.Log("HearSay role init: scene=" + SceneManager.GetActiveScene().name +
                 " savedRole=" + PlayerPrefs.GetInt("HearSay.VrRole", 0) +
                 " deafRole=" + DeafRole);
-            const string currentDefault = "http://172.25.96.216:8080/status";
-            address = PlayerPrefs.GetString("HearSay.Server", currentDefault);
-            if (SceneManager.GetActiveScene().name == "HearSay Demo" &&
-                Uri.TryCreate(address.Trim(), UriKind.Absolute, out var savedUri) &&
-                (savedUri.Scheme == "http" || savedUri.Scheme == "https"))
-                SessionServerUrl = new Uri(savedUri, "/status").AbsoluteUri;
-            // One-time migration of the previous network's default; preserve custom addresses.
-            if (!PlayerPrefs.HasKey("HearSay.ServerAddressMigrationV2"))
-            {
-                if (address.Trim().TrimEnd('/') == "http://192.168.1.60:8080/status")
-                    address = currentDefault;
-                PlayerPrefs.SetString("HearSay.Server", address);
-                PlayerPrefs.SetInt("HearSay.ServerAddressMigrationV2", 1);
-                PlayerPrefs.Save();
-            }
+            // Old saved http:// dummy-server addresses are ignored: there is no HTTP server any more.
+            address = PlayerPrefs.GetString("HearSay.Server", "");
+            if (!HearSayLocalMqtt.IsMqtt(address.Trim())) address = "";
+            if (SceneManager.GetActiveScene().name == "HearSay Demo" && HearSayLocalMqtt.Valid(address.Trim()))
+                SessionServerUrl = address.Trim();
         }
 
         private bool SaveAddress()
@@ -89,7 +66,6 @@ namespace HearSay
                     connection = "Use mqtt://HOST:1883/hearsay/demo/status";
                     return false;
                 }
-                if (resetInProgress) { StopAllCoroutines(); resetInProgress = false; }
                 SessionServerUrl = address.Trim();
                 HearSayLocalMqtt.For(SessionServerUrl);
                 PlayerPrefs.SetString("HearSay.Server", SessionServerUrl);
@@ -97,36 +73,18 @@ namespace HearSay
                 connection = "MQTT selected. Start the terminal publisher; type clear to clear inputs.";
                 return true;
             }
+            // No local publisher: ASL and mic data come straight from the Ultra96 over MQTT.
             HearSayLocalMqtt.Stop();
-            if (!Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) ||
-                (uri.Scheme != "http" && uri.Scheme != "https"))
-            {
-                connection = "Enter the full http:// address printed in Terminal.";
-                connectionExpanded = true;
-                return false;
-            }
-            SessionServerUrl = new Uri(uri, "/status").AbsoluteUri;
-            // Persist BEFORE the request: network/reset errors must not restore the old IP.
-            address = SessionServerUrl;
-            PlayerPrefs.SetString("HearSay.Server", SessionServerUrl);
+            SessionServerUrl = null;
+            PlayerPrefs.SetString("HearSay.Server", "");
             PlayerPrefs.Save();
-            if (resetInProgress) return false;
-            if (resetServerUrl != SessionServerUrl)
-            {
-                StartCoroutine(ResetServer(SessionServerUrl));
-                return false;
-            }
             return true;
         }
 
         private void Start()
         {
-            if (resetServerUrl != null) return;
             if (SceneManager.GetActiveScene().name == "HearSay Demo" && !DeafRole && !partner)
                 EnterPartnerRole();
-            if (Uri.TryCreate(address.Trim(), UriKind.Absolute, out var uri) &&
-                (uri.Scheme == "http" || uri.Scheme == "https"))
-                StartCoroutine(ResetServer(new Uri(uri, "/status").AbsoluteUri));
         }
 
         private void EnterPartnerRole()
@@ -142,53 +100,6 @@ namespace HearSay
             else Debug.LogError("Partner hand tracking prefab is missing.");
             partnerMqtt = gameObject.AddComponent<HearSaySshMqttManager>();
             polling = StartCoroutine(PollSigns());
-        }
-
-        private IEnumerator ResetServer(string statusUrl)
-        {
-            resetInProgress = true;
-            bool tunnelled = EnsureTunnel(statusUrl);
-            if (tunnelled)
-            {
-                float deadline = Time.realtimeSinceStartup + TunnelTimeoutSeconds;
-                while (!ServerTunnel.Ready && Time.realtimeSinceStartup < deadline)
-                {
-                    connection = "Opening SSH tunnel to Ultra96… " + ServerTunnel.Status;
-                    yield return null;
-                }
-                if (!ServerTunnel.Ready)
-                {
-                    connection = "SSH tunnel not ready: " + ServerTunnel.Status + " Select your role to retry.";
-                    connectionExpanded = true;
-                    resetInProgress = false;
-                    yield break;
-                }
-            }
-            connection = "Clearing previous sound and ASL commands…";
-            using (var request = new UnityWebRequest(new Uri(new Uri(statusUrl), "/reset").AbsoluteUri, "POST"))
-            {
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.timeout = 3;
-                UnityWebRequestAsyncOperation operation = null;
-                try { operation = request.SendWebRequest(); }
-                catch (Exception e) { connection = "Could not clear server: " + e.Message; }
-                if (operation != null) yield return operation;
-                if (operation != null && request.result == UnityWebRequest.Result.Success)
-                {
-                    resetServerUrl = statusUrl;
-                    connection = "Sound and ASL cleared. Choose your role.";
-                }
-                else
-                {
-                    // The port-8080 test server is optional: live captions (Ultra96 Whisper) and
-                    // ASL results (Ultra96 MQTT) work without it, so don't present this as an error.
-                    connection = tunnelled
-                        ? "Ultra96 reachable over SSH. Optional test server (port 8080) is not running - you can still open live captions or ASL translation."
-                        : "Optional test server not reachable - you can still open live captions or ASL translation.";
-                    resetServerUrl = statusUrl; // don't keep retrying it on every role press
-                }
-            }
-            resetInProgress = false;
         }
 
         private void OnGUI()
@@ -226,20 +137,19 @@ namespace HearSay
                     (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
                     DeafRole = true;
-                    // HearSay Demo decides the role from this saved value (1 = Deaf user /
-                    // live captions); without it the scene opened in partner mode, no captions.
-                    PlayerPrefs.SetInt("HearSay.VrRole", 1);
-                    PlayerPrefs.Save();
+                    // HearSayLiveCaption only runs Whisper when the saved role is deaf user (1).
+                    PlayerPrefs.SetInt("HearSay.VrRole", 1); PlayerPrefs.Save();
                     SceneManager.LoadScene("HearSay Demo");
                 }
                 if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
                     (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
                 {
-                    PlayerPrefs.SetInt("HearSay.VrRole", 2); // 2 = Conversation partner / ASL
-                    PlayerPrefs.Save();
+                    PlayerPrefs.SetInt("HearSay.VrRole", 0); PlayerPrefs.Save();
                     EnterPartnerRole();
                 }
-                if (HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
+                // The data monitor reads the local MQTT demo publisher, so it needs an mqtt:// address.
+                if (HearSayLocalMqtt.IsMqtt(address.Trim()) &&
+                    HearSayTheme.Action(new Rect(60, 448, 310, 48), "Data monitor / teammate", 18) && SaveAddress())
                 {
                     dataMonitor = gameObject.AddComponent<HearSayDataMonitor>();
                     dataMonitor.Initialize(SessionServerUrl);
@@ -249,14 +159,14 @@ namespace HearSay
                     connectionExpanded = !connectionExpanded;
                 if (connectionExpanded)
                 {
-                    if (HearSayTheme.Action(new Rect(60, 503, 165, 30), "HTTP", 16))
+                    if (HearSayTheme.Action(new Rect(60, 503, 165, 30), "Ultra96 only", 16))
                     {
-                        address = "http://127.0.0.1:8080/status";
+                        address = "";
                         HearSayLocalMqtt.Stop();
+                        connection = "Ultra96 MQTT. Choose your role.";
                     }
                     if (HearSayTheme.Action(new Rect(240, 503, 165, 30), "MQTT demo", 16))
                     {
-                        if (resetInProgress) { StopAllCoroutines(); resetInProgress = false; }
                         address = "mqtt://127.0.0.1:1883/hearsay/demo/status";
                         connection = "Local MQTT demo; no HTTP reset required.";
                     }
@@ -265,20 +175,13 @@ namespace HearSay
                     GUI.Label(new Rect(60, 590, 880, 45), connection, HearSayTheme.Label(16, HearSayTheme.Muted));
                 }
                 else
-                    GUI.Label(new Rect(60, 520, 880, 45), resetInProgress ? "Clearing previous commands…" :
-                        (resetServerUrl != null && !connection.Contains("Optional") ? "Ready. Waiting for new terminal commands." : connection),
+                    GUI.Label(new Rect(60, 520, 880, 45), connection,
                         HearSayTheme.Label(18, HearSayTheme.Muted, TextAnchor.MiddleCenter));
             }
             else if (calibration != null && calibration.IsOpen)
             {
                 // "Calibrate glove" steps take over the ASL translation screen until closed.
                 calibration.Draw();
-            }
-            else if (partnerMqtt != null && partnerMqtt.IsConnected && !HearSayGloveCalibration.OfferedThisSession)
-            {
-                // First Ultra96 connection this session: offer the guided glove calibration.
-                if (calibration == null) calibration = gameObject.AddComponent<HearSayGloveCalibration>();
-                calibration.Open(partnerMqtt, automatic: true);
             }
             else
             {
@@ -289,7 +192,8 @@ namespace HearSay
                 GUI.Label(new Rect(185, 427, 630, 80), translation.Replace("ASL DETECTED\n", ""),
                     HearSayTheme.Label(36, Color.white, TextAnchor.MiddleCenter));
                 string serverText = connection == "SERVER: CONNECTED" ? "Connected" : connection;
-                if (partnerMqtt != null) serverText += "  ·  Ultra96: " + partnerMqtt.ConnectionStatus;
+                if (partnerMqtt != null)
+                    serverText += (serverText.Length > 0 ? "  ·  " : "") + "Ultra96: " + partnerMqtt.ConnectionStatus;
                 GUI.Label(new Rect(185, 528, 630, 26), serverText,
                     HearSayTheme.Label(16, HearSayTheme.Muted, TextAnchor.MiddleCenter));
                 if (HearSayTheme.Action(new Rect(450, 38, 230, 50), "Calibrate glove", 19))
@@ -333,8 +237,8 @@ namespace HearSay
                 ? HearSayVrSplitScreen.VrStartScene : "HearSay Start");
         }
 
-        // Shows whichever source changed most recently: a terminal command from the
-        // dummy server (HTTP) or an Ultra96 RESULT (MQTT).
+        // Shows whichever source changed most recently: an Ultra96 RESULT (MQTT) or,
+        // when an mqtt:// demo address is set, a word from the local MQTT demo publisher.
         private IEnumerator PollSigns()
         {
             string lastHttpSign = null, lastMqttEvent = null;
@@ -342,7 +246,8 @@ namespace HearSay
             while (true)
             {
                 string httpWord = null;
-                using (var request = UnityWebRequest.Get(SessionServerUrl))
+                if (!HearSayLocalMqtt.IsMqtt(SessionServerUrl)) connection = "";
+                else using (var request = HearSayStatusRequest.Get(SessionServerUrl))
                 {
                     request.timeout = 2;
                     yield return request.SendWebRequest();

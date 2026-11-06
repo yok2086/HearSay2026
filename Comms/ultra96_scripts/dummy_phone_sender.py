@@ -15,7 +15,11 @@ DEVICE_ID = "glove_01"
 
 SEND_INTERVAL_S = 4
 
-EVENTS = ["HELLO", "YES", "THANK_YOU", "PLEASE"]
+EVENTS = [
+    "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you",
+    "want", "what", "again", "eat_food", "more", "go_to", "toilet", "fine",
+    "like", "learn", "sign", "finish",
+]
 
 
 def build_result_message(seq, event, confidence):

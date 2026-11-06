@@ -20,7 +20,7 @@ The terminal prints two URLs. Unity uses the `/status` URL. A sensor or ASL-mode
 
 Allowed `soundDirection`: `left`, `right`. Use `soundActive: false` for off.
 
-Allowed `aslWord`: `hello`, `see_you_later`, `i_me`, `yes`, `no`, `help`, `please`, `thank_you`, `want`, `what`, `again_repeat`, `eat_food`, `more`, `go_to`, `bathroom`, `fine`, `like`, `learn`, `sign`, `finish_done`.
+Allowed `aslWord`: `hello`, `see_you_later`, `me`, `yes`, `no`, `help`, `please`, `thank_you`, `want`, `what`, `again`, `eat_food`, `more`, `go_to`, `toilet`, `fine`, `like`, `learn`, `sign`, `finish`.
 
 Real data expires after 10 seconds without another update. The server marks it stale and sets soundActive/aslDetected false; it does NOT replace real data with random values. The explicit terminal command `random` still enables demo data.
 
@@ -59,7 +59,7 @@ python3 Tools/HearSayUltra96Sender.py --server http://LAPTOP_IP:8080
 
 The sender uses only Python's standard library and accepts all 20 word-bank items
 listed above. User-readable spaces/slashes are converted to underscores:
-I/Me -> i_me, again/repeat -> again_repeat, finish/done -> finish_done.
+thank you -> thank_you, see you later -> see_you_later, eat food -> eat_food.
 Use left/right for sound; front/back/up/down are no longer accepted.
 Inactive fields keep a valid placeholder word/direction; consumers must check the
 boolean flags, not display the placeholder.

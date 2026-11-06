@@ -33,10 +33,6 @@ LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
 REMOTE_PORT="8883"
 
-# Reverse forward so the phone reaches HearSayDummyServer.py through its own
-# stujump -> ultra96 tunnel instead of connecting to the Mac directly.
-DEMO_SERVER_PORT="8080"
-
 LOCAL_DIR="$HOME/HearSay2026/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
 
@@ -85,7 +81,7 @@ else
 fi
 
 echo ""
-echo "=== 2. Checking/starting DPU inference script on Ultra96 ==="
+echo "=== 2. Starting DPU inference script on Ultra96 ==="
 
 # Inference using sensor data
 # INFERENCE_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
@@ -123,13 +119,12 @@ lsof -ti :"$LOCAL_PORT" | xargs -r kill 2>/dev/null || true
 sleep 1
 
 ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" -f -N \
-  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" \
-  -R "${DEMO_SERVER_PORT}:127.0.0.1:${DEMO_SERVER_PORT}" "$ULTRA_HOST"
-echo "Tunnel opened in background (Ultra96 localhost:${DEMO_SERVER_PORT} -> Mac HearSayDummyServer)."
+  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" "$ULTRA_HOST"
+echo "Tunnel opened in background (Mac ${LOCAL_PORT} -> Ultra96 broker)."
 sleep 1
 
 echo ""
-echo "=== 4. Launching coordinator.py & dashboard.py in tmux ==="
+echo "=== 4. Launching coordinator.py & dashboard.py & stats.py in tmux ==="
 
 tmux kill-server 2>/dev/null || true
 sleep 0.5
@@ -140,16 +135,18 @@ tmux new-window -t "$TMUX_SESSION" -n dashboard \
   "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
 tmux new-window -t "$TMUX_SESSION" -n stats \
   "cd $LOCAL_DIR && $PYTHON_BIN stats.py; echo 'Press enter to close...'; read"
+
 # Keyboard pipeline test: relay window
 # tmux new-window -t "$TMUX_SESSION" -n keyboard \
   # "cd $LOCAL_DIR && $PYTHON_BIN keyboard_relay.py; echo 'Press enter to close...'; read"
+
 tmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""
 echo "=== All set ==="
 echo "Broker + inference: running on the Ultra96"
-echo "Tunnel: running in the background on your Mac"
-echo "coordinator / ble_bridge / dashboard / stats (speed + latency): running inside tmux session '$TMUX_SESSION'"
+echo "Tunnel running in the background"
+echo "coordinator / dashboard / stats running inside tmux session '$TMUX_SESSION'"
 echo ""
 echo "Now power on the FireBeetle."
 echo ""

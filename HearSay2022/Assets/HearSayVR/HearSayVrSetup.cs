@@ -11,7 +11,8 @@ namespace HearSay
         private string message = "";
         private void Awake()
         {
-            address = PlayerPrefs.GetString("HearSay.Server", "http://127.0.0.1:8080/status");
+            // Optional mqtt:// demo publisher address; empty = Ultra96 MQTT only (no HTTP server).
+            address = PlayerPrefs.GetString("HearSay.Server", "");
             var camera = gameObject.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.04f, 0.06f, 0.1f);
@@ -48,17 +49,17 @@ namespace HearSay
             }
             if (GUI.Button(new Rect(60, 330, 880, 70), "2. Start HearSay VR Test"))
             {
-                if (System.Uri.TryCreate(address.Trim(), System.UriKind.Absolute, out var uri) &&
-                    (uri.Scheme == "http" || uri.Scheme == "https"))
+                string trimmed = address.Trim();
+                if (trimmed.Length == 0 || HearSayLocalMqtt.Valid(trimmed))
                 {
-                    PlayerPrefs.SetString("HearSay.Server", new System.Uri(uri, "/status").AbsoluteUri);
+                    PlayerPrefs.SetString("HearSay.Server", trimmed);
                     PlayerPrefs.SetInt("HearSay.VRMode", 1);
                     PlayerPrefs.Save();
                     // Use the real Home scene so its layout and flow stay
                     // identical; HearSayRoles adds the Cardboard adapter there.
                     SceneManager.LoadScene("HearSay Start");
                 }
-                else message = "Enter a valid http:// server address.";
+                else message = "Leave empty for Ultra96 only, or enter mqtt://HOST:1883/hearsay/demo/status.";
             }
             if (GUI.Button(new Rect(60, 430, 880, 70), "Open normal HearSay instead"))
             {

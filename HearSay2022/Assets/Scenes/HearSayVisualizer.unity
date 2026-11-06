@@ -1679,7 +1679,7 @@ MonoBehaviour:
   speakerId: 1
   isSpeaking: 1
   transcript: Hello, How are you?
-  aslWord: HELLO
+  aslWord: hello
 --- !u!1 &1790521841
 GameObject:
   m_ObjectHideFlags: 0

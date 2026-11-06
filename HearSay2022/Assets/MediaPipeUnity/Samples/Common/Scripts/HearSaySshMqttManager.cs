@@ -34,38 +34,76 @@ public class HearSaySshMqttManager : MonoBehaviour
 
     public string lastResultEventId = "";
 
+    // ---- Mic direction (firebeetle_LR) -> deaf user's left/right sound waves ----
+    public string soundDeviceId = "mic_lr_01";
+    public string lastSoundEventId = "";
+    private float lastSoundTime = -999f;
+
     public string ConnectionStatus => client?.Status ?? "Not started";
+
+    // private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
+    //     new System.Collections.Generic.Dictionary<string, string>
+    // {
+    //     { "hello", "hello" },
+    //     { "later", "later" },
+    //     { "I", "I" },
+    //     { "yes", "yes" },
+    //     { "no", "no" },
+    //     { "please", "please" },
+    //     { "thank", "thank" },
+    //     { "what", "what" },
+    //     { "eat", "eat" },
+    //     { "more", "more" },
+    //     { "go", "go" },
+    //     { "love", "love" },
+    //     { "happy", "happy" },
+    //     { "know", "know" },
+    //     { "ready", "ready" },
+    //     { "deaf", "deaf" },
+    //     { "you", "you" },
+    //     { "where", "where" },
+    //     { "sorry", "sorry" },
+    //     { "wait_notyet_", "wait_notyet_" }
+    // };
+
+    // private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
+    //     new System.Collections.Generic.HashSet<string>
+    // {
+    //        "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
+    // "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
+    // };
 
     private static readonly System.Collections.Generic.Dictionary<string, string> EventToAslWord =
         new System.Collections.Generic.Dictionary<string, string>
     {
         { "hello", "hello" },
-        { "later", "later" },
-        { "i", "I" },
+        { "see_you_later", "see_you_later" },
+        { "me", "me" },
         { "yes", "yes" },
         { "no", "no" },
+        { "help", "help" },
         { "please", "please" },
-        { "thank", "thank" },
+        { "thank_you", "thank_you" },
+        { "want", "want" },
         { "what", "what" },
-        { "eat", "eat" },
+        { "again", "again" },
+        { "eat_food", "eat_food" },
         { "more", "more" },
-        { "go", "go" },
-        { "love", "love" },
-        { "happy", "happy" },
-        { "know", "know" },
-        { "ready", "ready" },
-        { "deaf", "deaf" },
-        { "you", "you" },
-        { "where", "where" },
-        { "sorry", "sorry" },
-        { "wait_notyet_", "wait_notyet_" }
+        { "go_to", "go_to" },
+        { "toilet", "toilet" },
+        { "fine", "fine" },
+        { "like", "like" },
+        { "learn", "learn" },
+        { "sign", "sign" },
+        { "finish", "finish" }
     };
 
+    // HandleMessage lowercases before checking this set, so every entry must be lowercase.
     private static readonly System.Collections.Generic.HashSet<string> AllowedWords =
         new System.Collections.Generic.HashSet<string>
     {
-           "hello", "later", "I", "yes", "no", "please", "thank", "what", "eat", "more",
-    "go", "love", "happy", "know", "ready", "deaf", "you", "where", "sorry", "wait_notyet_",
+        "hello", "see_you_later", "me", "yes", "no", "help", "please", "thank_you", "want", "what",
+        "again", "eat_food", "more", "go_to", "toilet", "fine", "like", "learn", "sign", "finish",
     };
 
     public float staleAfterSeconds = 10f;
@@ -156,6 +194,10 @@ public class HearSaySshMqttManager : MonoBehaviour
         if (ageSeconds > staleAfterSeconds)
         {
             aslDetected = false;
+        }
+        // The mic has its own timer so it isn't cleared just because no ASL result arrived.
+        if (Time.time - lastSoundTime > staleAfterSeconds)
+        {
             soundActive = false;
         }
     }
@@ -171,8 +213,10 @@ public class HearSaySshMqttManager : MonoBehaviour
         }
 
         string type = payload["type"]?.ToString();
+        if (type == "TELEMETRY" && msg.ModelId == soundDeviceId) { HandleSoundDirection(payload); return; }
         if (type == "TELEMETRY") { StoreFlex(msg.ModelId, payload); return; }
         if (type == "CALIBRATION_ACK") { StoreCalibration(msg.ModelId, payload); return; }
+        if (type == "CALIBRATION_STATUS" || type == "CALIBRATION") { StoreGloveCalibration(msg.ModelId, type, payload); return; }
         if (type != "RESULT") return;
 
         string rawEvent = payload["payload"]?["event"]?.ToString();
@@ -198,10 +242,61 @@ public class HearSaySshMqttManager : MonoBehaviour
         lastRealDataTime = Time.time;
     }
 
+    // firebeetle_LR sends one TELEMETRY per speech event with direction
+    // LEFT / RIGHT / FRONT / UNCERTAIN. Only LEFT and RIGHT drive the sound waves.
+    void HandleSoundDirection(JObject payload)
+    {
+        string direction = payload["payload"]?["direction"]?.ToString()?.Trim().ToLowerInvariant();
+        if (direction != "left" && direction != "right") return;
+
+        soundActive = true;
+        soundDirection = direction;
+        // A new id per event lets HearSayDemoVisuals replay the waves for repeat same-side sounds.
+        lastSoundEventId = payload["seq"]?.ToString() ?? System.Guid.NewGuid().ToString();
+        lastSoundTime = Time.time;
+    }
+
     // ---------------- Glove calibration support ----------------
     // Used by HearSayGloveCalibration ("Calibrate glove" on the ASL translation screen).
 
-    public static readonly string[] GloveIds = { "glove_01A", "glove_01B" };
+    public static readonly string[] GloveIds = { "glove_01L", "glove_01R" };
+
+    /// The glove's own calibration (firmware runs it when it connects):
+    /// CALIBRATION_STATUS on sys/<glove>/status (stage START / STRAIGHT / FIST /
+    /// FAILED / SUCCESS) and the retained CALIBRATION readings on sys/<glove>/calibration.
+    public class GloveCalibrationState
+    {
+        public string stage = "";
+        public string message = "";
+        public bool calibrated;
+        public float updatedAt;
+    }
+
+    readonly System.Collections.Generic.Dictionary<string, GloveCalibrationState> gloveCalibration =
+        new System.Collections.Generic.Dictionary<string, GloveCalibrationState>();
+
+    void StoreGloveCalibration(string gloveId, string type, JObject message)
+    {
+        if (!gloveCalibration.TryGetValue(gloveId, out var state))
+            gloveCalibration[gloveId] = state = new GloveCalibrationState();
+        if (type == "CALIBRATION")
+        {
+            state.calibrated = true;
+            if (state.stage == "" || state.stage == "START") { state.stage = "SUCCESS"; state.message = "Calibrated"; }
+        }
+        else
+        {
+            state.stage = message["payload"]?["stage"]?.ToString() ?? "";
+            state.message = message["payload"]?["message"]?.ToString() ?? "";
+            if (state.stage == "SUCCESS") state.calibrated = true;
+            else if (state.stage == "START") state.calibrated = false;
+        }
+        state.updatedAt = Time.time;
+        Debug.Log($"HearSaySshMqttManager: {gloveId} calibration {state.stage}: {state.message}");
+    }
+
+    public bool TryGetGloveCalibration(string gloveId, out GloveCalibrationState state) =>
+        gloveCalibration.TryGetValue(gloveId, out state);
     public bool IsConnected => ConnectionStatus == "Connected over SSH";
 
     /// Whisper speech-to-text API on the Ultra96 (POST a WAV, get {"text": ...}),
@@ -299,7 +394,7 @@ public class HearSaySshMqttManager : MonoBehaviour
         _ = SendCommandAsync(gloveId, json);
     }
 
-    /// Latest finger states (1 = bent, 0 = straight; thumb..pinky) if newer than maxAgeSeconds.
+    /// Latest raw flex readings (0-4095; thumb..pinky) if newer than maxAgeSeconds.
     public bool TryGetFlex(string gloveId, float maxAgeSeconds, out int[] flex)
     {
         flex = null;

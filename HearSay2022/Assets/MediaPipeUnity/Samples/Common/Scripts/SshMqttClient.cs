@@ -257,7 +257,7 @@ namespace CG4002.Comms
                     SetStatus("Connecting to MQTT...");
                     await connection.ConnectAsync(options, cancellation).ConfigureAwait(false);
                     var subscriptions = new MqttClientSubscribeOptionsBuilder()
-                        .WithTopicFilter("sys/+/status").WithTopicFilter("tele/+/raw")
+                        .WithTopicFilter("sys/+/status").WithTopicFilter("sys/+/calibration").WithTopicFilter("tele/+/raw")
                         .WithTopicFilter("tele/+/result").WithTopicFilter("cmd/+/ack")
                         .WithTopicFilter(LatencyPingTopic).Build();
                     var result = await connection.SubscribeAsync(subscriptions, cancellation).ConfigureAwait(false);

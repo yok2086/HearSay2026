@@ -13,7 +13,7 @@ MPU6050 mpu;
 // MQTT SETTINGS
 // ==================================================
 
-const char* DEVICE_ID = "glove_01B";
+const char* DEVICE_ID = "glove_01R";
 const char* MQTT_USER = "nathan";
 const char* MQTT_PASS = "mqtt";
 
@@ -22,16 +22,33 @@ PubSubClient mqtt(sshClient);
 
 String sessionId = "sess_001";
 uint32_t seq = 0;
-bool isRunning = false;
-unsigned long sampleRateHz = 50;
-unsigned long lastSampleMs = 0;
+volatile unsigned long sampleRateHz = 100;
 
 // Running totals, shown in the serial status line so you can see the real send rate
 unsigned long publishOk = 0;
 unsigned long publishFail = 0;
+unsigned long samplesSent = 0;
+volatile unsigned long samplesDropped = 0;
+
+// ---- Sampling and sending run separately, joined by this buffer ----
+#define SAMPLE_BUFFER_SAMPLES 600     // 6 s at 100 Hz: how long a stall can last before data is lost
+#define BATCH_SAMPLES 10              // samples per message: one message every 100 ms at 100 Hz
+#define BATCH_MAX_WAIT_MS 200
+#define TELEMETRY_BUFFER_BYTES 1100   // ~130 bytes of header + up to ~90 per sample
+#define MQTT_BUFFER_BYTES 1200
+
+struct RawSample {
+  uint32_t t;
+  int16_t imu[6];     // ax, ay, az, gx, gy, gz as read from the MPU6050
+  uint16_t flex[5];   // thumb .. pinky
+};
+
+QueueHandle_t sampleQueue;
+volatile bool samplingEnabled = false;
 
 String topicStatus() { return String("sys/") + DEVICE_ID + "/status"; }
 String topicRaw()    { return String("tele/") + DEVICE_ID + "/raw"; }
+String topicCalibration() { return String("sys/") + DEVICE_ID + "/calibration"; }
 String topicCmdSet() { return String("cmd/") + DEVICE_ID + "/set"; }
 String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 
@@ -52,21 +69,45 @@ String topicCmdAck() { return String("cmd/") + DEVICE_ID + "/ack"; }
 #define FLEX4_PIN 32   // Ring
 #define FLEX5_PIN 33   // Pinky
 
+const int flexPins[5] = {
+  FLEX1_PIN,
+  FLEX2_PIN,
+  FLEX3_PIN,
+  FLEX4_PIN,
+  FLEX5_PIN
+};
+
 // ==================================================
-// VIBRATION MOTOR (used only for the calibration steps)
+// VIBRATION MOTOR
 // ==================================================
 
 #define VIBRATION_PIN 26
 
-// pulses x onMs buzz, with gapMs between pulses. Blocks (calibration only).
-void vibrate(int pulses, int onMs, int gapMs = 150) {
-  for (int i = 0; i < pulses; i++) {
-    digitalWrite(VIBRATION_PIN, HIGH);
-    delay(onMs);
-    digitalWrite(VIBRATION_PIN, LOW);
-    if (i < pulses - 1) delay(gapMs);
-  }
-}
+#define SHORT_VIBRATION_MS 120
+#define LONG_VIBRATION_MS 700
+
+// ==================================================
+// CALIBRATION SETTINGS
+// ==================================================
+
+#define CALIBRATION_SAMPLES 100
+#define CALIBRATION_SAMPLE_DELAY_MS 10
+
+// Extra spacing so each vibration cue is easier to distinguish.
+#define CALIBRATION_PREP_DELAY_MS 4000
+#define BETWEEN_STAGES_DELAY_MS 2000
+
+// Straight-hand and clenched-fist readings. Sent to the Ultra96, which uses
+// them to normalise the raw flex values in the telemetry.
+int flexStraight[5] = {0, 0, 0, 0, 0};
+int flexBent[5] = {0, 0, 0, 0, 0};
+
+// Gyro reading (deg/s) while the hand is held still. The MPU6050's zero-rate
+// offset changes at every power-up; the Ultra96 subtracts this.
+float gyroOffset[3] = {0, 0, 0};
+
+bool calibrationComplete = false;
+bool calibrationPublished = false;
 
 // ==================================================
 // MPU6050 SCALE FACTORS
@@ -81,227 +122,235 @@ void vibrate(int pulses, int onMs, int gapMs = 150) {
 #define GRAVITY 9.80665
 
 // ==================================================
-// FLEX SENSOR SETTINGS (binary output: 1 = bent, 0 = straight)
+// VIBRATION FUNCTIONS
 // ==================================================
 
-// Individual bending thresholds determined from
-// experimental flex-sensor testing. A finger counts as bent when its
-// reading rises at least this far above its own calibrated baseline.
-
-const int flexBendDeltaDefault[5] = {
-  75,    // Flex 1 - Thumb
-  140,   // Flex 2 - Index
-  80,    // Flex 3 - Middle
-  65,    // Flex 4 - Ring
-  55     // Flex 5 - Pinky
-};
-
-// Thresholds in use. Start at the defaults; the app's guided calibration
-// replaces them with each wearer's own (halfway between straight and fist).
-int flexBendDelta[5] = {75, 140, 80, 65, 55};
-
-// 100 samples x 10 ms = approximately 1 second
-#define CALIBRATION_SAMPLES 100
-
-// Starting baseline (straight/rest reading) of each flex sensor
-int flexBaseline[5];
-
-
-// ==================================================
-// FUNCTION: CALIBRATE FLEX SENSORS
-// ==================================================
-
-// waitForUser: true at power-on (gives 2 s to straighten the fingers).
-// false when the phone app asks for it - the app already showed a countdown.
-void calibrateFlexSensors(bool waitForUser) {
-
-  long total[5] = {0, 0, 0, 0, 0};
-
-  Serial.println();
-  Serial.println("Starting flex sensor calibration...");
-  Serial.println("Keep all fingers in the straight/rest position.");
-
-  // Give user time to position hand
-  if (waitForUser) delay(2000);
-
-  Serial.println("Measuring baseline...");
-
-  // 100 samples x 10 ms = approximately 1 second
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-
-    total[0] += analogRead(FLEX1_PIN);
-    total[1] += analogRead(FLEX2_PIN);
-    total[2] += analogRead(FLEX3_PIN);
-    total[3] += analogRead(FLEX4_PIN);
-    total[4] += analogRead(FLEX5_PIN);
-
-    delay(10);
-  }
-
-  // Calculate individual average baselines
-  for (int i = 0; i < 5; i++) {
-    flexBaseline[i] = total[i] / CALIBRATION_SAMPLES;
-  }
-
-  Serial.println("Flex sensor calibration complete.");
-
-  Serial.print("Flex baselines: ");
-
-  for (int i = 0; i < 5; i++) {
-    Serial.print(flexBaseline[i]);
-    Serial.print(" ");
-  }
-
-  Serial.println();
-
-  Serial.print("Flex thresholds: ");
-
-  for (int i = 0; i < 5; i++) {
-    Serial.print(flexBendDelta[i]);
-    Serial.print(" ");
-  }
-
-  Serial.println();
-  Serial.println("----------------------------------");
+void vibrateShort() {
+  digitalWrite(VIBRATION_PIN, HIGH);
+  delay(SHORT_VIBRATION_MS);
+  digitalWrite(VIBRATION_PIN, LOW);
 }
 
+void vibrateLong() {
+  digitalWrite(VIBRATION_PIN, HIGH);
+  delay(LONG_VIBRATION_MS);
+  digitalWrite(VIBRATION_PIN, LOW);
+}
 
+void vibrateTwice() {
+  vibrateShort();
+  delay(150);
+  vibrateShort();
+}
 
 // ==================================================
-// GUIDED CALIBRATION (phone app "Calibrate glove")
+// READ AND AVERAGE ALL FIVE FLEX SENSORS
 // ==================================================
-//
-// The app sends CALIBRATE on cmd/<id>/set with payload.step:
-//   "ready"    one short buzz,  wait settle_ms, check every sensor responds
-//   "straight" one short buzz,  wait settle_ms, measure straight readings
-//   "fist"     two short buzzes, wait settle_ms, measure bent readings
-//   "save"     one long buzz,   use the new baselines + thresholds
-//   "fail"     three short buzzes, keep the previous calibration
-// Each step answers CALIBRATION_ACK on cmd/<id>/ack with the readings and a
-// per-finger ok flag. Nothing changes for translation until "save".
 
-#define ADC_MIN_OK 20        // below this the sensor is probably unplugged
-#define ADC_MAX_OK 4075      // above this the sensor is probably shorted
-#define MAX_STILL_RANGE 250  // max spread while the hand is held still
+// Calibration takes longer than the MQTT keepalive (15 s), so keep servicing
+// the connection while waiting or the broker drops the glove part way through.
+void calibrationWait(unsigned long ms) {
+  unsigned long start = millis();
+  while (millis() - start < ms) {
+    mqtt.loop();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
 
-int pendingStraight[5];
-int pendingBent[5];
-bool haveStraight = false;
-bool haveBent = false;
+void recordFlexReadings(int readings[5]) {
 
-// About 1 s: average and spread (max - min) of each sensor.
-void measureFlex(int avg[5], int range[5]) {
-  const int pins[5] = {FLEX1_PIN, FLEX2_PIN, FLEX3_PIN, FLEX4_PIN, FLEX5_PIN};
   long total[5] = {0, 0, 0, 0, 0};
-  int lo[5], hi[5];
-  for (int f = 0; f < 5; f++) { lo[f] = 4095; hi[f] = 0; }
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-    for (int f = 0; f < 5; f++) {
-      int v = analogRead(pins[f]);
-      total[f] += v;
-      if (v < lo[f]) lo[f] = v;
-      if (v > hi[f]) hi[f] = v;
+
+  for (int sample = 0; sample < CALIBRATION_SAMPLES; sample++) {
+
+    for (int sensor = 0; sensor < 5; sensor++) {
+      total[sensor] += analogRead(flexPins[sensor]);
     }
-    delay(10);
+
+    calibrationWait(CALIBRATION_SAMPLE_DELAY_MS);
   }
-  for (int f = 0; f < 5; f++) {
-    avg[f] = total[f] / CALIBRATION_SAMPLES;
-    range[f] = hi[f] - lo[f];
+
+  for (int sensor = 0; sensor < 5; sensor++) {
+    readings[sensor] = total[sensor] / CALIBRATION_SAMPLES;
   }
 }
 
-bool inAdcRange(int v) { return v >= ADC_MIN_OK && v <= ADC_MAX_OK; }
+void recordGyroOffset() {
 
-void publishStepAck(const char* step, const int values[5], const bool ok[5]) {
-  bool allOk = true;
-  for (int f = 0; f < 5; f++) allOk = allOk && ok[f];
+  float total[3] = {0, 0, 0};
 
-  StaticJsonDocument<384> doc;
-  doc["type"] = "CALIBRATION_ACK";
+  for (int sample = 0; sample < CALIBRATION_SAMPLES; sample++) {
+
+    int16_t axRaw, ayRaw, azRaw;
+    int16_t gxRaw, gyRaw, gzRaw;
+    mpu.getMotion6(&axRaw, &ayRaw, &azRaw, &gxRaw, &gyRaw, &gzRaw);
+
+    total[0] += gxRaw / GYRO_SENSITIVITY;
+    total[1] += gyRaw / GYRO_SENSITIVITY;
+    total[2] += gzRaw / GYRO_SENSITIVITY;
+
+    calibrationWait(CALIBRATION_SAMPLE_DELAY_MS);
+  }
+
+  for (int axis = 0; axis < 3; axis++) {
+    gyroOffset[axis] = total[axis] / CALIBRATION_SAMPLES;
+  }
+
+  Serial.printf("Gyro offset deg/s: %.2f %.2f %.2f\n", gyroOffset[0], gyroOffset[1], gyroOffset[2]);
+}
+
+// ==================================================
+// PRINT CALIBRATION READINGS
+// ==================================================
+
+void printReadings(const char *label, const int readings[5]) {
+
+  Serial.print(label);
+  Serial.print(": ");
+
+  for (int i = 0; i < 5; i++) {
+    Serial.print(readings[i]);
+
+    if (i < 4) {
+      Serial.print(" ");
+    }
+  }
+
+  Serial.println();
+}
+
+// ==================================================
+// CALIBRATION PROGRESS MESSAGES
+// ==================================================
+
+// Shown by coordinator.py and dashboard.py. Not retained: these are live prompts,
+// so a script started later shouldn't see an old one.
+void publishCalibrationStatus(const char* stage, const char* message) {
+  StaticJsonDocument<320> doc;
+  doc["type"] = "CALIBRATION_STATUS";
   doc["device_id"] = DEVICE_ID;
   doc["session_id"] = sessionId;
   doc["seq"] = seq++;
   doc["timestamp_ms"] = millis();
-  JsonObject payload = doc.createNestedObject("payload");
-  payload["step"] = step;
-  payload["status"] = allOk ? "OK" : "FAIL";
-  JsonArray v = payload.createNestedArray("values");
-  JsonArray k = payload.createNestedArray("ok");
-  JsonArray b = payload.createNestedArray("flex_baseline");
-  for (int f = 0; f < 5; f++) {
-    v.add(values[f]);
-    k.add(ok[f] ? 1 : 0);
-    b.add(flexBaseline[f]);
-  }
+  doc["payload"]["stage"] = stage;
+  doc["payload"]["message"] = message;
 
-  char buf[384];
+  char buf[320];
   serializeJson(doc, buf);
-  mqtt.publish(topicCmdAck().c_str(), buf);
-  Serial.printf("Published CALIBRATION_ACK step=%s status=%s\n", step, allOk ? "OK" : "FAIL");
+  mqtt.publish(topicStatus().c_str(), buf, false);
 }
 
-void runCalibrationStep(const String& step, int settleMs) {
-  int avg[5], range[5];
-  bool ok[5];
+// ==================================================
+// CALIBRATION PROCESS
+// ==================================================
 
-  if (step == "ready") {
-    haveStraight = haveBent = false;
-    vibrate(1, 150);
-    delay(settleMs);
-    measureFlex(avg, range);
-    for (int f = 0; f < 5; f++) ok[f] = inAdcRange(avg[f]) && range[f] <= 2 * MAX_STILL_RANGE;
-    publishStepAck("ready", avg, ok);
+// Runs once the glove is connected to the broker. No telemetry is sent until
+// it succeeds.
+void calibrateFlexSensors() {
 
-  } else if (step == "straight") {
-    vibrate(1, 150);
-    delay(settleMs);
-    measureFlex(avg, range);
-    for (int f = 0; f < 5; f++) {
-      ok[f] = inAdcRange(avg[f]) && range[f] <= MAX_STILL_RANGE;
-      pendingStraight[f] = avg[f];
-    }
-    haveStraight = true;
-    publishStepAck("straight", avg, ok);
+  calibrationComplete = false;
 
-  } else if (step == "fist") {
-    vibrate(2, 150);
-    delay(settleMs);
-    measureFlex(avg, range);
-    for (int f = 0; f < 5; f++) {
-      // A fist must bend each finger clearly past its straight reading.
-      int bend = avg[f] - pendingStraight[f];
-      ok[f] = haveStraight && inAdcRange(avg[f]) && bend >= (flexBendDeltaDefault[f] * 6) / 10;
-      pendingBent[f] = avg[f];
-    }
-    haveBent = true;
-    publishStepAck("fist", avg, ok);
+  // Repeat the entire sequence until valid calibration
+  // readings are obtained.
 
-  } else if (step == "save") {
-    for (int f = 0; f < 5; f++) ok[f] = haveStraight && haveBent;
-    if (haveStraight && haveBent) {
-      for (int f = 0; f < 5; f++) {
-        flexBaseline[f] = pendingStraight[f];
-        // Bent = halfway between this wearer's straight and fist readings,
-        // kept within 0.5x - 1.5x of the tested default.
-        int half = (pendingBent[f] - pendingStraight[f]) / 2;
-        flexBendDelta[f] = constrain(half, flexBendDeltaDefault[f] / 2, (flexBendDeltaDefault[f] * 3) / 2);
+  while (!calibrationComplete) {
+
+    // ---- Start calibration ----
+    Serial.println();
+    Serial.println("======================================");
+    Serial.println("       FLEX SENSOR CALIBRATION");
+    Serial.println("======================================");
+    Serial.println("Calibration starting.");
+    Serial.println("Vibration: one short pulse.");
+
+    publishCalibrationStatus("START", "Calibration starting");
+    vibrateShort();
+
+    // ---- Straighten fingers ----
+    Serial.println();
+    Serial.println("STEP 1: STRAIGHTEN ALL FINGERS");
+    Serial.println("Keep all fingers straight and relaxed.");
+    Serial.println("Recording straight-hand readings in 4 seconds...");
+
+    publishCalibrationStatus("STRAIGHT", "Straighten all fingers and hold still");
+    calibrationWait(CALIBRATION_PREP_DELAY_MS);
+
+    Serial.println("Recording straight-hand readings...");
+    recordFlexReadings(flexStraight);
+    printReadings("Straight readings", flexStraight);
+
+    Serial.println("Hold still, measuring gyro offset...");
+    recordGyroOffset();
+
+    Serial.println("Vibration: one long pulse.");
+    vibrateLong();
+    calibrationWait(BETWEEN_STAGES_DELAY_MS);
+
+    // ---- Clench fingers ----
+    Serial.println();
+    Serial.println("STEP 2: CLENCH ALL FINGERS");
+    Serial.println("Make a comfortable fist with all fingers.");
+    Serial.println("Vibration: two short pulses.");
+
+    publishCalibrationStatus("FIST", "Clench all fingers into a fist and hold");
+    vibrateTwice();
+
+    Serial.println("Hold the fist steady.");
+    Serial.println("Recording fist readings in 4 seconds...");
+
+    calibrationWait(CALIBRATION_PREP_DELAY_MS);
+
+    Serial.println("Recording clenched-fist readings...");
+    recordFlexReadings(flexBent);
+    printReadings("Clenched readings", flexBent);
+
+    Serial.println("Vibration: one long pulse.");
+    vibrateLong();
+    calibrationWait(BETWEEN_STAGES_DELAY_MS);
+
+    // ---- Validate ----
+    Serial.println();
+    Serial.println("Checking calibration readings...");
+
+    bool validCalibration = true;
+
+    for (int i = 0; i < 5; i++) {
+      Serial.printf("Sensor %d | Straight: %d | Clenched: %d | Difference: %d\n",
+                    i + 1, flexStraight[i], flexBent[i], flexBent[i] - flexStraight[i]);
+
+      // Assumption: bending increases the ADC reading.
+      // If even one clench reading is lower than its
+      // straight reading, restart the entire calibration.
+      if (flexBent[i] < flexStraight[i]) {
+        validCalibration = false;
       }
-      vibrate(1, 800);
-      Serial.print("Calibration saved. Baselines: ");
-      for (int f = 0; f < 5; f++) { Serial.print(flexBaseline[f]); Serial.print(" "); }
-      Serial.print(" Thresholds: ");
-      for (int f = 0; f < 5; f++) { Serial.print(flexBendDelta[f]); Serial.print(" "); }
-      Serial.println();
-    } else {
-      vibrate(3, 150);
     }
-    publishStepAck("save", flexBendDelta, ok);
 
-  } else if (step == "fail") {
-    haveStraight = haveBent = false;
-    vibrate(3, 150);
-    for (int f = 0; f < 5; f++) ok[f] = false;
-    publishStepAck("fail", flexBaseline, ok);
+    if (!validCalibration) {
+      Serial.println();
+      Serial.println("CALIBRATION FAILED!");
+      Serial.println("At least one clench reading is lower");
+      Serial.println("than its straight reading.");
+      Serial.println("Check sensor wiring and finger movement.");
+      Serial.println("Restarting calibration...");
+      Serial.println();
+
+      publishCalibrationStatus("FAILED",
+                               "A clenched reading is below its straight reading, restarting calibration");
+      calibrationWait(1000);
+      continue;
+    }
+
+    calibrationComplete = true;
+    publishCalibrationStatus("SUCCESS", "Calibration completed successfully");
+
+    Serial.println();
+    Serial.println("======================================");
+    Serial.println("     CALIBRATION SUCCESSFUL!");
+    Serial.println("======================================");
+    printReadings("Straight readings", flexStraight);
+    printReadings("Clenched readings", flexBent);
+    Serial.println();
   }
 }
 
@@ -362,24 +411,37 @@ void publishHello() {
   Serial.println("Published HELLO");
 }
 
-// Sent after a calibration requested by the app (CALIBRATE on cmd/<id>/set),
-// so the app can show the new straight-finger baselines.
-void publishCalibrationAck() {
-  StaticJsonDocument<256> doc;
-  doc["type"] = "CALIBRATION_ACK";
+// Round to 2 decimals so the JSON stays short - every byte has to go through
+// two SSH hops on the ESP32, and 2 decimals is well within the sensor's noise.
+static inline float r2(float v) {
+  return roundf(v * 100.0f) / 100.0f;
+}
+
+// Retained, so the Ultra96 handler still gets it if it starts after the glove.
+bool publishCalibration() {
+  StaticJsonDocument<512> doc;
+  doc["type"] = "CALIBRATION";
   doc["device_id"] = DEVICE_ID;
   doc["session_id"] = sessionId;
   doc["seq"] = seq++;
   doc["timestamp_ms"] = millis();
   JsonObject payload = doc.createNestedObject("payload");
-  payload["status"] = "OK";
-  JsonArray baseline = payload.createNestedArray("flex_baseline");
-  for (int i = 0; i < 5; i++) baseline.add(flexBaseline[i]);
+  JsonArray straight = payload.createNestedArray("straight");
+  JsonArray bent = payload.createNestedArray("bent");
+  for (int i = 0; i < 5; i++) {
+    straight.add(flexStraight[i]);
+    bent.add(flexBent[i]);
+  }
+  JsonArray gyro = payload.createNestedArray("gyro_offset");
+  for (int i = 0; i < 3; i++) {
+    gyro.add(r2(gyroOffset[i]));
+  }
 
-  char buf[256];
+  char buf[320];
   serializeJson(doc, buf);
-  mqtt.publish(topicCmdAck().c_str(), buf);
-  Serial.println("Published CALIBRATION_ACK");
+  bool ok = mqtt.publish(topicCalibration().c_str(), buf, true);
+  Serial.println(ok ? "Published CALIBRATION" : "Failed to publish CALIBRATION");
+  return ok;
 }
 
 void publishConfigAck() {
@@ -397,71 +459,78 @@ void publishConfigAck() {
   Serial.println("Published CONFIG_ACK");
 }
 
-// Round to 2 decimals so the JSON stays short - every byte has to go through
-// two SSH hops on the ESP32, and 2 decimals is well within the sensor's noise.
-static inline float r2(float v) {
-  return roundf(v * 100.0f) / 100.0f;
+// The sampling task reads the sensors at a steady rate and only touches this
+// queue, so a stalled send delays samples instead of losing them.
+void sampleTask(void* param) {
+
+  TickType_t lastWake = xTaskGetTickCount();
+
+  for (;;) {
+    vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(1000UL / sampleRateHz));
+    if (!samplingEnabled) continue;
+
+    RawSample sample;
+    sample.t = millis();   // timestamp at read time, not send time
+    mpu.getMotion6(&sample.imu[0], &sample.imu[1], &sample.imu[2],
+                   &sample.imu[3], &sample.imu[4], &sample.imu[5]);
+    for (int i = 0; i < 5; i++) {
+      sample.flex[i] = analogRead(flexPins[i]);
+    }
+
+    // Buffer full: drop the oldest sample, the newest is the most useful.
+    if (xQueueSend(sampleQueue, &sample, 0) != pdTRUE) {
+      RawSample oldest;
+      xQueueReceive(sampleQueue, &oldest, 0);
+      xQueueSend(sampleQueue, &sample, 0);
+      samplesDropped = samplesDropped + 1;
+    }
+  }
 }
 
+// One sample as [t,ax,ay,az,gx,gy,gz,f1,f2,f3,f4,f5]: accelerometer in m/s^2,
+// gyroscope in degrees/second, raw flex readings 0-4095 (thumb .. pinky).
+int formatSample(char* out, size_t size, const RawSample& s) {
+  return snprintf(out, size, "[%lu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%u,%u,%u,%u,%u]",
+                  (unsigned long)s.t,
+                  (s.imu[0] / ACCEL_SENSITIVITY) * GRAVITY,
+                  (s.imu[1] / ACCEL_SENSITIVITY) * GRAVITY,
+                  (s.imu[2] / ACCEL_SENSITIVITY) * GRAVITY,
+                  s.imu[3] / GYRO_SENSITIVITY,
+                  s.imu[4] / GYRO_SENSITIVITY,
+                  s.imu[5] / GYRO_SENSITIVITY,
+                  s.flex[0], s.flex[1], s.flex[2], s.flex[3], s.flex[4]);
+}
+
+// Sends the next batch once it is full. A batch that fails is kept and retried.
 void publishTelemetry() {
 
-  // ---- Read MPU6050 ----
-  int16_t axRaw, ayRaw, azRaw;
-  int16_t gxRaw, gyRaw, gzRaw;
-  mpu.getMotion6(&axRaw, &ayRaw, &azRaw, &gxRaw, &gyRaw, &gzRaw);
+  static RawSample batch[BATCH_SAMPLES];
+  static int batchCount = 0;
+  static unsigned long lastSendMs = 0;
+  static char buf[TELEMETRY_BUFFER_BYTES];
 
-  // Accelerometer -> m/s^2, gyroscope -> degrees/second
-  float ax = (axRaw / ACCEL_SENSITIVITY) * GRAVITY;
-  float ay = (ayRaw / ACCEL_SENSITIVITY) * GRAVITY;
-  float az = (azRaw / ACCEL_SENSITIVITY) * GRAVITY;
-
-  float gx = gxRaw / GYRO_SENSITIVITY;
-  float gy = gyRaw / GYRO_SENSITIVITY;
-  float gz = gzRaw / GYRO_SENSITIVITY;
-
-  // ---- Read flex sensors and convert each to a binary state ----
-  int flexValue[5];
-  flexValue[0] = analogRead(FLEX1_PIN);
-  flexValue[1] = analogRead(FLEX2_PIN);
-  flexValue[2] = analogRead(FLEX3_PIN);
-  flexValue[3] = analogRead(FLEX4_PIN);
-  flexValue[4] = analogRead(FLEX5_PIN);
-
-  int flexChange[5];   // reading minus that finger's own baseline
-  int flexState[5];    // 1 = bent, 0 = straight
-
-  for (int i = 0; i < 5; i++) {
-    flexChange[i] = flexValue[i] - flexBaseline[i];
-    flexState[i] = (flexChange[i] >= flexBendDelta[i]) ? 1 : 0;
+  while (batchCount < BATCH_SAMPLES && xQueueReceive(sampleQueue, &batch[batchCount], 0) == pdTRUE) {
+    batchCount++;
   }
 
-  // ---- Build and publish the message ----
-  StaticJsonDocument<320> doc;
-  doc["type"] = "TELEMETRY";
-  doc["device_id"] = DEVICE_ID;
-  doc["session_id"] = sessionId;
-  doc["seq"] = seq++;
-  doc["timestamp_ms"] = millis();
+  // A part-full batch only goes out after a while, for low CONFIG sample rates.
+  if (batchCount == 0) return;
+  if (batchCount < BATCH_SAMPLES && millis() - lastSendMs < BATCH_MAX_WAIT_MS) return;
 
-  JsonObject payload = doc.createNestedObject("payload");
-  JsonObject imu = payload.createNestedObject("imu");
-  imu["ax"] = r2(ax);
-  imu["ay"] = r2(ay);
-  imu["az"] = r2(az);
-  imu["gx"] = r2(gx);
-  imu["gy"] = r2(gy);
-  imu["gz"] = r2(gz);
-
-  // Binary flex states: 1 = bent, 0 = straight (thumb .. pinky)
-  JsonArray flex = payload.createNestedArray("flex");
-  for (int i = 0; i < 5; i++) {
-    flex.add(flexState[i]);
+  int len = snprintf(buf, sizeof(buf),
+                     "{\"type\":\"TELEMETRY\",\"device_id\":\"%s\",\"session_id\":\"%s\",\"seq\":%lu,\"timestamp_ms\":%lu,\"payload\":{\"samples\":[",
+                     DEVICE_ID, sessionId.c_str(), (unsigned long)seq, (unsigned long)batch[batchCount - 1].t);
+  for (int i = 0; i < batchCount; i++) {
+    if (i > 0) buf[len++] = ',';
+    len += formatSample(buf + len, sizeof(buf) - len, batch[i]);
   }
+  len += snprintf(buf + len, sizeof(buf) - len, "]}}");
 
-  char buf[384];
-  serializeJson(doc, buf);
   if (mqtt.publish(topicRaw().c_str(), buf)) {
+    seq++;
     publishOk++;
+    samplesSent += batchCount;
+    lastSendMs = millis();
   } else {
     publishFail++;
     static unsigned long lastWarnMs = 0;
@@ -471,22 +540,26 @@ void publishTelemetry() {
       //   len + ~24 > bufSize        -> message too big for the MQTT buffer
       //   connected=0                -> tunnel/MQTT session dropped
       //   heap/maxBlock very small   -> ESP32 out of memory (libssh can't allocate the packet)
-      Serial.printf("Telemetry publish failed: len=%u bufSize=%u connected=%d state=%d freeHeap=%u maxBlock=%u\n",
-                    (unsigned)strlen(buf), (unsigned)mqtt.getBufferSize(),
+      Serial.printf("Telemetry publish failed: len=%d bufSize=%u connected=%d state=%d freeHeap=%u maxBlock=%u\n",
+                    len, (unsigned)mqtt.getBufferSize(),
                     (int)mqtt.connected(), mqtt.state(),
                     (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
     }
+    vTaskDelay(pdMS_TO_TICKS(20));
+    return;
   }
 
-  // ---- Serial status (twice a second, not every sample) ----
+  // ---- Serial status (twice a second, not every batch) ----
   static unsigned long lastPrintMs = 0;
   if (millis() - lastPrintMs >= 500) {
     lastPrintMs = millis();
-    Serial.printf("Accel m/s^2: %.3f %.3f %.3f | Gyro deg/s: %.3f %.3f %.3f | Flex: %d %d %d %d %d | pub ok=%lu fail=%lu heap=%u\n",
-                  ax, ay, az, gx, gy, gz,
-                  flexValue[0], flexValue[1], flexValue[2], flexValue[3], flexValue[4],
+    const RawSample& s = batch[batchCount - 1];
+    Serial.printf("Flex: %u %u %u %u %u | sent=%lu buffered=%u dropped=%lu | pub ok=%lu fail=%lu heap=%u\n",
+                  s.flex[0], s.flex[1], s.flex[2], s.flex[3], s.flex[4],
+                  samplesSent, (unsigned)uxQueueMessagesWaiting(sampleQueue), samplesDropped,
                   publishOk, publishFail, (unsigned)ESP.getFreeHeap());
   }
+  batchCount = 0;
 }
 
 void onMessage(char* topic, byte* payload, unsigned int length) {
@@ -504,19 +577,6 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     Serial.print("Received CONFIG, sample_rate_hz=");
     Serial.println(sampleRateHz);
     publishConfigAck();
-  } else if (type == "CALIBRATE") {
-    String step = doc["payload"]["step"] | "open_hand";
-    int settleMs = constrain((int)(doc["payload"]["settle_ms"] | 2500), 0, 5000);
-    Serial.print("Received CALIBRATE from app, step=");
-    Serial.println(step);
-    if (step == "open_hand") {
-      // Older app versions: re-measure the straight baseline right away.
-      calibrateFlexSensors(false);
-      publishCalibrationAck();
-    } else {
-      // Guided calibration step (telemetry pauses for a few seconds meanwhile).
-      runCalibrationStep(step, settleMs);
-    }
   }
 }
 
@@ -526,6 +586,9 @@ void connectMQTT() {
   // path from secrets.h / ssh_client.h.
   mqtt.setServer("ultra96", 1883);
   mqtt.setCallback(onMessage);
+  // The broker publishes the Last Will (OFFLINE) after 1.5x this with nothing
+  // heard, so about 9 s after a glove dies.
+  mqtt.setKeepAlive(6);
 
   while (!mqtt.connected()) {
     Serial.print("Connecting to MQTT broker via SSH tunnel...");
@@ -538,9 +601,6 @@ void connectMQTT() {
       Serial.println(" connected");
       mqtt.subscribe(topicCmdSet().c_str());
       publishHello();
-      // Stream straight away at the compiled-in sampleRateHz - a CONFIG on
-      // cmd/<id>/set is now an optional override, not a gate.
-      isRunning = true;
     } else {
       Serial.print(" failed, rc=");
       Serial.print(mqtt.state());
@@ -555,27 +615,38 @@ void connectMQTT() {
 void mqttTask(void* param) {
 
   // PubSubClient's default packet buffer is 256 bytes, which is too small for
-  // a telemetry message (~250 bytes of JSON + topic + header) - publish()
-  // would silently return false. 512 leaves comfortable headroom.
-  bool bufferOk = mqtt.setBufferSize(512);
-  Serial.printf("MQTT buffer resize to 512: %s\n", bufferOk ? "ok" : "FAILED");
+  // a batch of samples - publish() would silently return false.
+  bool bufferOk = mqtt.setBufferSize(MQTT_BUFFER_BYTES);
+  Serial.printf("MQTT buffer resize to %d: %s\n", MQTT_BUFFER_BYTES, bufferOk ? "ok" : "FAILED");
 
   connectMQTT();
   for (;;) {
     if (!mqtt.connected()) {
-      isRunning = false;
+      calibrationPublished = false;
       connectMQTT();
     }
     mqtt.loop();
 
-    if (isRunning) {
-      unsigned long intervalMs = 1000UL / sampleRateHz;
-      if (millis() - lastSampleMs >= intervalMs) {
-        lastSampleMs = millis();
-        publishTelemetry();
-      }
+    // Calibrate on the first connection only. A later reconnect just re-sends
+    // the stored readings, in case the broker lost them.
+    if (!calibrationComplete) {
+      calibrateFlexSensors();
+      continue;
     }
-    vTaskDelay(pdMS_TO_TICKS(5));
+    if (!calibrationPublished) {
+      calibrationPublished = publishCalibration();
+      if (!calibrationPublished) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        continue;
+      }
+      // Sample at the compiled-in sampleRateHz - a CONFIG on cmd/<id>/set
+      // is an optional override, not a gate. Sampling carries on through a
+      // later reconnect, so the buffer holds what happened during it.
+      samplingEnabled = true;
+    }
+
+    publishTelemetry();
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
@@ -606,10 +677,6 @@ void setup() {
   mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
   mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
 
-  // ---- Vibration motor off (buzzes only during calibration steps) ----
-  pinMode(VIBRATION_PIN, OUTPUT);
-  digitalWrite(VIBRATION_PIN, LOW);
-
   // ---- Initialise flex sensor pins ----
   pinMode(FLEX1_PIN, INPUT);
   pinMode(FLEX2_PIN, INPUT);
@@ -628,15 +695,22 @@ void setup() {
 
   Serial.println("Five flex sensors initialised.");
 
-  // Measure each finger's straight baseline at power-on. Without this every
-  // baseline is 0 and almost every reading counts as "bent". Keep the hand open
-  // and fingers straight for ~3 s after switching the glove on. The phone app's
-  // "Calibrate glove" button can redo this at any time.
-  calibrateFlexSensors(true);
+  // ---- Vibration motor off until calibration starts ----
+  pinMode(VIBRATION_PIN, OUTPUT);
+  digitalWrite(VIBRATION_PIN, LOW);
 
   // ---- Network ----
   connectWiFi();
 
+  sampleQueue = xQueueCreate(SAMPLE_BUFFER_SAMPLES, sizeof(RawSample));
+  if (sampleQueue == NULL) {
+    Serial.println("Could not allocate the sample buffer!");
+    while (1);
+  }
+
+  // Calibration reads the same sensors, but only before samplingEnabled is set.
+  // On core 1, away from the WiFi stack, and above the send task.
+  xTaskCreatePinnedToCore(sampleTask, "SampleTask", 4096, NULL, 6, NULL, 1);
   xTaskCreate(mqttTask, "MqttSshTask", 24576, NULL, 5, NULL);
 }
 

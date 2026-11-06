@@ -589,24 +589,7 @@ namespace HearSay
                 _ = HearSayLocalMqtt.For(statusUrl).Report("caption", JsonUtility.ToJson(new CaptionPayload { caption = caption }));
                 yield break;
             }
-            if (string.IsNullOrEmpty(statusUrl))
-            {
-                yield break;
-            }
-
-            string captionUrl = statusUrl.Replace("/status", "/caption");
-            byte[] body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(new CaptionPayload { caption = caption }));
-            using (var request = new UnityWebRequest(captionUrl, UnityWebRequest.kHttpVerbPOST))
-            {
-                request.uploadHandler = new UploadHandlerRaw(body);
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.SetRequestHeader("Content-Type", "application/json");
-                yield return request.SendWebRequest();
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogWarning("HearSay caption debug server unavailable: " + request.error);
-                }
-            }
+            // No HTTP dummy server: captions are only shown on the phone.
         }
 
         [Serializable]
