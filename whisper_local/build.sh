@@ -12,9 +12,13 @@ SDL=OFF
 if [ "${1:-}" = "--with-mic" ]; then SDL=ON; fi
 cmake -S whisper.cpp -B whisper.cpp/build -DCMAKE_BUILD_TYPE=Release -DWHISPER_BUILD_TESTS=OFF -DWHISPER_SDL2=$SDL
 JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
-TARGETS="--target whisper-cli --target whisper-server"
+TARGETS="--target whisper-cli --target whisper-server --target whisper-quantize"
 [ "$SDL" = ON ] && TARGETS="$TARGETS --target whisper-stream"
 cmake --build whisper.cpp/build -j"$JOBS" --config Release $TARGETS
+# 8-bit copy of the model: faster on the Ultra96's ARM cores, practically the same accuracy.
+if [ -f models/ggml-base.en.bin ] && [ ! -f models/ggml-base.en-q8_0.bin ]; then
+  ./whisper.cpp/build/bin/whisper-quantize models/ggml-base.en.bin models/ggml-base.en-q8_0.bin q8_0
+fi
 echo
 echo "Built: $(pwd)/whisper.cpp/build/bin/"
 ls whisper.cpp/build/bin
