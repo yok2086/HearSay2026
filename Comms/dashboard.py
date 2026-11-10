@@ -1,3 +1,4 @@
+import os
 import json
 import threading
 import queue
@@ -9,7 +10,7 @@ BROKER_HOST = "localhost"
 BROKER_PORT = 8883
 MQTT_USER = "nathan"
 MQTT_PASS = "mqtt"
-CA_CERT_PATH = "/Users/NathanTan_1/HearSay2026/Comms/mqtt/mosquitto_certs/ca.crt"
+CA_CERT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mqtt", "mosquitto_certs", "ca.crt")
 # ------------------------
 
 latest_result = {}
