@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HearSay Tutorial</title>
+<style>
+  :root {
+    --navy: #0f2a4a; --navy-2: #163a63; --panel: #ffffff; --bg: #eef3f9;
+    --ink: #13233a; --muted: #5b6b80; --accent: #2f6fd6; --good: #1f9d55; --bad: #d64545;
+    --line: #d5deea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--ink); }
+  header { background: var(--navy); color: #fff; padding: 14px 28px; display: flex; align-items: center; gap: 18px; }
+  header h1 { margin: 0; font-size: 26px; font-style: italic; letter-spacing: .5px; }
+  header .sub { opacity: .8; font-size: 15px; border-left: 1px solid rgba(255,255,255,.4); padding-left: 16px; }
+  header .badge { margin-left: auto; font-size: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.15); }
+  header .badge.ok { background: var(--good); }
+  header .badge.bad { background: var(--bad); }
+  .progress { height: 6px; background: var(--navy-2); }
+  .progress > div { height: 100%; background: #6fb1ff; width: 0; transition: width .3s; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 28px 0; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #dfe7f2; color: var(--muted); cursor: pointer; border: none; }
+  .chip.current { background: var(--accent); color: #fff; }
+  .chip.done { background: #cdeedb; color: #146c3a; }
+  .chip.failed { background: #f6d5d5; color: #8e2a2a; }
+  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); gap: 24px; padding: 18px 28px 28px; }
+  .media { background: #0b1626; border-radius: 16px; overflow: hidden; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; position: relative; }
+  .media video, .media img { width: 100%; height: 100%; object-fit: contain; background: #0b1626; }
+  .media .placeholder { color: #9fb3cc; text-align: center; padding: 24px; font-size: 18px; line-height: 1.5; }
+  .media .placeholder code { color: #d7e5f7; background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 4px; }
+  .media .tag { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; padding: 4px 10px; border-radius: 6px; }
+  .panel { background: var(--panel); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(15,42,74,.08); }
+  .step-no { color: var(--accent); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .panel h2 { margin: 0; font-size: 30px; line-height: 1.15; }
+  .panel p.text { margin: 0; font-size: 17px; line-height: 1.5; color: #2d3e55; }
+  .status { border-radius: 12px; padding: 16px; font-size: 18px; background: #f3f6fb; min-height: 58px; }
+  .status.listening { background: #e7f0ff; color: #1d4fa5; }
+  .status.good { background: #e3f6eb; color: #146c3a; }
+  .status.bad { background: #fbe9e9; color: #8e2a2a; }
+  .status .big { font-size: 26px; font-weight: 700; display: block; margin-top: 4px; }
+  .dots { display: flex; gap: 8px; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: 700; }
+  .dot.ok { background: var(--good); border-color: var(--good); }
+  .dot.no { background: var(--bad); border-color: var(--bad); }
+  .rows { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 10px; background: #f3f6fb; font-size: 17px; }
+  .row .state { font-weight: 700; color: var(--muted); }
+  .row .state.ok { color: var(--good); }
+  .row .state.no { color: var(--bad); }
+  .buttons { display: flex; gap: 10px; margin-top: auto; flex-wrap: wrap; }
+  button.btn { font: inherit; font-size: 17px; font-weight: 600; padding: 12px 20px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.btn.go { background: var(--good); border-color: var(--good); color: #fff; }
+  button.btn:disabled { opacity: .45; cursor: default; }
+  .spacer { flex: 1; }
+  .last { font-size: 14px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; }
+  .score { font-size: 44px; font-weight: 800; color: var(--accent); }
+  .demo-help { font-size: 13px; color: var(--muted); background: #fff7e0; border: 1px solid #f1dfa6; border-radius: 8px; padding: 8px 10px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>HearSay</h1>
+  <div class="sub">Tutorial mode</div>
+  <div class="badge" id="badge">connecting…</div>
+</header>
+<div class="progress"><div id="bar"></div></div>
+<div class="chips" id="chips"></div>
+<main>
+  <div class="media" id="media"></div>
+  <div class="panel" id="panel"></div>
+</main>
+
+<script>
+const S = { cfg: null, i: 0, steps: [], res: {}, listening: false, lastSign: null };
+
+function fmt(label) { return label.replace(/_/g, " ").replace(/^./, c => c.toUpperCase()); }
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+function result(step) {
+  if (!S.res[step.id]) S.res[step.id] = { attempts: [], done: false, failed: false, gloves: {}, dirs: {} };
+  return S.res[step.id];
+}
+
+async function init() {
+  S.cfg = await (await fetch("/config")).json();
+  S.steps = S.cfg.steps;
+  setBadge(S.cfg.mqtt);
+  const es = new EventSource("/events");
+  es.onmessage = m => onEvent(JSON.parse(m.data));
+  es.onerror = () => setBadge("disconnected");
+  render();
+}
+
+function setBadge(state) {
+  const b = document.getElementById("badge");
+  const text = { connected: "Ultra96 connected", demo: "Demo mode (keyboard)", connecting: "Connecting to Ultra96…",
+                 disconnected: "Ultra96 not connected", off: "Not connected" }[state] || state;
+  b.textContent = text;
+  b.className = "badge " + (state === "connected" ? "ok" : state === "demo" ? "" : state === "connecting" ? "" : "bad");
+}
+
+function onEvent(ev) {
+  if (ev.kind === "status") return setBadge(ev.mqtt);
+  const step = S.steps[S.i];
+  const r = result(step);
+  if (ev.kind === "sign") {
+    S.lastSign = ev;
+    if (step.kind === "sign" && S.listening && !r.done) {
+      const ok = ev.label === step.sign;
+      r.attempts.push({ label: ev.label, confidence: ev.confidence, ok });
+      const correct = r.attempts.filter(a => a.ok).length;
+      if (correct >= S.cfg.passNeeded) { r.done = true; r.failed = false; S.listening = false; }
+      else if (r.attempts.length >= S.cfg.maxTries) { r.failed = true; S.listening = false; }
+    }
+  } else if (ev.kind === "direction" && step.kind === "direction") {
+    if (ev.direction === "left" || ev.direction === "right") r.dirs[ev.direction] = true;
+    r.last = ev.direction;
+    if (r.dirs.left && r.dirs.right) r.done = true;
+  } else if (ev.kind === "calibration" && step.kind === "calibration") {
+    if (ev.glove === "both") { r.gloves = { glove_01L: { ok: true }, glove_01R: { ok: true } }; }
+    else r.gloves[ev.glove] = ev;
+    const g = r.gloves;
+    if (g.glove_01L && g.glove_01L.ok && g.glove_01R && g.glove_01R.ok) r.done = true;
+  }
+  render();
+}
+
+function videoFor(step) {
+  const v = (S.cfg.videos || []).find(f => f.replace(/\.[^.]+$/, "") === step.id);
+  if (!v) return null;
+  return "videos/" + v;
+}
+
+function renderMedia(step) {
+  const m = document.getElementById("media");
+  m.innerHTML = "";
+  if (step.kind === "summary") {
+    m.append(el("div", { class: "placeholder" }, el("div", { style: "font-size:64px" }, "🎉"), "Tutorial complete"));
+    return;
+  }
+  const src = videoFor(step);
+  if (src && /\.gif$/i.test(src)) m.append(el("img", { src, alt: step.title }));
+  else if (src) m.append(el("video", { src, autoplay: "", loop: "", muted: "", playsinline: "" }));
+  else m.append(el("div", { class: "placeholder" }, "Demo video not added yet.", el("br"),
+                   "Save it as ", el("code", {}, `videos/${step.id}.mp4`)));
+  m.append(el("div", { class: "tag" }, step.kind === "sign" ? "Watch, then try" : "Demo"));
+  const v = m.querySelector("video"); if (v) { v.muted = true; v.play().catch(() => {}); }
+}
+
+function renderChips() {
+  const c = document.getElementById("chips");
+  c.innerHTML = "";
+  S.steps.forEach((s, idx) => {
+    const r = S.res[s.id];
+    let cls = "chip";
+    if (idx === S.i) cls += " current"; else if (r && r.done) cls += " done"; else if (r && r.failed) cls += " failed";
+    const name = s.kind === "sign" ? fmt(s.sign) : s.title.replace(/^(Calibrate the|Move around the|Choose a)\s*/i, "");
+    c.append(el("button", { class: cls, onclick: () => go(idx) }, `${idx + 1}. ${name}`));
+  });
+  document.getElementById("bar").style.width = (100 * S.i / (S.steps.length - 1)) + "%";
+}
+
+function renderPanel(step) {
+  const p = document.getElementById("panel");
+  p.innerHTML = "";
+  const r = result(step);
+  p.append(el("div", { class: "step-no" }, `Step ${S.i + 1} of ${S.steps.length}`), el("h2", {}, step.title));
+  if (step.text) p.append(el("p", { class: "text" }, step.text));
+
+  const nextBtn = el("button", { class: "btn " + (r.done || step.kind === "info" ? "go" : ""), onclick: () => go(S.i + 1) },
+                     S.i === S.steps.length - 2 ? "Finish →" : "Next →");
+  const backBtn = el("button", { class: "btn", onclick: () => go(S.i - 1) }, "← Back");
+  if (S.i === 0) backBtn.disabled = true;
+  const buttons = el("div", { class: "buttons" });
+
+  if (step.kind === "sign") {
+    const correct = r.attempts.filter(a => a.ok).length;
+    let st;
+    if (r.done) st = el("div", { class: "status good" }, "Passed!", el("span", { class: "big" }, `${correct} / ${r.attempts.length} correct`));
+    else if (r.failed) st = el("div", { class: "status bad" }, "Not quite. Watch the video again and retry.",
+                               el("span", { class: "big" }, `${correct} / ${r.attempts.length} correct`));
+    else if (S.listening) {
+      const last = r.attempts[r.attempts.length - 1];
+      st = el("div", { class: "status listening" }, last ? (last.ok ? "✓ Correct, again!" : `✗ Recognised “${fmt(last.label)}”, try again`)
+                                                         : "Listening… sign it now.",
+              el("span", { class: "big" }, `Sign “${fmt(step.sign)}”`));
+    } else st = el("div", { class: "status" }, "Press Try when you are ready.");
+    p.append(st);
+    const dots = el("div", { class: "dots" });
+    for (let k = 0; k < S.cfg.maxTries; k++) {
+      const a = r.attempts[k];
+      dots.append(el("div", { class: "dot" + (a ? (a.ok ? " ok" : " no") : "") }, a ? (a.ok ? "✓" : "✗") : ""));
+    }
+    p.append(dots, el("div", { class: "last" }, `Need ${S.cfg.passNeeded} correct out of ${S.cfg.maxTries}.` +
+                      (S.lastSign ? `  Last recognised: ${fmt(S.lastSign.label)} (${Math.round(S.lastSign.confidence * 100)}%)` : "")));
+    if (!r.done) {
+      const label = r.failed ? "Retry" : S.listening ? "Listening…" : "Try";
+      const tryBtn = el("button", { class: "btn primary", onclick: () => startTry(step) }, label);
+      if (S.listening) tryBtn.disabled = true;
+      buttons.append(tryBtn);
+    }
+  } else if (step.kind === "calibration") {
+    const rows = el("div", { class: "rows" });
+    [["glove_01L", "Left glove"], ["glove_01R", "Right glove"]].forEach(([id, name]) => {
+      const g = r.gloves[id];
+      let text = "waiting…", cls = "state";
+      if (g && g.ok) { text = "✓ calibrated"; cls += " ok"; }
+      else if (g && g.stage === "FAILED") { text = "✗ " + (g.message || "failed, restarting"); cls += " no"; }
+      else if (g) { text = "calibrating " + (g.message || g.stage || ""); }
+      rows.append(el("div", { class: "row" }, name, el("span", { class: cls }, text)));
+    });
+    p.append(rows);
+    if (!r.done) buttons.append(el("button", { class: "btn", onclick: () => { r.done = true; render(); } }, "Mark done"));
+  } else if (step.kind === "direction") {
+    const rows = el("div", { class: "rows" });
+    [["left", "Speak from the LEFT"], ["right", "Speak from the RIGHT"]].forEach(([d, name]) => {
+      rows.append(el("div", { class: "row" }, name, el("span", { class: "state" + (r.dirs[d] ? " ok" : "") }, r.dirs[d] ? "✓ detected" : "waiting…")));
+    });
+    p.append(rows);
+    if (r.last) p.append(el("div", { class: "last" }, `Last detected direction: ${r.last.toUpperCase()}`));
+    if (!r.done) buttons.append(el("button", { class: "btn", onclick: () => { r.done = true; render(); } }, "Mark done"));
+  } else if (step.kind === "manual") {
+    p.append(el("div", { class: "status" + (r.done ? " good" : "") }, r.done ? "✓ Done" : "Try it in the headset, then press Done."));
+    if (!r.done) buttons.append(el("button", { class: "btn primary", onclick: () => { r.done = true; render(); } }, "Done"));
+  } else if (step.kind === "summary") {
+    renderSummary(p);
+    buttons.append(el("button", { class: "btn primary", onclick: restart }, "Start again"));
+  }
+
+  if (S.cfg.demo && step.kind !== "summary" && step.kind !== "info")
+    p.append(el("div", { class: "demo-help" }, "Demo keys: C = correct sign, W = wrong sign, L / R = sound direction, K = gloves calibrated, Space = Try, ←/→ = back/next"));
+
+  if (step.kind !== "summary") buttons.append(el("div", { class: "spacer" }), backBtn, nextBtn);
+  else buttons.prepend(backBtn);
+  p.append(buttons);
+}
+
+function renderSummary(p) {
+  const signSteps = S.steps.filter(s => s.kind === "sign");
+  let tot = 0, ok = 0;
+  const tbody = el("tbody");
+  signSteps.forEach(s => {
+    const r = S.res[s.id] || { attempts: [] };
+    const c = r.attempts.filter(a => a.ok).length;
+    tot += r.attempts.length; ok += c;
+    tbody.append(el("tr", {}, el("td", {}, fmt(s.sign)), el("td", {}, `${c} / ${r.attempts.length}`),
+      el("td", {}, r.attempts.length ? Math.round(100 * c / r.attempts.length) + "%" : "–"),
+      el("td", {}, r.done ? "✓ Passed" : r.attempts.length ? "✗ Not passed" : "Skipped")));
+  });
+  const acc = tot ? Math.round(100 * ok / tot) : 0;
+  p.append(el("div", {}, el("div", { class: "score" }, tot ? acc + "%" : "–"), el("div", { class: "last" }, `Sign accuracy: ${ok} correct out of ${tot} attempts`)));
+  p.append(el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Sign"), el("th", {}, "Correct"), el("th", {}, "Accuracy"), el("th", {}, "Result"))), tbody));
+  const feats = el("div", { class: "rows" });
+  S.steps.filter(s => ["calibration", "manual", "direction"].includes(s.kind)).forEach(s => {
+    const d = S.res[s.id] && S.res[s.id].done;
+    feats.append(el("div", { class: "row" }, s.title, el("span", { class: "state" + (d ? " ok" : "") }, d ? "✓" : "–")));
+  });
+  p.append(feats);
+}
+
+function startTry(step) {
+  const r = result(step);
+  if (r.failed || r.attempts.length >= S.cfg.maxTries) { r.attempts = []; r.failed = false; }
+  S.listening = true;
+  render();
+}
+
+function go(idx) {
+  if (idx < 0 || idx >= S.steps.length) return;
+  S.i = idx; S.listening = false;
+  render(true);
+}
+
+function restart() { S.res = {}; S.lastSign = null; go(0); }
+
+let lastStep = -1;
+function render() {
+  const step = S.steps[S.i];
+  if (lastStep !== S.i) { renderMedia(step); lastStep = S.i; }
+  renderChips();
+  renderPanel(step);
+}
+
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  const step = S.steps[S.i];
+  if (e.key === "ArrowRight") return go(S.i + 1);
+  if (e.key === "ArrowLeft") return go(S.i - 1);
+  if (e.key === " " && step.kind === "sign" && !S.listening && !result(step).done) { e.preventDefault(); return startTry(step); }
+  if (!S.cfg || !S.cfg.demo) return;
+  const k = e.key.toLowerCase();
+  const sim = q => fetch("/simulate?" + new URLSearchParams(q));
+  if (k === "c") {
+    const label = step.kind === "sign" ? step.sign : S.cfg.allSigns[Math.floor(Math.random() * S.cfg.allSigns.length)];
+    sim({ kind: "sign", label, confidence: (0.75 + Math.random() * 0.24).toFixed(3) });
+  } else if (k === "w") {
+    const others = S.cfg.allSigns.filter(s => s !== step.sign);
+    sim({ kind: "sign", label: others[Math.floor(Math.random() * others.length)], confidence: (0.66 + Math.random() * 0.2).toFixed(3) });
+  } else if (k === "l" || k === "r") sim({ kind: "direction", direction: k === "l" ? "left" : "right" });
+  else if (k === "k") sim({ kind: "calibration", glove: "both", ok: "1", stage: "SUCCESS" });
+});
+
+init();
+</script>
+</body>
+</html>

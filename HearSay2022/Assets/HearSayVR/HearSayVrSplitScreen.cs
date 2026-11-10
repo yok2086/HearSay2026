@@ -10,6 +10,9 @@ namespace HearSay
     // It lives only in "HearSay VR Start" and survives into the scenes loaded from
     // there (HearSay Demo), so the normal HearSay scenes behave exactly as before.
     //
+    // Phones without a gyroscope (e.g. Galaxy A10) use the normal touch screen
+    // instead (see touchOnPhonesWithoutGyroscope).
+    //
     // In the headset:
     //  - The screen stays still in each lens; turn your head to move the ring pointer.
     //  - Look at a button for a moment (or tap the screen / headset button) to press it.
@@ -36,6 +39,11 @@ namespace HearSay
         public bool invertVertical;
         [Tooltip("Tick only if the picture appears upside down on your phone.")]
         public bool flipVertically;
+        // Phones without a gyroscope (e.g. Galaxy A10): keep the split VR view everywhere, but
+        // press buttons by tapping them on the screen (either eye's picture) instead of gazing.
+        // Set to false to use the look-up/down stepping instead.
+        // (Static, so it isn't a serialized Inspector field.)
+        public static bool touchOnPhonesWithoutGyroscope = true;
 
         public static HearSayVrSplitScreen Instance { get; private set; }
 
@@ -43,6 +51,12 @@ namespace HearSay
         public static bool Active => Instance != null && Instance.split;
 
         private bool split = true;
+        private bool noGyroDecided, noGyro;
+        private bool touchMode;                       // no gyroscope: tap buttons in the split view
+        private readonly Rect[] eyeRects = new Rect[2]; // where each eye's picture is on screen (top-left origin)
+        private float eyeScale = 1f;                  // picture size / full screen size
+        private string touchKey;                      // button tapped this frame
+        private int touchFrame = -10;
         private RenderTexture frame;
         private Texture2D ring, ringOutline, fill;
         private Vector2 headOffset;          // gaze offset from screen centre, pixels, y up
@@ -100,6 +114,24 @@ namespace HearSay
                 Mathf.Abs(a.Value.center.y - b.Value.center.y) < rowTolerance
                     ? a.Value.center.x.CompareTo(b.Value.center.x)
                     : a.Value.center.y.CompareTo(b.Value.center.y));
+
+            // Phones without a working gyroscope: VR view, but tap the buttons.
+            if (touchOnPhonesWithoutGyroscope && !noGyroDecided)
+            {
+                if (!SystemInfo.supportsGyroscope || (!gyroSeen && Time.unscaledTime > 3f))
+                {
+                    noGyro = noGyroDecided = touchMode = true;
+                    Debug.Log("HearSay VR: no gyroscope, tap the buttons in the VR view.");
+                }
+                else if (gyroSeen) noGyroDecided = true;
+            }
+            if (touchMode)
+            {
+                if (touchKey != null && Time.frameCount - touchFrame > 2) touchKey = null; // tap missed every button
+                if (SingleTap()) TouchButton(Input.mousePosition);
+                TrackHead(); // only keeps the sensors' state up to date; the pointer is not used
+                return;
+            }
 
             TrackHead();
 
@@ -264,6 +296,26 @@ namespace HearSay
             return Input.GetMouseButtonDown(0);
         }
 
+        // Touch mode: map a tap on either eye's picture back to the full screen the app
+        // drew, and remember the button under it so GazeButton presses it this frame.
+        private void TouchButton(Vector3 mouse)
+        {
+            var tap = new Vector2(mouse.x, Screen.height - mouse.y); // top-left origin, like OnGUI
+            for (int eye = 0; eye < 2; eye++)
+            {
+                Rect r = eyeRects[eye];
+                if (r.width <= 0f || !r.Contains(tap)) continue;
+                var point = (tap - r.position) / eyeScale; // position on the full-size screen
+                foreach (var b in shownButtons)
+                {
+                    if (!b.Value.Contains(point)) continue;
+                    touchKey = b.Key;
+                    touchFrame = Time.frameCount;
+                    return;
+                }
+            }
+        }
+
         // Pointer position in OnGUI screen coordinates (origin top-left).
         private Vector2 GazeGuiPoint()
         {
@@ -284,6 +336,15 @@ namespace HearSay
                 // Remember where each button is on screen (for the no-gyroscope stepping).
                 Vector2 p0 = GUI.matrix.MultiplyPoint3x4(guiRect.min), p1 = GUI.matrix.MultiplyPoint3x4(guiRect.max);
                 self.frameButtons.Add(new KeyValuePair<string, Rect>(key, Rect.MinMaxRect(p0.x, p0.y, p1.x, p1.y)));
+            }
+            if (self.touchMode)
+            {
+                // Pressed only by tapping it on the screen (see TouchButton).
+                if (key != self.touchKey) return false;
+                focused = true;
+                if (Event.current == null || Event.current.type != EventType.Repaint) return false;
+                self.touchKey = null;
+                return true;
             }
             if (self.stepMode)
             {
@@ -370,8 +431,12 @@ namespace HearSay
                 float cy = h * 0.5f;
                 // The picture stays fixed in each lens; only the pointer moves with the head.
                 var r = new Rect(cx - eyeW * 0.5f, cy - eyeH * 0.5f, eyeW, eyeH);
+                eyeRects[eye] = new Rect(eye * halfW + r.x, r.y, r.width, r.height);
+                eyeScale = s;
                 if (flip) r = new Rect(r.x, r.yMax, r.width, -r.height);
                 Graphics.DrawTexture(r, frame);
+
+                if (touchMode) continue; // tapping: no gaze pointer
 
                 // Pointer: where the head is aimed, drawn at the same spot in both eyes.
                 float px = cx + headOffset.x * s, py = cy - headOffset.y * s;

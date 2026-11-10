@@ -134,7 +134,7 @@ namespace HearSay
                 GUI.Label(new Rect(530, 222, 380, 45), "Conversation partner", HearSayTheme.Label(28, Color.white));
                 GUI.Label(new Rect(530, 272, 380, 66), "See sign-language translations in your surroundings.", HearSayTheme.Label(21, HearSayTheme.Muted));
                 if (HearSayTheme.Action(new Rect(85, 350, 365, 54), "Open live captions") &&
-                    (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
+                    (SaveAddress() || HearSayVrSplitScreen.Instance != null)) // VR test: open even without the server
                 {
                     DeafRole = true;
                     // HearSayLiveCaption only runs Whisper when the saved role is deaf user (1).
@@ -142,7 +142,7 @@ namespace HearSay
                     SceneManager.LoadScene("HearSay Demo");
                 }
                 if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
-                    (SaveAddress() || HearSayVrSplitScreen.Active)) // VR test: open even without the server
+                    (SaveAddress() || HearSayVrSplitScreen.Instance != null)) // VR test: open even without the server
                 {
                     PlayerPrefs.SetInt("HearSay.VrRole", 0); PlayerPrefs.Save();
                     EnterPartnerRole();
