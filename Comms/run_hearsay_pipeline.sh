@@ -32,6 +32,8 @@ REMOTE_PYTHON="sudo -n /usr/local/share/pynq-venv/bin/python3 -u"
 LOCAL_BIND="0.0.0.0"
 LOCAL_PORT="8883"
 REMOTE_PORT="8883"
+# Hotspot backup: gloves/headset on the same hotspot send plain MQTT here
+RELAY_PORT="1883"
 
 LOCAL_DIR="$HOME/HearSay2026/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
@@ -57,6 +59,7 @@ cleanup() {
 
   echo "Closing local relay tunnel..."
   lsof -ti :"$LOCAL_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
+  lsof -ti :"$RELAY_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
 
   echo "Killing tmux session '$TMUX_SESSION'..."
   tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
@@ -116,11 +119,14 @@ echo ""
 echo "=== 3. Opening local relay tunnel (background) ==="
 # Kill any stale tunnel already holding this port before opening a fresh one
 lsof -ti :"$LOCAL_PORT" | xargs -r kill 2>/dev/null || true
+lsof -ti :"$RELAY_PORT" | xargs -r kill 2>/dev/null || true
 sleep 1
 
 ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" -f -N \
-  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" "$ULTRA_HOST"
+  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" \
+  -L "${LOCAL_BIND}:${RELAY_PORT}:localhost:1883" "$ULTRA_HOST"
 echo "Tunnel opened in background (Mac ${LOCAL_PORT} -> Ultra96 broker)."
+echo "Hotspot relay open on port ${RELAY_PORT} for devices on the same network."
 sleep 1
 
 echo ""

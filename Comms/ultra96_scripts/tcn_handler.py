@@ -38,7 +38,7 @@ HOP = 10                 # frames between predictions (10 -> 10 predictions/s at
 AGREE_N = 3              # predictions in a row that must agree
 MIN_CONFIDENCE = 0.65     # softmax probability needed to count towards a word
 PRINT_PREDICTIONS = True # print every window prediction (for tuning)
-PRINT_SAMPLES = False    # print every sample's glove timestamp (about 200 lines/s, for gaps.py)
+PRINT_SAMPLES = True    # print every sample's glove timestamp (about 200 lines/s, for gaps.py)
 
 # Replaced with the training values from NORM_PATH when the handler starts.
 FEATURE_MEAN = np.zeros(22, dtype=np.float32)
