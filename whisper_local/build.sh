@@ -19,6 +19,9 @@ cmake --build whisper.cpp/build -j"$JOBS" --config Release $TARGETS
 if [ -f models/ggml-base.en.bin ] && [ ! -f models/ggml-base.en-q8_0.bin ]; then
   ./whisper.cpp/build/bin/whisper-quantize models/ggml-base.en.bin models/ggml-base.en-q8_0.bin q8_0
 fi
+if [ -f models/ggml-tiny.en.bin ] && [ ! -f models/ggml-tiny.en-q8_0.bin ]; then
+  ./whisper.cpp/build/bin/whisper-quantize models/ggml-tiny.en.bin models/ggml-tiny.en-q8_0.bin q8_0
+fi
 echo
 echo "Built: $(pwd)/whisper.cpp/build/bin/"
 ls whisper.cpp/build/bin
