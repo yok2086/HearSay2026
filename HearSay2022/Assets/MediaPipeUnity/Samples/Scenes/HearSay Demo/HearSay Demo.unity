@@ -452,7 +452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   logLevel: 2
-  modelPath: Whisper/ggml-base.en.bin
+  modelPath: Whisper/ggml-tiny.en.bin
   isModelPathInStreamingAssets: 1
   initOnAwake: 0
   useGpu: 0
