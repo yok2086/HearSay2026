@@ -26,6 +26,10 @@ REMOTE_INFERENCE_SCRIPT="/home/xilinx/jupyter_notebooks/tcn/tcn_handler.py"
 
 REMOTE_INFERENCE_LOG="$REMOTE_LOG_DIR/ultra96_inference.log"
 
+# Whisper speech-to-text server (whisper_local/run_server.sh, port 8090; the phone reaches it over its SSH tunnel)
+REMOTE_WHISPER_DIR="/home/xilinx/whisper_local"
+REMOTE_WHISPER_LOG="$REMOTE_LOG_DIR/whisper.log"
+
 REMOTE_PYTHON="sudo -n /usr/local/share/pynq-venv/bin/python3 -u"
 # REMOTE_PYTHON="python3 -u"
 
@@ -39,6 +43,9 @@ LOCAL_DIR="$HOME/HearSay2026/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
 
 TMUX_SESSION="hearsay"
+# The pipeline's own tmux server (socket "hearsay"), so it never touches your other
+# tmux sessions and a stuck default server can't stop it from starting.
+htmux() { tmux -L hearsay "$@"; }
 
 SSH_MUX_OPTS=(-o ControlMaster=auto -o ControlPath=$HOME/.ssh/hearsay_mux_%C -o ControlPersist=10m)
 
@@ -47,13 +54,14 @@ cleanup() {
   echo ""
   echo "=== Shutting everything down ==="
 
-  echo "Killing broker + inference script on the Ultra96..."
+  echo "Killing broker + inference script + Whisper server on the Ultra96..."
   ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
     "pkill -f '[m]osquitto -c $REMOTE_CONF' || true; \
      pkill -f '[u]ltra96_inference.py' || true; \
      pkill -f '[d]ummy_inference.py' || true; \
      pkill -f '[d]ummy_phone_sender.py' || true; \
      pkill -f '[k]eyboard_ultra96.py' || true; \
+     pkill -f '[w]hisper-server' || true; \
      sudo -n pkill -f '[t]cn_handler.py' || true" \
     2>/dev/null || true
 
@@ -62,7 +70,7 @@ cleanup() {
   lsof -ti :"$RELAY_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
 
   echo "Killing tmux session '$TMUX_SESSION'..."
-  tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
+  htmux kill-server 2>/dev/null || true
 
   echo "Done. Everything stopped (Ultra96 included)."
 }
@@ -116,7 +124,23 @@ else
 fi
 
 echo ""
-echo "=== 3. Opening local relay tunnel (background) ==="
+echo "=== 3. Starting Whisper server on Ultra96 ==="
+WHISPER_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+    "pgrep -f '[w]hisper-server' || true")
+
+if [ -n "$WHISPER_RUNNING" ]; then
+  echo "Whisper server already running (pid $WHISPER_RUNNING) - skipping start."
+else
+  echo "Starting Whisper server..."
+  ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+    "mkdir -p $REMOTE_LOG_DIR; if [ -x $REMOTE_WHISPER_DIR/run_server.sh ]; then \
+       setsid nohup $REMOTE_WHISPER_DIR/run_server.sh > $REMOTE_WHISPER_LOG 2>&1 < /dev/null & \
+     else echo 'WARNING: $REMOTE_WHISPER_DIR/run_server.sh not found - captions on the Ultra96 will not work'; fi"
+  sleep 2
+fi
+
+echo ""
+echo "=== 4. Opening local relay tunnel (background) ==="
 # Kill any stale tunnel already holding this port before opening a fresh one
 lsof -ti :"$LOCAL_PORT" | xargs -r kill 2>/dev/null || true
 lsof -ti :"$RELAY_PORT" | xargs -r kill 2>/dev/null || true
@@ -130,27 +154,32 @@ echo "Hotspot relay open on port ${RELAY_PORT} for devices on the same network."
 sleep 1
 
 echo ""
-echo "=== 4. Launching coordinator.py & dashboard.py & stats.py in tmux ==="
+echo "=== 5. Launching coordinator.py & dashboard.py & stats.py in tmux ==="
 
-tmux kill-server 2>/dev/null || true
+htmux kill-server 2>/dev/null || true
 sleep 0.5
+# A server that crashed can leave a socket nothing answers on ("server exited
+# unexpectedly"); remove it so new-session starts a fresh server.
+if ! htmux list-sessions >/dev/null 2>&1; then
+  rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/hearsay"
+fi
 
-tmux new-session -d -s "$TMUX_SESSION" -n coordinator \
+htmux new-session -d -s "$TMUX_SESSION" -n coordinator \
   "cd $LOCAL_DIR && $PYTHON_BIN coordinator.py; echo 'Press enter to close...'; read"
-tmux new-window -t "$TMUX_SESSION" -n dashboard \
+htmux new-window -t "$TMUX_SESSION" -n dashboard \
   "cd $LOCAL_DIR && $PYTHON_BIN dashboard.py; echo 'Press enter to close...'; read"
-tmux new-window -t "$TMUX_SESSION" -n stats \
+htmux new-window -t "$TMUX_SESSION" -n stats \
   "cd $LOCAL_DIR && $PYTHON_BIN stats.py; echo 'Press enter to close...'; read"
 
 # Keyboard pipeline test: relay window
-# tmux new-window -t "$TMUX_SESSION" -n keyboard \
+# htmux new-window -t "$TMUX_SESSION" -n keyboard \
   # "cd $LOCAL_DIR && $PYTHON_BIN keyboard_relay.py; echo 'Press enter to close...'; read"
 
-tmux select-window -t "$TMUX_SESSION:dashboard"
+htmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""
 echo "=== All set ==="
-echo "Broker + inference: running on the Ultra96"
+echo "Broker + inference + Whisper: running on the Ultra96 (Whisper log: $REMOTE_WHISPER_LOG)"
 echo "Tunnel running in the background"
 echo "coordinator / dashboard / stats running inside tmux session '$TMUX_SESSION'"
 echo ""
@@ -163,4 +192,4 @@ echo "  Ctrl+C while attached to tmux only stops whichever pane is focused (e.g.
 echo "  To fully stop EVERYTHING (including the Ultra96's broker and inference script):"
 echo "    1) Detach from tmux with Ctrl+B then D"
 echo "    2) That returns control to this script, which then runs full cleanup automatically."
-tmux attach -t "$TMUX_SESSION"
+htmux attach -t "$TMUX_SESSION"

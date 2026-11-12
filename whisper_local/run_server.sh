@@ -9,7 +9,9 @@
 # Default model: tiny.en (fastest English model). Uses its 8-bit version (made by
 # build.sh) when it exists, and falls back to base.en if tiny.en isn't on the board.
 # Speed options: -nt no timestamps, -nf no temperature fallback retries,
-# -bo 1 -bs 1 single greedy pass, -ac 512 (~10 s audio window; clips are <= 6 s).
+# -bo 1 -bs 1 single greedy pass, -ac 384 (7.68 s audio window: the phone sends clips of at
+# most maxClipSeconds (6 s) + one 0.5 s chunk; a smaller window makes every request faster,
+# but audio past the window is ignored, so raise this if maxClipSeconds goes up).
 set -euo pipefail
 cd "$(dirname "$0")"
 DEFAULT_MODEL=models/ggml-base.en.bin
@@ -20,4 +22,4 @@ MODEL="${1:-$DEFAULT_MODEL}"
 PORT="${2:-8090}"
 THREADS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
 echo "Whisper API on 127.0.0.1:$PORT using $MODEL ($THREADS threads)"
-exec ./whisper.cpp/build/bin/whisper-server -m "$MODEL" --host 127.0.0.1 --port "$PORT" -t "$THREADS" -l en -sns -nt -nf -bo 1 -bs 1 -ac 512
+exec ./whisper.cpp/build/bin/whisper-server -m "$MODEL" --host 127.0.0.1 --port "$PORT" -t "$THREADS" -l en -sns -nt -nf -bo 1 -bs 1 -ac 384

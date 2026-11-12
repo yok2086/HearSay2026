@@ -36,9 +36,9 @@ NORM_PATH = os.path.join(MODEL_DIR, "norm_stats.npz")   # saved by train.py
 # until a full window has passed, so one sign isn't reported several times.
 HOP = 10                 # frames between predictions (10 -> 10 predictions/s at 100 Hz)
 AGREE_N = 3              # predictions in a row that must agree
-MIN_CONFIDENCE = 0.65     # softmax probability needed to count towards a word
+MIN_CONFIDENCE = 0.75     # softmax probability needed to count towards a word
 PRINT_PREDICTIONS = True # print every window prediction (for tuning)
-PRINT_SAMPLES = True    # print every sample's glove timestamp (about 200 lines/s, for gaps.py)
+PRINT_SAMPLES = True    # print every sample's glove timestamp and raw IMU/flex values (about 200 lines/s, for gaps.py)
 
 # Replaced with the training values from NORM_PATH when the handler starts.
 FEATURE_MEAN = np.zeros(22, dtype=np.float32)
@@ -310,7 +310,11 @@ def on_message(client, userdata, msg):
     offset = update_clock_offset(device_id, samples[-1][0])
     for sample, vector in zip(samples, vectors):
         if PRINT_SAMPLES:
-            print(f"[sample] {device_id} timestamp_ms={sample[0]}")
+            # Raw values as the glove sent them (before calibration and normalization).
+            _, ax, ay, az, gx, gy, gz, *flex = sample
+            print(f"[sample] {device_id} timestamp_ms={sample[0]} "
+                  f"accel={ax},{ay},{az} gyro={gx},{gy},{gz} "
+                  f"flex={','.join(str(value) for value in flex)}")
         sample_queues[device_id].append((sample[0] + offset, vector))
     pair_samples(client)
 

@@ -26,14 +26,19 @@ bool isRunning = false;
 // Inference results from tcn_handler.py are spoken on the speaker.
 const char* TOPIC_INFERENCE = "tele/glove_pair/result";
 
-// The TCN outputs a label every window even with no sign, and playback turns the
-// centre mic off, so limit how often the speaker talks to leave the mic time to listen.
-const unsigned long MIN_SPEECH_GAP_MS = 1000;    // between any two phrases
-const unsigned long REPEAT_WORD_GAP_MS = 3000;   // before repeating the same word
+// tcn_handler.py already merges window predictions into words and won't publish
+// the same word twice within one window, so every RESULT is a real word to speak.
+// Playback turns the centre mic off, so leave a short gap between phrases for it.
+const unsigned long MIN_SPEECH_GAP_MS = 400;     // after one phrase ends, before the next starts
+const unsigned long MAX_SIGN_AGE_MS = 5000;      // words waiting longer than this are stale, skip them
 
-// Set in onMessage, played from mqttTask: playback blocks for over a second.
-char pendingSign[32] = "";
-char lastSpokenSign[32] = "";
+// Filled in onMessage, played from mqttTask. Playback blocks for about a second,
+// so words that arrive meanwhile wait here in order instead of overwriting each other.
+// onMessage and speakPendingInference both run in mqttTask, so no locking is needed.
+const int SIGN_QUEUE_LEN = 6;
+char signQueue[SIGN_QUEUE_LEN][32];
+unsigned long signQueueMs[SIGN_QUEUE_LEN];
+int signQueueHead = 0, signQueueCount = 0;
 unsigned long lastSpokenMs = 0;
 
 void mqttTask(void* param);
@@ -139,9 +144,17 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     publishConfigAck();
   } else if (doc["type"] == "RESULT" && String(TOPIC_INFERENCE) == topic) {
     const char* sign = doc["payload"]["event"] | "";
-    // Only the newest result is kept, so the speaker never falls behind.
-    strncpy(pendingSign, sign, sizeof(pendingSign) - 1);
-    pendingSign[sizeof(pendingSign) - 1] = '\0';
+    if (sign[0] == '\0') return;
+    if (signQueueCount == SIGN_QUEUE_LEN) {
+      // Full: drop the oldest word rather than the newest.
+      signQueueHead = (signQueueHead + 1) % SIGN_QUEUE_LEN;
+      signQueueCount--;
+    }
+    int slot = (signQueueHead + signQueueCount) % SIGN_QUEUE_LEN;
+    strncpy(signQueue[slot], sign, sizeof(signQueue[slot]) - 1);
+    signQueue[slot][sizeof(signQueue[slot]) - 1] = '\0';
+    signQueueMs[slot] = millis();
+    signQueueCount++;
   }
 }
 
@@ -3652,16 +3665,22 @@ const char* phraseForSign(const char* sign) {
 }
 
 void speakPendingInference() {
-  if (pendingSign[0] == '\0') return;
+  if (signQueueCount == 0) return;
 
-  char sign[sizeof(pendingSign)];
-  strcpy(sign, pendingSign);
-  pendingSign[0] = '\0';
-
+  // Wait for the gap without taking the word off the queue, so it isn't lost.
   unsigned long now = millis();
-  if (lastSpokenMs != 0) {
-    if (now - lastSpokenMs < MIN_SPEECH_GAP_MS) return;
-    if (strcmp(sign, lastSpokenSign) == 0 && now - lastSpokenMs < REPEAT_WORD_GAP_MS) return;
+  if (lastSpokenMs != 0 && now - lastSpokenMs < MIN_SPEECH_GAP_MS) return;
+
+  char sign[sizeof(signQueue[0])];
+  strcpy(sign, signQueue[signQueueHead]);
+  unsigned long queuedMs = signQueueMs[signQueueHead];
+  signQueueHead = (signQueueHead + 1) % SIGN_QUEUE_LEN;
+  signQueueCount--;
+
+  if (now - queuedMs > MAX_SIGN_AGE_MS) {
+    Serial.print("Skipping stale sign: ");
+    Serial.println(sign);
+    return;
   }
 
   const char* phrase = phraseForSign(sign);
@@ -3673,7 +3692,6 @@ void speakPendingInference() {
 
   dispatchAudioCommand(phrase);
 
-  strcpy(lastSpokenSign, sign);
   lastSpokenMs = millis();
 
   // The mic was off during playback, so drop any half-finished event and
@@ -3692,7 +3710,7 @@ void mqttTask(void* param) {
       isRunning = false;
       connectMQTT();
     }
-    // Read a few packets so results queued during playback collapse to the newest.
+    // Read a few packets so results that arrived during playback get queued promptly.
     for (int i = 0; i < 4 && mqtt.connected(); i++) {
       mqtt.loop();
     }

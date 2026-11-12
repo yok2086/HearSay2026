@@ -40,8 +40,12 @@ namespace HearSay
         [Tooltip("Connection to the Ultra96 (found automatically if empty).")]
         [SerializeField] private HearSaySshMqttManager ultra96;
         [Tooltip("A clip is sent when speech pauses for this long, or reaches the maximum length.")]
-        [SerializeField] private float pauseToSendSeconds = 0.7f;
+        [SerializeField] private float pauseToSendSeconds = 0.5f;
+        [Tooltip("Keep at or below what run_server.sh's -ac allows (-ac 384 = 7.68 s, minus one chunk).")]
         [SerializeField] private float maxClipSeconds = 6f;
+        [Tooltip("While someone is still talking, send the speech so far this often and show it as a " +
+                 "partial caption. Skipped while a request is in flight, so a slow Ultra96 just gets fewer. 0 = off.")]
+        [SerializeField] private float partialEverySeconds = 1f;
 
         private WhisperStream stream;
         private GameObject bubble;
@@ -261,7 +265,11 @@ namespace HearSay
             }
         }
 
-        private void ShowTranscript(string transcript)
+        private void ShowTranscript(string transcript) => ShowTranscript(transcript, false);
+
+        // partial: text for speech that is still going on. It is shown with "…" and
+        // replaced by the final text, and isn't sent to the terminal.
+        private void ShowTranscript(string transcript, bool partial)
         {
             if (captionText == null) return;
 
@@ -269,13 +277,14 @@ namespace HearSay
             // Whisper labels unclear audio as "[Music]", "(wind)", "[BLANK_AUDIO]" etc.
             // Keep the last real caption instead of showing those labels.
             if (cleaned.Length == 0 && transcript.Trim().Length > 0) return;
-            LatestCaption = cleaned;
+            if (partial && cleaned.Length == 0) return;
+            if (!partial) LatestCaption = cleaned;
             if (showCaptionsOnlyForSpeaker && !SpeakerActivity.IsSpeaking)
             {
                 return;
             }
-            captionText.text = cleaned;
-            pendingCaptionForTerminal = cleaned;
+            captionText.text = partial ? cleaned + " …" : cleaned;
+            if (!partial) pendingCaptionForTerminal = cleaned;
             bubble.SetActive(cleaned.Length > 0);
             hasTranscript = cleaned.Length > 0;
             if (hasTranscript)
@@ -436,7 +445,8 @@ namespace HearSay
         private float lastVoiceTime = -999f;
         private int clipFrequency = 16000;
         private bool requestInFlight;
-        private byte[] queuedClip;
+        private byte[] queuedClip;              // a finished clip waiting for the request in flight
+        private float lastPartialSentTime = -999f;
 
         [Serializable] private class WhisperApiReply { public string text; public string error; }
 
@@ -469,6 +479,17 @@ namespace HearSay
                 SendClip();
             else if (!inSpeech)
                 clipSamples.Clear();
+            else if (partialEverySeconds > 0f && seconds >= 1f && !requestInFlight &&
+                     Time.unscaledTime - lastPartialSentTime >= partialEverySeconds)
+                SendPartial();
+        }
+
+        // The speech so far, sent without ending the clip, for a caption that updates while talking.
+        // Only sent when nothing is in flight, so partials never delay a finished clip.
+        private void SendPartial()
+        {
+            lastPartialSentTime = Time.unscaledTime;
+            StartCoroutine(PostClip(EncodeWav(clipSamples.ToArray(), clipFrequency), true));
         }
 
         private void SendClip()
@@ -476,11 +497,12 @@ namespace HearSay
             if (clipSamples.Count == 0) return;
             byte[] wav = EncodeWav(clipSamples.ToArray(), clipFrequency);
             clipSamples.Clear();
+            lastPartialSentTime = -999f;
             if (requestInFlight) { queuedClip = wav; return; } // keep only the newest waiting clip
-            StartCoroutine(PostClip(wav));
+            StartCoroutine(PostClip(wav, false));
         }
 
-        private IEnumerator PostClip(byte[] wav)
+        private IEnumerator PostClip(byte[] wav, bool partial)
         {
             requestInFlight = true;
             string url = ultra96 != null ? ultra96.WhisperApiUrl : null;
@@ -508,7 +530,7 @@ namespace HearSay
                         if (reply != null && !string.IsNullOrEmpty(reply.error))
                             Debug.LogWarning("HearSay captions: Ultra96 Whisper error: " + reply.error);
                         else if (reply != null && !string.IsNullOrEmpty(reply.text))
-                            ShowTranscript(reply.text.Trim());
+                            ShowTranscript(reply.text.Trim(), partial);
                     }
                     else
                     {
@@ -523,7 +545,7 @@ namespace HearSay
             {
                 byte[] next = queuedClip;
                 queuedClip = null;
-                StartCoroutine(PostClip(next));
+                StartCoroutine(PostClip(next, false));
             }
         }
 
