@@ -1,0 +1,8 @@
+# Words sherpa often mishears -> what was said. One per line, "wrong -> right".
+# Whole words, any capitals. Saved changes are used on the next caption (no restart).
+hulo -> hello
+hullo -> hello
+helo -> hello
+hallo -> hello
+here say -> HearSay
+hear say -> HearSay

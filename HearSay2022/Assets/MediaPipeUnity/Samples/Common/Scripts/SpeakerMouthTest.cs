@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
+using Mediapipe.Tasks.Vision.PoseLandmarker;
 using Mediapipe.Tasks.Components.Containers;
 
 namespace HearSay
@@ -45,6 +46,7 @@ namespace HearSay
         private Vector2[] pendingFaceContour;
         private Vector2 pendingMouthPosition;
         private bool contourVisible;
+        private double lastFaceSeenAt = -10;   // body backup only runs when no face for a while
 
         // MediaPipe's standard face-oval contour, ordered clockwise around the face.
         private static readonly int[] FaceOvalLandmarkIndices =
@@ -111,9 +113,11 @@ namespace HearSay
         {
             if (result.faceLandmarks == null || result.faceLandmarks.Count == 0)
             {
-                MarkLockedSpeakerMissing();
+                // No face: the body (pose) backup decides, unless it hasn't seen anyone either.
+                if (TrackingSeconds - lastBodySeenAt > 0.7) MarkLockedSpeakerMissing();
                 return;
             }
+            lastFaceSeenAt = TrackingSeconds;
 
             if (result.faceBlendshapes == null ||
                 result.faceBlendshapes.Count == 0)
@@ -148,10 +152,11 @@ namespace HearSay
                     continue;
                 }
 
-                float mouthOpen = GetBlendshapeValue(
-                    classifications.categories,
-                    "jawOpen"
-                );
+                // jawOpen comes from a whole-face model and stays near 0 when a VR headset
+                // hides the eyes; the lip-gap measure only uses the mouth. Use the higher one.
+                float mouthOpen = Mathf.Max(
+                    GetBlendshapeValue(classifications.categories, "jawOpen"),
+                    GetLipOpening(result.faceLandmarks[faceIndex]));
 
 
                 if (mouthOpen > highestMouthMovement)
@@ -165,7 +170,9 @@ namespace HearSay
             double now = TrackingSeconds;
             if (currentSpeaker >= 0 && currentSpeaker < result.faceBlendshapes.Count)
             {
-                float selectedOpen = GetBlendshapeValue(result.faceBlendshapes[currentSpeaker].categories, "jawOpen");
+                float selectedOpen = Mathf.Max(
+                    GetBlendshapeValue(result.faceBlendshapes[currentSpeaker].categories, "jawOpen"),
+                    currentSpeaker < result.faceLandmarks.Count ? GetLipOpening(result.faceLandmarks[currentSpeaker]) : 0f);
                 if (selectedOpen >= speakingThreshold)
                     lastSelectedMouthActivity = now;
             }
@@ -232,6 +239,69 @@ namespace HearSay
                 // mean they stopped being the selected speaker.
                 ClearSpeakerCandidate();
                 HideOverlayOnlyWhenNoSpeakerIsLocked();
+            }
+        }
+
+        // ---- Body (pose) backup: for a person whose face can't be found (VR headset) ----
+        private double lastBodySeenAt = -10;
+
+        /// Called with MediaPipe pose results. Only used when no face has been found for
+        /// 0.7 s. The person counts as the speaker while the microphone hears a voice
+        /// (lips can't be read reliably under a headset); the caption bubble goes to the
+        /// body tracker's mouth points and an oval is drawn around the head.
+        public void ProcessPoseResult(PoseLandmarkerResult result)
+        {
+            double now = TrackingSeconds;
+            if (now - lastFaceSeenAt < 0.7) return; // the face tracker is working: it wins
+            if (result.poseLandmarks == null || result.poseLandmarks.Count == 0 ||
+                result.poseLandmarks[0].landmarks == null || result.poseLandmarks[0].landmarks.Count < 13)
+            {
+                if (now - lastBodySeenAt > 0.7) MarkLockedSpeakerMissing();
+                return;
+            }
+            lastBodySeenAt = now;
+            var lm = result.poseLandmarks[0].landmarks;
+            // 0 nose, 7/8 ears, 9/10 mouth corners, 11/12 shoulders
+            var mouth = new Vector2((lm[9].x + lm[10].x) * 0.5f, (lm[9].y + lm[10].y) * 0.5f);
+            float headW = Mathf.Max(Mathf.Abs(lm[7].x - lm[8].x), Mathf.Abs(lm[11].x - lm[12].x) * 0.45f) * 1.25f;
+            if (headW < 0.02f) headW = 0.1f;
+            float cx = lm[0].x;
+            float top = lm[0].y - headW * 0.85f;
+            float bottom = mouth.y + headW * 0.45f;
+
+            if (!HearSayAudioActivity.VoiceDetectedRecently(voiceActivityHoldSeconds))
+            {
+                SpeakerActivity.IsSpeakerCurrentlyActive = false;
+                if (!SpeakerActivity.IsSpeaking) QueueHiddenSpeakerBox();
+                else QueueBodyBox(cx, headW, top, bottom, mouth); // keep following the person
+                return;
+            }
+            if (!SpeakerActivity.IsSpeaking) Debug.Log(">>> SPEAKER DETECTED FROM BODY (face hidden) <<<");
+            SpeakerActivity.IsSpeaking = true;
+            SpeakerActivity.IsSpeakerCurrentlyActive = true;
+            currentSpeaker = -1; // not tied to a face index
+            missingLockedSpeakerFrames = 0;
+            QueueBodyBox(cx, headW, top, bottom, mouth);
+        }
+
+        private void QueueBodyBox(float cx, float headW, float top, float bottom, Vector2 mouth)
+        {
+            // Oval around the head with as many points as the face outline uses.
+            int n = FaceOvalLandmarkIndices.Length;
+            var contour = new Vector2[n];
+            float cy = (top + bottom) * 0.5f, rx = headW * 0.5f, ry = (bottom - top) * 0.5f;
+            for (int i = 0; i < n; i++)
+            {
+                float a = -Mathf.PI * 0.5f + 2f * Mathf.PI * i / n;
+                contour[i] = new Vector2(cx + rx * Mathf.Cos(a), cy + ry * Mathf.Sin(a));
+            }
+            lock (overlayLock)
+            {
+                pendingFaceBounds = new Vector4(cx - rx, cx + rx, top, bottom);
+                pendingFaceContour = contour;
+                pendingMouthPosition = mouth;
+                pendingOverlayVisible = true;
+                overlayStateDirty = true;
             }
         }
 
@@ -509,6 +579,22 @@ namespace HearSay
                 contour[i] = new Vector2(landmark.x, landmark.y);
             }
             return contour;
+        }
+
+        // How open the mouth is, from the lip points only (works with a VR headset on):
+        // gap between the inner lips (13, 14) relative to the mouth width (corners 61, 291),
+        // minus a closed-mouth baseline. About 0 when closed, ~0.1-0.4 while talking, so it
+        // compares directly with speakingThreshold like jawOpen does.
+        private static float GetLipOpening(NormalizedLandmarks face)
+        {
+            const int upperLip = 13, lowerLip = 14, leftCorner = 61, rightCorner = 291;
+            if (face.landmarks == null || face.landmarks.Count <= rightCorner) return 0f;
+            NormalizedLandmark u = face.landmarks[upperLip], l = face.landmarks[lowerLip];
+            NormalizedLandmark a = face.landmarks[leftCorner], b = face.landmarks[rightCorner];
+            float width = Mathf.Sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+            if (width < 1e-4f) return 0f;
+            float gap = Mathf.Sqrt((u.x - l.x) * (u.x - l.x) + (u.y - l.y) * (u.y - l.y));
+            return Mathf.Max(0f, gap / width - 0.06f);
         }
 
         private static Vector2 GetMouthCenter(NormalizedLandmarks face)

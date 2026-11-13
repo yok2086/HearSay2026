@@ -139,7 +139,8 @@ namespace HearSay
                     DeafRole = true;
                     // HearSayLiveCaption only runs Whisper when the saved role is deaf user (1).
                     PlayerPrefs.SetInt("HearSay.VrRole", 1); PlayerPrefs.Save();
-                    SceneManager.LoadScene("HearSay Demo");
+                    // The separate "HearSay Sherpa" app uses on-phone sherpa-onnx captions.
+                    SceneManager.LoadScene(HearSaySherpa.IsSherpaApp ? HearSaySherpa.SceneName : "HearSay Demo");
                 }
                 if (HearSayTheme.Action(new Rect(530, 350, 385, 54), "Open ASL translation") &&
                     (SaveAddress() || HearSayVrSplitScreen.Instance != null)) // VR test: open even without the server
@@ -187,15 +188,18 @@ namespace HearSay
             {
                 HearSayTheme.Card(new Rect(40, 30, 390, 65), HearSayTheme.Panel);
                 GUI.Label(new Rect(60, 38, 350, 48), "HearSay  /  Conversation partner", HearSayTheme.Label(21, Color.white));
-                HearSayTheme.Card(new Rect(160, 375, 680, 195), HearSayTheme.Panel);
-                GUI.Label(new Rect(185, 387, 630, 32), "ASL  /  LIVE TRANSLATION", HearSayTheme.Label(16, HearSayTheme.Accent));
-                GUI.Label(new Rect(185, 427, 630, 80), translation.Replace("ASL DETECTED\n", ""),
-                    HearSayTheme.Label(36, Color.white, TextAnchor.MiddleCenter));
+                // Live translation box: small, low on the screen and see-through (45%), so
+                // the signer's hands and body behind it stay visible.
+                var p = HearSayTheme.Panel;
+                HearSayTheme.Card(new Rect(290, 460, 420, 115), new Color(p.r, p.g, p.b, 0.45f));
+                GUI.Label(new Rect(305, 467, 390, 22), "ASL  /  LIVE TRANSLATION", HearSayTheme.Label(12, HearSayTheme.Accent));
+                GUI.Label(new Rect(305, 489, 390, 52), translation.Replace("ASL DETECTED\n", ""),
+                    HearSayTheme.Label(26, Color.white, TextAnchor.MiddleCenter));
                 string serverText = connection == "SERVER: CONNECTED" ? "Connected" : connection;
                 if (partnerMqtt != null)
                     serverText += (serverText.Length > 0 ? "  ·  " : "") + "Ultra96: " + partnerMqtt.ConnectionStatus;
-                GUI.Label(new Rect(185, 528, 630, 26), serverText,
-                    HearSayTheme.Label(16, HearSayTheme.Muted, TextAnchor.MiddleCenter));
+                GUI.Label(new Rect(305, 545, 390, 22), serverText,
+                    HearSayTheme.Label(12, HearSayTheme.Muted, TextAnchor.MiddleCenter));
                 if (HearSayTheme.Action(new Rect(450, 38, 230, 50), "Calibrate glove", 19))
                 {
                     if (calibration == null) calibration = gameObject.AddComponent<HearSayGloveCalibration>();

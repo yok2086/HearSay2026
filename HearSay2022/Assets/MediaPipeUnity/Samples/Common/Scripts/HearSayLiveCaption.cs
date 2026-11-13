@@ -19,6 +19,10 @@ namespace HearSay
     {
         public static string LatestCaption { get; private set; } = "";
         public static bool MicrophoneRecording { get; private set; }
+
+        /// The separate "HearSay Whisper" app (HearSay > VR > Build and run Whisper APK):
+        /// live Whisper on the phone, no Ultra96 needed.
+        public static bool IsWhisperPhoneApp => Application.identifier.EndsWith(".whisper");
         [SerializeField] private WhisperManager whisper;
         [SerializeField] private MicrophoneRecord microphoneRecord;
         [SerializeField] private bool startOnlyWhenSpeakerDetected;
@@ -154,9 +158,17 @@ namespace HearSay
 #endif
             Debug.Log("HearSay captions: microphone = " + microphoneRecord.SelectedMicDevice);
 
+            // "HearSay Demo Sherpa" scene: streaming sherpa-onnx on the phone instead of Whisper.
+            if (HearSaySherpa.SceneActive && HearSaySherpa.RunOnPhone)
+            {
+                StartCoroutine(StartSherpaCaptions());
+                isStartingWhisper = false;
+                return;
+            }
+
             // 32-bit (ARMv7) phones have no on-phone Whisper library, so they always
             // use the Ultra96 server.
-            if (useUltra96Whisper || IntPtr.Size == 4)
+            if ((useUltra96Whisper && !IsWhisperPhoneApp) || IntPtr.Size == 4)
             {
                 StartRemoteCaptions();
                 isStartingWhisper = false;
@@ -167,6 +179,16 @@ namespace HearSay
             {
                 // The model is loaded only for on-phone captions (initOnAwake is off in the
                 // scene), so phones that cannot run Whisper never load it in Ultra96 mode.
+                if (IsWhisperPhoneApp)
+                {
+                    // Live: re-read the last few seconds every second while someone speaks,
+                    // so the caption follows the speech about 1 s behind.
+                    whisper.stepSec = 1f;
+                    whisper.keepSec = 0.2f;
+                    whisper.lengthSec = 8f;
+                    whisper.useVad = true; // skip silence, so noise doesn't become text
+                    Debug.Log("HearSay captions: live Whisper on the phone (tiny.en, 1 s steps)");
+                }
                 if (!whisper.IsLoaded && !whisper.IsLoading) await whisper.InitModel();
                 stream = await whisper.CreateStream(microphoneRecord);
                 if (this == null || microphoneRecord == null) return;
@@ -191,6 +213,9 @@ namespace HearSay
         private void OnDestroy()
         {
             if (microphoneRecord != null) microphoneRecord.OnChunkReady -= OnRemoteChunk;
+            if (microphoneRecord != null) microphoneRecord.OnChunkReady -= OnSherpaChunk;
+            sherpa?.Dispose();
+            sherpa = null;
             if (stream != null)
             {
                 stream.OnResultUpdated -= ShowTranscript;
@@ -435,6 +460,124 @@ namespace HearSay
             return System.Text.RegularExpressions.Regex.Replace(text, @"[ \t]+", " ").Trim();
         }
 
+        // ---------------- sherpa-onnx on the phone ("HearSay Demo Sherpa") ----------------
+        // Streaming recognizer: every microphone chunk is decoded straight away, so the
+        // caption grows word by word while the person is speaking.
+
+        private HearSaySherpa sherpa;
+        private bool combined; // sherpa live on the phone + Whisper correction from the Ultra96
+        private bool sherpaHeardWords; // combined: sherpa recognised words since the last clip
+        private float gateOpenUntil = -1f;  // noise gate stays open until this time
+        private float[] gatePrevious;       // last chunk, replayed when speech starts
+        private float micLevel, micPeak;    // for the on-screen mic meter (sherpa scene)
+        private float micPeakTime;
+        private float logMin = 1f, logMax, logSince; // once-a-second mic log (adb logcat)
+
+        private IEnumerator StartSherpaCaptions()
+        {
+            captionText.text = "Loading speech model…";
+            HearSaySherpa created = null;
+            string error = null;
+            yield return HearSaySherpa.Create((s, e) => { created = s; error = e; });
+            if (this == null) { created?.Dispose(); yield break; }
+            if (created == null)
+            {
+                captionText.text = "SHERPA-ONNX ERROR\n" + error;
+                Debug.LogError("HearSay captions: " + error);
+                yield break;
+            }
+            sherpa = created;
+            microphoneRecord.OnChunkReady -= OnSherpaChunk;
+            microphoneRecord.OnChunkReady += OnSherpaChunk;
+            microphoneRecord.StartRecord();
+            MicrophoneRecording = microphoneRecord.IsRecording;
+            captionText.text = "Listening…";
+            Debug.Log("HearSay captions: using sherpa-onnx on the phone (streaming)");
+
+            // Two-pass: the same microphone audio is also cut into sentences and sent to
+            // Whisper on the Ultra96; its answer replaces sherpa's text for that sentence.
+            if (HearSaySherpa.CorrectWithUltra96)
+            {
+                if (ultra96 == null) ultra96 = FindFirstObjectByType<HearSaySshMqttManager>();
+                combined = true;
+                microphoneRecord.OnChunkReady -= OnRemoteChunk;
+                microphoneRecord.OnChunkReady += OnRemoteChunk;
+                Debug.Log("HearSay captions: Whisper on the Ultra96 corrects finished sentences");
+            }
+        }
+
+        private void OnSherpaChunk(AudioChunk chunk)
+        {
+            if (sherpa == null) return;
+            // Noise gate: speech louder than NoiseGate opens it, and it stays open for
+            // GateHoldSeconds so soft syllables and word endings get through. While closed,
+            // sherpa gets silence (it still sees the pause that ends a sentence) instead of
+            // room noise. The chunk just before speech is replayed so the first sound isn't lost.
+            float[] data = chunk.Data;
+            if (HearSaySherpa.NoiseGate > 0f && data.Length > 0)
+            {
+                double sum = 0;
+                for (int i = 0; i < data.Length; i++) sum += data[i] * data[i];
+                float rms = (float)Math.Sqrt(sum / data.Length);
+                micLevel = rms;
+                if (rms > micPeak || Time.unscaledTime - micPeakTime > 2f) { micPeak = rms; micPeakTime = Time.unscaledTime; }
+                // Every second: quietest and loudest level -> phone log ("HearSay mic").
+                // Quietest while nobody talks = room noise; the gate should sit above it.
+                logMin = Math.Min(logMin, rms); logMax = Math.Max(logMax, rms);
+                if (Time.unscaledTime - logSince >= 1f)
+                {
+                    Debug.Log($"HearSay mic: lowest {logMin:0.000}  highest {logMax:0.000}  gate {HearSaySherpa.NoiseGate:0.000}  {(logMax >= HearSaySherpa.NoiseGate ? "SPEECH" : "quiet")}");
+                    logMin = 1f; logMax = 0f; logSince = Time.unscaledTime;
+                }
+                bool loud = rms >= HearSaySherpa.NoiseGate;
+                bool wasOpen = Time.unscaledTime < gateOpenUntil;
+                if (loud) gateOpenUntil = Time.unscaledTime + HearSaySherpa.GateHoldSeconds;
+                if (loud && !wasOpen && gatePrevious != null)
+                    sherpa.Accept(chunk.Frequency, gatePrevious, out _, out _); // start of the word
+                gatePrevious = chunk.Data;
+                if (!(loud || wasOpen)) data = new float[data.Length];
+            }
+            bool changed = sherpa.Accept(chunk.Frequency, data, out string text, out bool finished);
+            if (text.Length > 0) sherpaHeardWords = true;
+            if ((changed || finished) && text.Length > 0) ShowTranscript(HearSaySherpa.Fix(SentenceCase(text)));
+            // Finished sentence -> phone log, so it can be read on the Mac with adb logcat.
+            if (finished && text.Length > 0)
+                Debug.Log("HearSay caption: " + HearSaySherpa.Fix(SentenceCase(text)));
+        }
+
+        // Mic meter (HearSay Sherpa only): live level, the loudest of the last 2 s, and the
+        // NoiseGate threshold, so the threshold can be set between room noise and speech.
+        private void OnGUI()
+        {
+            if (sherpa == null || !HearSaySherpa.ShowMicMeter) return;
+            float scale = Mathf.Max(1f, Screen.height / 650f);
+            var box = new Rect(12 * scale, 12 * scale, 300 * scale, 58 * scale);
+            var old = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(box, Texture2D.whiteTexture);
+            // Bar: 0 to 0.15 RMS. Green above the threshold, grey below; white line = threshold.
+            const float full = 0.15f;
+            var bar = new Rect(box.x + 8 * scale, box.y + 32 * scale, box.width - 16 * scale, 16 * scale);
+            GUI.color = new Color(1f, 1f, 1f, 0.15f);
+            GUI.DrawTexture(bar, Texture2D.whiteTexture);
+            GUI.color = micLevel >= HearSaySherpa.NoiseGate ? new Color(0.3f, 0.9f, 0.4f) : new Color(0.6f, 0.6f, 0.6f);
+            GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(micLevel / full), bar.height), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.DrawTexture(new Rect(bar.x + bar.width * Mathf.Clamp01(HearSaySherpa.NoiseGate / full) - scale, bar.y - 3 * scale, 2 * scale, bar.height + 6 * scale), Texture2D.whiteTexture);
+            GUI.color = old;
+            var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(15 * scale) };
+            style.normal.textColor = Color.white;
+            GUI.Label(new Rect(box.x + 8 * scale, box.y + 4 * scale, box.width, 26 * scale),
+                $"Mic {micLevel:0.000}   peak {micPeak:0.000}   gate {HearSaySherpa.NoiseGate:0.000}", style);
+        }
+
+        // The English model outputs CAPITALS ("HELLO HOW ARE YOU"): show it as a sentence.
+        private static string SentenceCase(string text)
+        {
+            text = (" " + text.ToLowerInvariant() + " ").Replace(" i ", " I ").Replace(" i'", " I'").Trim();
+            return text.Length > 0 ? char.ToUpperInvariant(text[0]) + text.Substring(1) : text;
+        }
+
         // ---------------- Ultra96 Whisper API ----------------
         // The phone records with the existing microphone + voice detection, cuts the
         // speech into short clips (at a pause or after maxClipSeconds), sends each clip
@@ -449,6 +592,19 @@ namespace HearSay
         private float lastPartialSentTime = -999f;
 
         [Serializable] private class WhisperApiReply { public string text; public string error; }
+
+        // Quiet / distant speech: Whisper turns near-silent clips into made-up phrases
+        // ("Thank you.", "Thanks for watching!"), so clips are cleaned up before sending.
+        private const float MinClipRms = 0.008f;    // quieter than this = background noise only: not sent
+        private const float QuietClipRms = 0.02f;   // below this, stock Whisper guesses are ignored
+        private const float TargetPeak = 0.9f;      // quiet clips are boosted to this peak level...
+        private const float MaxGain = 12f;          // ...by at most this much
+        private float lastSentClipRms = 1f;
+        private static readonly string[] SilenceGuesses =
+        {
+            "thank you", "thank you.", "thank you!", "thanks.", "thanks for watching", "thanks for watching!",
+            "thank you for watching", "thank you for watching.", "you", "you.", "bye.", "bye", "okay.",
+        };
 
         private void StartRemoteCaptions()
         {
@@ -495,9 +651,28 @@ namespace HearSay
         private void SendClip()
         {
             if (clipSamples.Count == 0) return;
-            byte[] wav = EncodeWav(clipSamples.ToArray(), clipFrequency);
+            float[] samples = clipSamples.ToArray();
             clipSamples.Clear();
             lastPartialSentTime = -999f;
+            // Combined mode: a clip in which sherpa heard no words is background noise.
+            // Don't send it, or Whisper invents text ("Thank you", "you") for the silence.
+            if (combined)
+            {
+                if (!sherpaHeardWords) return;
+                sherpaHeardWords = false;
+            }
+            // Loudness of the clip: skip pure background noise, boost quiet speech.
+            double sum = 0; float peak = 0f;
+            foreach (float v in samples) { sum += v * v; float a = Mathf.Abs(v); if (a > peak) peak = a; }
+            float rms = (float)Math.Sqrt(sum / samples.Length);
+            if (rms < MinClipRms) { Debug.Log($"HearSay captions: clip skipped, only background noise (rms {rms:F4})"); return; }
+            if (peak > 0f)
+            {
+                float gain = Mathf.Min(MaxGain, TargetPeak / peak);
+                if (gain > 1f) for (int i = 0; i < samples.Length; i++) samples[i] *= gain;
+            }
+            lastSentClipRms = rms;
+            byte[] wav = EncodeWav(samples, clipFrequency);
             if (requestInFlight) { queuedClip = wav; return; } // keep only the newest waiting clip
             StartCoroutine(PostClip(wav, false));
         }
@@ -508,7 +683,9 @@ namespace HearSay
             string url = ultra96 != null ? ultra96.WhisperApiUrl : null;
             if (url == null)
             {
-                captionText.text = "Waiting for Ultra96 connection…\n" + (ultra96 != null ? ultra96.ConnectionStatus : "");
+                // Combined mode: sherpa's text stays; the board is only a correction.
+                if (!combined)
+                    captionText.text = "Waiting for Ultra96 connection…\n" + (ultra96 != null ? ultra96.ConnectionStatus : "");
             }
             else
             {
@@ -530,12 +707,29 @@ namespace HearSay
                         if (reply != null && !string.IsNullOrEmpty(reply.error))
                             Debug.LogWarning("HearSay captions: Ultra96 Whisper error: " + reply.error);
                         else if (reply != null && !string.IsNullOrEmpty(reply.text))
-                            ShowTranscript(reply.text.Trim(), partial);
+                        {
+                            string said = reply.text.Trim();
+                            if (lastSentClipRms < QuietClipRms &&
+                                Array.IndexOf(SilenceGuesses, said.ToLowerInvariant()) >= 0)
+                                Debug.Log($"HearSay captions: ignored \"{said}\" from a quiet clip (rms {lastSentClipRms:F4})");
+                            else
+                            {
+                                // Combined: replace sherpa's sentence only if nobody is
+                                // talking again yet (otherwise the new live words stay).
+                                if (!combined)
+                                    ShowTranscript(said, partial);
+                                else if (sherpa == null || sherpa.Partial.Length == 0)
+                                {
+                                    ShowTranscript(HearSaySherpa.Fix(said));
+                                    Debug.Log("HearSay captions: Ultra96 Whisper correction: " + said);
+                                }
+                            }
+                        }
                     }
                     else
                     {
                         Debug.LogWarning("HearSay captions: Ultra96 Whisper request failed: " + request.error);
-                        if (!hasTranscript)
+                        if (!hasTranscript && !combined)
                             captionText.text = "Ultra96 Whisper not reachable.\nIs run_server.sh running on the Ultra96?";
                     }
                 }

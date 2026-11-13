@@ -15,6 +15,7 @@ namespace HearSay.Editor
         public const string VrHome = "Assets/HearSayVR/Final VR HearSay.unity";
         public const string SetupScene = "Assets/HearSayVR/HearSay VR Setup.unity";
         public const string VrStart = "Assets/HearSayVR/HearSay VR Start.unity";
+        public const string SherpaScene = "Assets/MediaPipeUnity/Samples/Scenes/HearSay Demo/HearSay Demo Sherpa.unity";
 
         [MenuItem("HearSay/VR/Open VR Start scene")]
         public static void OpenVrStart()
@@ -69,9 +70,34 @@ namespace HearSay.Editor
             Build(Path.GetFullPath("Builds/HearSay-VR-Test.apk"), BuildOptions.Development | BuildOptions.AutoRunPlayer);
         }
 
+        // Separate "HearSay Sherpa" app (id ...sherpa) next to the VR test app: same VR start,
+        // but "Open live captions" uses sherpa-onnx on the phone instead of Whisper.
+        [MenuItem("HearSay/VR/Build and run Sherpa APK on phone")]
+        public static void BuildAndRunSherpa()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            Build(Path.GetFullPath("Builds/HearSay-Sherpa.apk"), BuildOptions.Development | BuildOptions.AutoRunPlayer,
+                ".sherpa", "HearSay Sherpa", new[] { VrStart, SherpaScene, Original, NormalHome });
+        }
+
+        // Separate "HearSay Whisper" app (id ...whisper): live Whisper (tiny.en) on the phone
+        // for captions, so it works without the Ultra96. 64-bit phones only (e.g. Fold4).
+        [MenuItem("HearSay/VR/Build and run Whisper APK on phone")]
+        public static void BuildAndRunWhisper()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            Build(Path.GetFullPath("Builds/HearSay-Whisper.apk"), BuildOptions.Development | BuildOptions.AutoRunPlayer,
+                ".whisper", "HearSay Whisper", new[] { VrStart, Original, NormalHome });
+        }
+
         private static void Build(string path) { Build(path, BuildOptions.Development); }
 
         private static void Build(string path, BuildOptions buildOptions)
+        {
+            Build(path, buildOptions, ".vrtest", "HearSay VR Test", new[] { VrStart, Original, NormalHome });
+        }
+
+        private static void Build(string path, BuildOptions buildOptions, string idSuffix, string appName, string[] scenes)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 throw new BuildFailedException("Switch the project to Android before building the VR test.");
@@ -80,8 +106,8 @@ namespace HearSay.Editor
             try
             {
                 // Install alongside the working APK instead of overwriting it.
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, previousId + ".vrtest");
-                PlayerSettings.productName = "HearSay VR Test";
+                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, previousId + idSuffix);
+                PlayerSettings.productName = appName;
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                 // 32-bit (ARMv7) and 64-bit phones. On ARMv7 the captions use the
                 // Ultra96 Whisper server and the camera hand tracking is not available.
@@ -91,13 +117,13 @@ namespace HearSay.Editor
                     // Starts in HearSay VR Start (a copy of HearSay Start plus the
                     // split-screen object), which carries the two-lens view into
                     // HearSay Demo. The normal scenes themselves are unchanged.
-                    scenes = new[] { VrStart, Original, NormalHome },
+                    scenes = scenes,
                     locationPathName = path,
                     target = BuildTarget.Android,
                     options = buildOptions
                 });
                 if (report.summary.result != BuildResult.Succeeded)
-                    throw new BuildFailedException("VR test build failed; inspect the first Console error.");
+                    throw new BuildFailedException(appName + " build failed; inspect the first Console error.");
             }
             finally
             {
