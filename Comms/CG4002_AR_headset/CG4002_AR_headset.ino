@@ -32,16 +32,34 @@ const char* TOPIC_INFERENCE = "tele/glove_pair/result";
 const unsigned long MIN_SPEECH_GAP_MS = 400;     // after one phrase ends, before the next starts
 const unsigned long MAX_SIGN_AGE_MS = 5000;      // words waiting longer than this are stale, skip them
 
-// Filled in onMessage, played from mqttTask. Playback blocks for about a second,
-// so words that arrive meanwhile wait here in order instead of overwriting each other.
-// onMessage and speakPendingInference both run in mqttTask, so no locking is needed.
+// Words to speak. onMessage (and serial commands) add to it in mqttTask; audioTask
+// takes them off and plays them. Playback runs in its own task, so mqttTask keeps
+// reading the left/right mics (direction detection) while a word is playing.
 const int SIGN_QUEUE_LEN = 6;
-char signQueue[SIGN_QUEUE_LEN][32];
-unsigned long signQueueMs[SIGN_QUEUE_LEN];
-int signQueueHead = 0, signQueueCount = 0;
-unsigned long lastSpokenMs = 0;
+struct QueuedSign { char sign[32]; unsigned long queuedMs; };
+QueueHandle_t signQueue = nullptr;
+unsigned long lastSpokenMs = 0;   // only used by audioTask
+
+// The centre mic and the amplifier share I2S port 1. audioTask holds this while it
+// has the port as an output; processMicrophone skips the centre mic until it is free.
+SemaphoreHandle_t centrePortMutex = nullptr;
 
 void mqttTask(void* param);
+void audioTask(void* param);
+
+// Add a word to the speech queue. When full, the oldest word is dropped, not the newest.
+void queueSign(const char* sign) {
+  if (signQueue == nullptr || sign == nullptr || sign[0] == '\0') return;
+  QueuedSign item;
+  strncpy(item.sign, sign, sizeof(item.sign) - 1);
+  item.sign[sizeof(item.sign) - 1] = '\0';
+  item.queuedMs = millis();
+  if (xQueueSend(signQueue, &item, 0) != pdTRUE) {
+    QueuedSign dropped;
+    xQueueReceive(signQueue, &dropped, 0);
+    xQueueSend(signQueue, &item, 0);
+  }
+}
 
 String topicStatus() { return String("sys/") + DEVICE_ID + "/status"; }
 String topicRaw()    { return String("tele/") + DEVICE_ID + "/raw"; }
@@ -144,17 +162,7 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     publishConfigAck();
   } else if (doc["type"] == "RESULT" && String(TOPIC_INFERENCE) == topic) {
     const char* sign = doc["payload"]["event"] | "";
-    if (sign[0] == '\0') return;
-    if (signQueueCount == SIGN_QUEUE_LEN) {
-      // Full: drop the oldest word rather than the newest.
-      signQueueHead = (signQueueHead + 1) % SIGN_QUEUE_LEN;
-      signQueueCount--;
-    }
-    int slot = (signQueueHead + signQueueCount) % SIGN_QUEUE_LEN;
-    strncpy(signQueue[slot], sign, sizeof(signQueue[slot]) - 1);
-    signQueue[slot][sizeof(signQueue[slot]) - 1] = '\0';
-    signQueueMs[slot] = millis();
-    signQueueCount++;
+    queueSign(sign);
   }
 }
 
@@ -2594,15 +2602,17 @@ bool setupAmplifierTX() {
 
 void playAudioPhrase(const char *text, int maxSamples, const char *label) {
   Serial.print("PLAYING: "); Serial.println(label);
+  // Take port 1 from the centre mic. The left/right mics are on port 0 and keep running.
+  xSemaphoreTake(centrePortMutex, portMAX_DELAY);
   i2s_driver_uninstall(CENTRE_I2S_PORT);
   delay(5);
-  if (!setupAmplifierTX()) { setupCentreMicrophoneRX(); return; }
+  if (!setupAmplifierTX()) { setupCentreMicrophoneRX(); xSemaphoreGive(centrePortMutex); return; }
 
   // Decode this phrase into a temporary byte buffer.
   uint8_t *sampleBytes = (uint8_t *)malloc(maxSamples);
   if (!sampleBytes) {
     Serial.println("ERROR: Not enough memory for audio");
-    i2s_driver_uninstall(CENTRE_I2S_PORT); delay(5); setupCentreMicrophoneRX(); return;
+    i2s_driver_uninstall(CENTRE_I2S_PORT); delay(5); setupCentreMicrophoneRX(); xSemaphoreGive(centrePortMutex); return;
   }
   int outIndex = 0, accumulator = 0, bits = 0;
   for (int i = 0; text[i] != '\0'; i++) {
@@ -2641,12 +2651,14 @@ void playAudioPhrase(const char *text, int maxSamples, const char *label) {
     i2s_write(CENTRE_I2S_PORT, audioTxBuffer, sizeof(audioTxBuffer), &bytesWritten, portMAX_DELAY);
   }
   free(sampleBytes);
-  // Allow DMA to drain based on phrase duration.
-  delay((outIndex * 1000UL / 8000UL) + 100);
+  // i2s_write already blocked while the phrase played, so only the DMA buffers
+  // (8 x 256 frames, about 43 ms) are still queued. Wait for those, plus a margin.
+  delay(60);
   i2s_zero_dma_buffer(CENTRE_I2S_PORT);
   i2s_driver_uninstall(CENTRE_I2S_PORT);
   delay(5);
   setupCentreMicrophoneRX();
+  xSemaphoreGive(centrePortMutex);
   Serial.print("PLAYBACK COMPLETE: "); Serial.println(label);
 }
 
@@ -2677,7 +2689,7 @@ void handleSerialCommand() {
 
     if (c == '\n' || c == '\r') {
       command.trim();
-      if (command.length()) dispatchAudioCommand(command);
+      if (command.length()) queueSign(command.c_str());
       command = "";
       continue;
     }
@@ -2691,7 +2703,7 @@ void handleSerialCommand() {
     if (isCompleteAudioCommand(command)) {
       String ready = command;
       command = "";
-      dispatchAudioCommand(ready);
+      queueSign(ready.c_str());
     }
   }
 }
@@ -3193,23 +3205,21 @@ bool readMicrophones(
   }
 
 
-  // Centre
-  esp_err_t resultCentre =
-    i2s_read(
-      CENTRE_I2S_PORT,
-      centreSamples,
-      sizeof(centreSamples),
-      &bytesReadCentre,
-      portMAX_DELAY
-    );
-
-
-  if (
-    resultCentre != ESP_OK ||
-    bytesReadCentre == 0
-  ) {
-
-    return false;
+  // Centre: only when the speaker isn't using its port. While a word plays,
+  // the centre level is 0 and the event logic runs on the left/right mics alone.
+  if (xSemaphoreTake(centrePortMutex, 0) == pdTRUE) {
+    esp_err_t resultCentre =
+      i2s_read(
+        CENTRE_I2S_PORT,
+        centreSamples,
+        sizeof(centreSamples),
+        &bytesReadCentre,
+        pdMS_TO_TICKS(50)
+      );
+    xSemaphoreGive(centrePortMutex);
+    if (resultCentre != ESP_OK) {
+      bytesReadCentre = 0;
+    }
   }
 
 
@@ -3400,8 +3410,14 @@ void setup() {
   // Centre microphone bus
   setupCentreMicrophoneRX();
 
+  signQueue = xQueueCreate(SIGN_QUEUE_LEN, sizeof(QueuedSign));
+  centrePortMutex = xSemaphoreCreateMutex();
+
   connectWiFi();
   xTaskCreate(mqttTask, "MqttSshTask", 24576, NULL, 5, NULL);
+  // Playback in its own task, above mqttTask so the TDOA maths can't starve the speaker.
+  // It spends most of its time blocked in i2s_write, so it costs little CPU.
+  xTaskCreatePinnedToCore(audioTask, "AudioTask", 6144, NULL, 6, NULL, 1);
 
 
   delay(200);
@@ -3664,42 +3680,35 @@ const char* phraseForSign(const char* sign) {
   return nullptr;
 }
 
-void speakPendingInference() {
-  if (signQueueCount == 0) return;
+void audioTask(void* param) {
+  QueuedSign item;
+  for (;;) {
+    if (xQueueReceive(signQueue, &item, portMAX_DELAY) != pdTRUE) continue;
 
-  // Wait for the gap without taking the word off the queue, so it isn't lost.
-  unsigned long now = millis();
-  if (lastSpokenMs != 0 && now - lastSpokenMs < MIN_SPEECH_GAP_MS) return;
+    // Leave a short gap after the previous phrase.
+    if (lastSpokenMs != 0) {
+      unsigned long sinceLast = millis() - lastSpokenMs;
+      if (sinceLast < MIN_SPEECH_GAP_MS) vTaskDelay(pdMS_TO_TICKS(MIN_SPEECH_GAP_MS - sinceLast));
+    }
 
-  char sign[sizeof(signQueue[0])];
-  strcpy(sign, signQueue[signQueueHead]);
-  unsigned long queuedMs = signQueueMs[signQueueHead];
-  signQueueHead = (signQueueHead + 1) % SIGN_QUEUE_LEN;
-  signQueueCount--;
+    if (millis() - item.queuedMs > MAX_SIGN_AGE_MS) {
+      Serial.print("Skipping stale sign: ");
+      Serial.println(item.sign);
+      continue;
+    }
 
-  if (now - queuedMs > MAX_SIGN_AGE_MS) {
-    Serial.print("Skipping stale sign: ");
-    Serial.println(sign);
-    return;
+    const char* phrase = phraseForSign(item.sign);
+    if (phrase == nullptr) {
+      Serial.print("No audio for sign: ");
+      Serial.println(item.sign);
+      continue;
+    }
+
+    // Blocks this task only; mqttTask keeps running MQTT and the left/right mics.
+    dispatchAudioCommand(phrase);
+    lastSpokenMs = millis();
   }
-
-  const char* phrase = phraseForSign(sign);
-  if (phrase == nullptr) {
-    Serial.print("No audio for sign: ");
-    Serial.println(sign);
-    return;
-  }
-
-  dispatchAudioCommand(phrase);
-
-  lastSpokenMs = millis();
-
-  // The mic was off during playback, so drop any half-finished event and
-  // don't let the end of our own phrase count as a new sound.
-  resetSoundEvent();
-  lastDetectionTime = millis();
 }
-
 
 void mqttTask(void* param) {
   mqtt.setBufferSize(512);
@@ -3715,7 +3724,6 @@ void mqttTask(void* param) {
       mqtt.loop();
     }
     handleSerialCommand();
-    speakPendingInference();
     publishHeartbeat();
     processMicrophone();
     vTaskDelay(pdMS_TO_TICKS(5));
@@ -3724,6 +3732,6 @@ void mqttTask(void* param) {
 
 
 void loop() {
-  // Audio processing, serial playback commands, and MQTT run in mqttTask.
+  // MQTT, serial commands and the microphones run in mqttTask; playback runs in audioTask.
   vTaskDelay(pdMS_TO_TICKS(1000));
 }

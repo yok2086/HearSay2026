@@ -33,11 +33,10 @@ REMOTE_WHISPER_LOG="$REMOTE_LOG_DIR/whisper.log"
 REMOTE_PYTHON="sudo -n /usr/local/share/pynq-venv/bin/python3 -u"
 # REMOTE_PYTHON="python3 -u"
 
-LOCAL_BIND="0.0.0.0"
+# Only coordinator/dashboard/stats on this Mac use the tunnel, so it listens on loopback only.
+LOCAL_BIND="127.0.0.1"
 LOCAL_PORT="8883"
 REMOTE_PORT="8883"
-# Hotspot backup: gloves/headset on the same hotspot send plain MQTT here
-RELAY_PORT="1883"
 
 LOCAL_DIR="$HOME/HearSay2026/Comms"
 PYTHON_BIN="$HOME/miniconda3/bin/python3"
@@ -65,9 +64,8 @@ cleanup() {
      sudo -n pkill -f '[t]cn_handler.py' || true" \
     2>/dev/null || true
 
-  echo "Closing local relay tunnel..."
+  echo "Closing local tunnel..."
   lsof -ti :"$LOCAL_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
-  lsof -ti :"$RELAY_PORT" 2>/dev/null | xargs -r kill 2>/dev/null || true
 
   echo "Killing tmux session '$TMUX_SESSION'..."
   htmux kill-server 2>/dev/null || true
@@ -123,38 +121,19 @@ else
   sleep 2
 fi
 
-# echo ""
-# echo "=== 3. Starting Whisper server on Ultra96 ==="
-# WHISPER_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-#     "pgrep -f '[w]hisper-server' || true")
-# 
-# if [ -n "$WHISPER_RUNNING" ]; then
-#   echo "Whisper server already running (pid $WHISPER_RUNNING) - skipping start."
-# else
-#   echo "Starting Whisper server..."
-#   ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-#     "mkdir -p $REMOTE_LOG_DIR; if [ -x $REMOTE_WHISPER_DIR/run_server.sh ]; then \
-#        setsid nohup $REMOTE_WHISPER_DIR/run_server.sh > $REMOTE_WHISPER_LOG 2>&1 < /dev/null & \
-#      else echo 'WARNING: $REMOTE_WHISPER_DIR/run_server.sh not found - captions on the Ultra96 will not work'; fi"
-#   sleep 2
-# fi
-
 echo ""
-echo "=== 4. Opening local relay tunnel (background) ==="
+echo "=== 3. Opening local tunnel to the broker (background) ==="
 # Kill any stale tunnel already holding this port before opening a fresh one
 lsof -ti :"$LOCAL_PORT" | xargs -r kill 2>/dev/null || true
-lsof -ti :"$RELAY_PORT" | xargs -r kill 2>/dev/null || true
 sleep 1
 
 ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" -f -N \
-  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" \
-  -L "${LOCAL_BIND}:${RELAY_PORT}:localhost:1883" "$ULTRA_HOST"
+  -L "${LOCAL_BIND}:${LOCAL_PORT}:localhost:${REMOTE_PORT}" "$ULTRA_HOST"
 echo "Tunnel opened in background (Mac ${LOCAL_PORT} -> Ultra96 broker)."
-echo "Hotspot relay open on port ${RELAY_PORT} for devices on the same network."
 sleep 1
 
 echo ""
-echo "=== 5. Launching coordinator.py & dashboard.py & stats.py in tmux ==="
+echo "=== 4. Launching coordinator.py & dashboard.py & stats.py in tmux ==="
 
 htmux kill-server 2>/dev/null || true
 sleep 0.5

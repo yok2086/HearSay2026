@@ -45,11 +45,10 @@ $RemoteInferenceLog = "$RemoteLogDir/ultra96_inference.log"
 $RemotePython = "sudo -n /usr/local/share/pynq-venv/bin/python3 -u"
 # $RemotePython = "python3 -u"
 
-$LocalBind  = "0.0.0.0"
+# Only the tools on this PC use the tunnel, so it listens on loopback only.
+$LocalBind  = "127.0.0.1"
 $LocalPort  = 8883
 $RemotePort = 8883
-# Hotspot backup: gloves/headset on the same hotspot send plain MQTT here
-$RelayPort  = 1883
 
 $LocalDir = $PSScriptRoot   # the Comms folder this script lives in
 
@@ -92,12 +91,11 @@ function Invoke-Cleanup {
                       "sudo -n pkill -f '[t]cn_handler.py' || true") 2>$null | Out-Null
     } catch { }
 
-    Write-Host "Closing local relay tunnel..."
+    Write-Host "Closing local tunnel..."
     if ($script:TunnelProcess -and -not $script:TunnelProcess.HasExited) {
         Stop-Process -Id $script:TunnelProcess.Id -Force -ErrorAction SilentlyContinue
     }
     Stop-PortListener $LocalPort
-    Stop-PortListener $RelayPort
 
     Write-Host "Closing coordinator / dashboard / stats windows..."
     foreach ($p in $script:ToolProcesses) {
@@ -142,15 +140,13 @@ try {
     }
 
     Write-Host ""
-    Write-Host "=== 3. Opening local relay tunnel (background) ==="
+    Write-Host "=== 3. Opening local tunnel to the broker (background) ==="
     # Kill any stale tunnel already holding this port before opening a fresh one
     Stop-PortListener $LocalPort
-    Stop-PortListener $RelayPort
     Start-Sleep -Seconds 1
 
     $tunnelArgs = "-N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 " +
-                  "-J $JumpHost -L ${LocalBind}:${LocalPort}:localhost:${RemotePort} " +
-                  "-L ${LocalBind}:${RelayPort}:localhost:1883 $UltraHost"
+                  "-J $JumpHost -L ${LocalBind}:${LocalPort}:localhost:${RemotePort} $UltraHost"
     $script:TunnelProcess = Start-Process -FilePath "ssh" -ArgumentList $tunnelArgs `
         -WindowStyle Minimized -PassThru
     Start-Sleep -Seconds 3
@@ -158,7 +154,6 @@ try {
         throw "Tunnel failed to start (port $LocalPort in use, or SSH login failed)."
     }
     Write-Host "Tunnel opened in background (this PC ${LocalPort} -> Ultra96 broker)."
-    Write-Host "Hotspot relay open on port ${RelayPort} for devices on the same network."
 
     Write-Host ""
     Write-Host "=== 4. Launching $($ToolScripts -join ', ') in separate windows ==="
