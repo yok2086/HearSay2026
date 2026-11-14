@@ -123,21 +123,21 @@ else
   sleep 2
 fi
 
-echo ""
-echo "=== 3. Starting Whisper server on Ultra96 ==="
-WHISPER_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-    "pgrep -f '[w]hisper-server' || true")
-
-if [ -n "$WHISPER_RUNNING" ]; then
-  echo "Whisper server already running (pid $WHISPER_RUNNING) - skipping start."
-else
-  echo "Starting Whisper server..."
-  ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
-    "mkdir -p $REMOTE_LOG_DIR; if [ -x $REMOTE_WHISPER_DIR/run_server.sh ]; then \
-       setsid nohup $REMOTE_WHISPER_DIR/run_server.sh > $REMOTE_WHISPER_LOG 2>&1 < /dev/null & \
-     else echo 'WARNING: $REMOTE_WHISPER_DIR/run_server.sh not found - captions on the Ultra96 will not work'; fi"
-  sleep 2
-fi
+# echo ""
+# echo "=== 3. Starting Whisper server on Ultra96 ==="
+# WHISPER_RUNNING=$(ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#     "pgrep -f '[w]hisper-server' || true")
+# 
+# if [ -n "$WHISPER_RUNNING" ]; then
+#   echo "Whisper server already running (pid $WHISPER_RUNNING) - skipping start."
+# else
+#   echo "Starting Whisper server..."
+#   ssh -J "$JUMP_HOST" "${SSH_MUX_OPTS[@]}" "$ULTRA_HOST" \
+#     "mkdir -p $REMOTE_LOG_DIR; if [ -x $REMOTE_WHISPER_DIR/run_server.sh ]; then \
+#        setsid nohup $REMOTE_WHISPER_DIR/run_server.sh > $REMOTE_WHISPER_LOG 2>&1 < /dev/null & \
+#      else echo 'WARNING: $REMOTE_WHISPER_DIR/run_server.sh not found - captions on the Ultra96 will not work'; fi"
+#   sleep 2
+# fi
 
 echo ""
 echo "=== 4. Opening local relay tunnel (background) ==="
@@ -179,7 +179,7 @@ htmux select-window -t "$TMUX_SESSION:dashboard"
 
 echo ""
 echo "=== All set ==="
-echo "Broker + inference + Whisper: running on the Ultra96 (Whisper log: $REMOTE_WHISPER_LOG)"
+echo "Broker + inference: running on the Ultra96 (Whisper startup is commented out)"
 echo "Tunnel running in the background"
 echo "coordinator / dashboard / stats running inside tmux session '$TMUX_SESSION'"
 echo ""
