@@ -22,9 +22,11 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
     public Tasks.Vision.Core.RunningMode RunningMode { get; set; } = Tasks.Vision.Core.RunningMode.LIVE_STREAM;
 
     public int NumFaces { get; set; } = 5;
-    public float MinFaceDetectionConfidence { get; set; } = 0.5f;
-    public float MinFacePresenceConfidence { get; set; } = 0.5f;
-    public float MinTrackingConfidence { get; set; } = 0.5f;
+    // HearSay: lowered from 0.5 so a face half-covered by a VR headset (eyes hidden)
+    // still counts; the mouth stays visible for the caption bubble.
+    public float MinFaceDetectionConfidence { get; set; } = 0.2f;
+    public float MinFacePresenceConfidence { get; set; } = 0.2f;
+    public float MinTrackingConfidence { get; set; } = 0.3f;
     public bool OutputFaceBlendshapes { get; set; } = true;
     public bool OutputFacialTransformationMatrixes { get; set; } = true;
     public string ModelPath => OutputFaceBlendshapes ? "face_landmarker_v2_with_blendshapes.bytes" : "face_landmarker_v2.bytes";

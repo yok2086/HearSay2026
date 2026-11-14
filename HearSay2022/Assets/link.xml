@@ -8,4 +8,5 @@
   <assembly fullname="Newtonsoft.Json" preserve="all"/>
   <assembly fullname="System.Formats.Asn1" preserve="all"/>
   <assembly fullname="Microsoft.Bcl.AsyncInterfaces" preserve="all"/>
+  <assembly fullname="sherpa-onnx" preserve="all"/>
 </linker>

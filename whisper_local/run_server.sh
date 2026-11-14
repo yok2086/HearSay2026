@@ -21,5 +21,7 @@ DEFAULT_MODEL=models/ggml-base.en.bin
 MODEL="${1:-$DEFAULT_MODEL}"
 PORT="${2:-8090}"
 THREADS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+# Only one server can use the port: stop the sherpa-onnx server (sherpa_local) if it runs.
+pkill -f "sherpa_server.py" 2>/dev/null || true
 echo "Whisper API on 127.0.0.1:$PORT using $MODEL ($THREADS threads)"
 exec ./whisper.cpp/build/bin/whisper-server -m "$MODEL" --host 127.0.0.1 --port "$PORT" -t "$THREADS" -l en -sns -nt -nf -bo 1 -bs 1 -ac 384

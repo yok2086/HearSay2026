@@ -7,6 +7,7 @@
 
 using System.Collections;
 using Mediapipe.Tasks.Vision.FaceLandmarker;
+using Mediapipe.Tasks.Vision.PoseLandmarker;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -23,8 +24,16 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
 
     public readonly FaceLandmarkDetectionConfig config = new FaceLandmarkDetectionConfig();
 
+    // HearSay: body (pose) tracker as a backup for people whose face can't be found,
+    // e.g. someone wearing a VR headset (eyes covered). Runs on every other frame.
+    private const string PoseModel = "pose_landmarker_lite.bytes";
+    private PoseLandmarker _poseTask;
+    private int _frameCount;
+
     public override void Stop()
     {
+      _poseTask?.Close();
+      _poseTask = null;
       base.Stop();
       _textureFramePool?.Dispose();
       _textureFramePool = null;
@@ -59,6 +68,30 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
           options,
           GpuManager.GpuResources
       );
+
+      if (_speakerMouthTest != null && config.RunningMode == Tasks.Vision.Core.RunningMode.LIVE_STREAM)
+      {
+        yield return AssetLoader.PrepareAssetAsync(PoseModel);
+        try
+        {
+          _poseTask = PoseLandmarker.CreateFromOptions(
+            new PoseLandmarkerOptions(
+              new Tasks.Core.BaseOptions(config.Delegate, modelAssetPath: PoseModel),
+              runningMode: Tasks.Vision.Core.RunningMode.LIVE_STREAM,
+              numPoses: 1,
+              minPoseDetectionConfidence: 0.4f,
+              minPosePresenceConfidence: 0.4f,
+              minTrackingConfidence: 0.4f,
+              resultCallback: OnPoseOutput),
+            GpuManager.GpuResources);
+          Debug.Log("=== HEARSAY POSE BACKUP READY ===");
+        }
+        catch (System.Exception e)
+        {
+          Debug.LogWarning("HearSay: pose backup not available: " + e.Message);
+          _poseTask = null;
+        }
+      }
 
       var imageSource = ImageSourceProvider.ImageSource;
 
@@ -266,11 +299,20 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
 
           case Tasks.Vision.Core.RunningMode.LIVE_STREAM:
 
-            taskApi.DetectAsync(
-              image,
-              GetCurrentTimestampMillisec(),
-              imageProcessingOptions
-            );
+            // Faces on even frames, bodies on odd frames (each image is used once).
+            _frameCount++;
+            if (_poseTask != null && (_frameCount & 1) == 1)
+            {
+              _poseTask.DetectAsync(image, GetCurrentTimestampMillisec(), imageProcessingOptions);
+            }
+            else
+            {
+              taskApi.DetectAsync(
+                image,
+                GetCurrentTimestampMillisec(),
+                imageProcessingOptions
+              );
+            }
 
             break;
         }
@@ -286,6 +328,14 @@ namespace Mediapipe.Unity.Sample.FaceLandmarkDetection
       _faceLandmarkerResultAnnotationController?.DrawLater(result);
 
       SendResultToSpeakerTest(result);
+    }
+
+    private void OnPoseOutput(PoseLandmarkerResult result, Image image, long timestamp)
+    {
+      if (_speakerMouthTest != null)
+      {
+        _speakerMouthTest.ProcessPoseResult(result);
+      }
     }
 
     private void SendResultToSpeakerTest(
