@@ -37,8 +37,6 @@ $RemoteInferenceScript = "/home/xilinx/jupyter_notebooks/tcn/tcn_handler.py"; $I
 # Sensor Inference
 # $RemoteInferenceScript = "/home/xilinx/ultra96_inference.py"; $InferenceMatch = "[u]ltra96_inference.py"
 
-# Keyboard pipeline test
-# $RemoteInferenceScript = "/home/xilinx/keyboard_ultra96.py"; $InferenceMatch = "[k]eyboard_ultra96.py"
 
 $RemoteInferenceLog = "$RemoteLogDir/ultra96_inference.log"
 
@@ -56,8 +54,6 @@ $LocalDir = $PSScriptRoot   # the Comms folder this script lives in
 $PythonCmd = ""
 
 $ToolScripts = @("coordinator.py", "dashboard.py", "stats.py")
-# Keyboard pipeline test: also run the relay
-# $ToolScripts += "keyboard_relay.py"
 
 
 function Invoke-Ultra([string]$Command) {
@@ -87,7 +83,6 @@ function Invoke-Cleanup {
                       "pkill -f '[u]ltra96_inference.py' || true; " +
                       "pkill -f '[d]ummy_inference.py' || true; " +
                       "pkill -f '[d]ummy_phone_sender.py' || true; " +
-                      "pkill -f '[k]eyboard_ultra96.py' || true; " +
                       "sudo -n pkill -f '[t]cn_handler.py' || true") 2>$null | Out-Null
     } catch { }
 

@@ -118,7 +118,8 @@ The script:
 
 1. Starts Mosquitto on the Ultra96, or reuses it if it's already running.
 2. Starts `tcn_handler.py` on the DPU, or reuses it if it's already running.
-3. Opens a background tunnel from Mac port 8883 to the Ultra96 broker.
+3. Opens a background tunnel from Mac port 8883 to the Ultra96 broker. It
+   listens on `127.0.0.1` only, so only programs on the Mac can use it.
 4. Opens a `tmux` session `hearsay` with three windows:
    - `coordinator`: device states (RUNNING, STALE, OFFLINE)
    - `dashboard`: live messages, including calibration progress
@@ -205,6 +206,8 @@ status line shows `sent`, `buffered`, `dropped` and `pub ok`/`fail`.
 
 To use another inference script, change the commented
 `REMOTE_INFERENCE_SCRIPT` / `INFERENCE_RUNNING` pairs in
-`run_hearsay_pipeline.sh`. The options are dummy inference, dummy phone sender
-and the keyboard test. `run_keyboard_test.sh` runs the keyboard pipeline test
-on its own.
+`run_hearsay_pipeline.sh` (or `$RemoteInferenceScript` / `$InferenceMatch` in
+`run_hearsay_pipeline.ps1`). The options are dummy inference
+(`dummy_inference.py`), dummy phone sender (`dummy_phone_sender.py`) and the
+older sensor inference (`ultra96_inference.py`), all in
+`Comms/ultra96_scripts/`.
