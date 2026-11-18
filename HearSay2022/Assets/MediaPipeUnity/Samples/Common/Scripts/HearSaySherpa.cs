@@ -46,6 +46,12 @@ namespace HearSay
         /// words; lower it if the speaker has to talk too loudly.
         public static float NoiseGate = 0.025f;
         public static float GateHoldSeconds = 0.8f;
+        /// Auto threshold: the app keeps measuring the room noise (the quietest moment of
+        /// every 2 s, smoothed) and sets the gate GateAboveNoise times above it, so it rises
+        /// by itself in a louder room. NoiseGate is then the lowest it goes, GateMax the highest.
+        public static bool AutoGate = true;
+        public static float GateAboveNoise = 3f;
+        public static float GateMax = 0.2f;
 
         /// Shows the mic level meter (top-left of the caption screen) for setting NoiseGate.
         public static bool ShowMicMeter = true;
