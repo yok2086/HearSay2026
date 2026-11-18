@@ -49,7 +49,7 @@ namespace HearSay
         [SerializeField] private float maxClipSeconds = 6f;
         [Tooltip("While someone is still talking, send the speech so far this often and show it as a " +
                  "partial caption. Skipped while a request is in flight, so a slow Ultra96 just gets fewer. 0 = off.")]
-        [SerializeField] private float partialEverySeconds = 1f;
+        [NonSerialized] private float partialEverySeconds = 1f; // not serialized: avoids a scene layout mismatch
 
         private WhisperStream stream;
         private GameObject bubble;
@@ -472,6 +472,12 @@ namespace HearSay
         private float micLevel, micPeak;    // for the on-screen mic meter (sherpa scene)
         private float micPeakTime;
         private float logMin = 1f, logMax, logSince; // once-a-second mic log (adb logcat)
+        private float noiseFloor = -1f, windowMin = 1f, windowStart; // auto threshold (room noise)
+        private readonly float[] recentMins = { 1f, 1f, 1f, 1f, 1f }; // quietest of each of the last 5 windows (10 s)
+        private int recentMinIndex;
+        private float CurrentGate => HearSaySherpa.AutoGate && noiseFloor >= 0f
+            ? Mathf.Clamp(noiseFloor * HearSaySherpa.GateAboveNoise, HearSaySherpa.NoiseGate, HearSaySherpa.GateMax)
+            : HearSaySherpa.NoiseGate;
 
         private IEnumerator StartSherpaCaptions()
         {
@@ -523,13 +529,25 @@ namespace HearSay
                 if (rms > micPeak || Time.unscaledTime - micPeakTime > 2f) { micPeak = rms; micPeakTime = Time.unscaledTime; }
                 // Every second: quietest and loudest level -> phone log ("HearSay mic").
                 // Quietest while nobody talks = room noise; the gate should sit above it.
+                // Room noise = the quietest moment of the last 10 s (people pause between
+                // sentences, so this is the background, not the speech, even if someone talks
+                // a lot). Goes up within ~10 s in a louder room, back down within ~2 s.
+                windowMin = Math.Min(windowMin, rms);
+                if (Time.unscaledTime - windowStart >= 2f)
+                {
+                    recentMins[recentMinIndex] = windowMin;
+                    recentMinIndex = (recentMinIndex + 1) % recentMins.Length;
+                    float quietest = Mathf.Min(recentMins);
+                    noiseFloor = noiseFloor < 0f ? windowMin : Mathf.Lerp(noiseFloor, quietest, 0.5f);
+                    windowMin = 1f; windowStart = Time.unscaledTime;
+                }
                 logMin = Math.Min(logMin, rms); logMax = Math.Max(logMax, rms);
                 if (Time.unscaledTime - logSince >= 1f)
                 {
-                    Debug.Log($"HearSay mic: lowest {logMin:0.000}  highest {logMax:0.000}  gate {HearSaySherpa.NoiseGate:0.000}  {(logMax >= HearSaySherpa.NoiseGate ? "SPEECH" : "quiet")}");
+                    Debug.Log($"HearSay mic: lowest {logMin:0.000}  highest {logMax:0.000}  room noise {Math.Max(noiseFloor, 0f):0.000}  gate {CurrentGate:0.000}  {(logMax >= CurrentGate ? "SPEECH" : "quiet")}");
                     logMin = 1f; logMax = 0f; logSince = Time.unscaledTime;
                 }
-                bool loud = rms >= HearSaySherpa.NoiseGate;
+                bool loud = rms >= CurrentGate;
                 bool wasOpen = Time.unscaledTime < gateOpenUntil;
                 if (loud) gateOpenUntil = Time.unscaledTime + HearSaySherpa.GateHoldSeconds;
                 if (loud && !wasOpen && gatePrevious != null)
@@ -560,15 +578,15 @@ namespace HearSay
             var bar = new Rect(box.x + 8 * scale, box.y + 32 * scale, box.width - 16 * scale, 16 * scale);
             GUI.color = new Color(1f, 1f, 1f, 0.15f);
             GUI.DrawTexture(bar, Texture2D.whiteTexture);
-            GUI.color = micLevel >= HearSaySherpa.NoiseGate ? new Color(0.3f, 0.9f, 0.4f) : new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = micLevel >= CurrentGate ? new Color(0.3f, 0.9f, 0.4f) : new Color(0.6f, 0.6f, 0.6f);
             GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(micLevel / full), bar.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.DrawTexture(new Rect(bar.x + bar.width * Mathf.Clamp01(HearSaySherpa.NoiseGate / full) - scale, bar.y - 3 * scale, 2 * scale, bar.height + 6 * scale), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(bar.x + bar.width * Mathf.Clamp01(CurrentGate / full) - scale, bar.y - 3 * scale, 2 * scale, bar.height + 6 * scale), Texture2D.whiteTexture);
             GUI.color = old;
             var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(15 * scale) };
             style.normal.textColor = Color.white;
             GUI.Label(new Rect(box.x + 8 * scale, box.y + 4 * scale, box.width, 26 * scale),
-                $"Mic {micLevel:0.000}   peak {micPeak:0.000}   gate {HearSaySherpa.NoiseGate:0.000}", style);
+                $"Mic {micLevel:0.000}   peak {micPeak:0.000}   gate {CurrentGate:0.000}{(HearSaySherpa.AutoGate ? " auto" : "")}", style);
         }
 
         // The English model outputs CAPITALS ("HELLO HOW ARE YOU"): show it as a sentence.

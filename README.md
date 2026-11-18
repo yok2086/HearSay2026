@@ -136,7 +136,7 @@ When it prints **"Now power on the FireBeetle"**:
      still**. The gyro offset is measured at this step, and moving gives a bad
      offset for the whole session.
    - **Fist:** make a fist when prompted.
-3. Open the app on both phones with **HearSay VR Start**, choosing:
+3. Open **HearSay Sherpa** on both phones (see section 7), choosing:
    - **Conversation partner:** sees the recognised words, and the headset
      speaker reads them aloud.
    - **Deaf user:** sees left/right sound waves from the headset, plus captions.
@@ -211,3 +211,105 @@ To use another inference script, change the commented
 older sensor inference (`ultra96_inference.py`), all in
 `Comms/ultra96_scripts/`.
 
+---
+
+## 7. Phone app (HearSay Sherpa)
+
+The phone app is the Unity project in `HearSay2022/` (Unity 2023.2.22f1). Speech
+captions run on the phone with sherpa-onnx, so no server is needed for speech.
+
+### Build and install
+
+1. Plug the phone into the Mac with USB debugging on (check with `adb devices`).
+2. In Unity, click **Assets → Refresh**, then
+   **HearSay → VR → Build and run Sherpa APK on phone**.
+
+This builds `HearSay2022/Builds/HearSay-Sherpa.apk` and installs it on the phone.
+
+### Run it
+
+1. Start the pipeline (section 3) for ASL translations and sound direction.
+2. Plug the lavalier mic receiver into the Deaf user's phone.
+3. Open **HearSay Sherpa** on both phones and choose **Deaf user** or
+   **Conversation partner**.
+
+To see the captions on the Mac:
+```bash
+adb logcat -s Unity | grep --line-buffered "HearSay"
+```
+
+---
+
+## 8. AI model (sign classifier)
+
+A small 1-D CNN (a temporal convolutional network, TCN) classifies 2.56 s windows
+of glove data (22 channels: per hand, 3-axis accel, 3-axis gyro and 5 flex sensors,
+at 100 Hz) into 20 signs. It is quantized to INT8 and runs on the Ultra96's DPU
+(DPUCZDX8G B1600) in about 0.37 ms per window.
+
+### What's in `ai/`
+
+| Folder | Contents |
+|---|---|
+| `laptop_data_collection_code/` | `logger.py` (records labelled takes from both gloves over USB serial), `check_names.py` (checks take file names), `firebeetle_glove/` (the serial data-collection firmware, not the MQTT firmware used live) |
+| `training_data/` | One folder per recording session: `calib.json` plus one CSV per take (`<sign>-NN.csv`) |
+| `laptop_training_code/` | Dataset loading, model, training, evaluation, INT8 quantization, and `arch_ultra96.json` for the compiler |
+| `ultra96_code/` | Deployed model (`tcn.xmodel`, `norm_stats.npz`, `test_data.npz`), `tcn_infer.py` (DPU wrapper), `tcn_handler.py` (live MQTT inference), `tcn_dpu.py` (accuracy and latency check), `power_test.py` |
+
+`tcn.xmodel`, `norm_stats.npz` and `test_data.npz` all come from the same training
+run and must be copied to the board together. The DPU overlay (`dpu.bit`, `.hwh`,
+`.xclbin`) is not in the repo; it comes with the `pynq-dpu` 2.5.1 package installed
+on the Ultra96.
+
+### Collecting data (Windows)
+
+```powershell
+python -m serial.tools.list_ports -v      # use the two "USB-SERIAL CH340" ports
+python logger.py <name>_<date> --left COMx --right COMy
+```
+
+The logger runs a side check (rotate the left hand only), then calibration (hands
+flat, then fists), then recording. Close the Arduino Serial Monitor first. Copy each
+new session folder into `ai/training_data/`, then run `check_names.py` and
+`session_stats.py`.
+
+### Training and deploying (Vitis AI 2.5 Docker container, CPU)
+
+Run these from `ai/laptop_training_code/` inside the `vitis-ai-pytorch` environment.
+The validation and test sessions are set by `VAL_SESSIONS` and `TEST_SESSIONS` in
+`dataset.py`; every other session folder in `training_data/` is used for training.
+
+```bash
+python dataset.py                 # checks the data and the split
+python train.py                   # evaluation run: saves the best-validation model
+python evaluate.py                # test accuracy and misclassifications
+python train.py --final           # deployment run: trains on all sessions
+python quantize.py --mode calib
+python quantize.py --mode test
+vai_c_xir -x quantize_result/TCN_int.xmodel -a arch_ultra96.json -o compiled -n tcn
+python -c "from dataset import load_all; import numpy as np; X, y = load_all()['test']; np.savez('compiled/test_data.npz', X=X, y=y)"
+```
+
+- Quote accuracy from the evaluation run. After `--final`, the test session is in the
+  training data, so its scores are no longer a real test.
+- Check that the compiler output says `DPU subgraph number 1`. It exits with code 0
+  even when compilation fails.
+- Only `train.py` writes `norm_stats.npz`. Deploy the one from the `--final` run.
+
+Copy `compiled/tcn.xmodel`, `compiled/test_data.npz` and `norm_stats.npz` to
+`/home/xilinx/jupyter_notebooks/tcn/` on the Ultra96, then check them as root with
+the XRT and PYNQ environments sourced:
+
+```bash
+python3 tcn_dpu.py      # DPU accuracy on test_data.npz and latency
+```
+
+### Notes
+
+- Sessions with faulty sensors are left out of `training_data/`, because every
+  folder there is used for training.
+- The flex calibration and normalisation in `tcn_handler.py` must match
+  `dataset.py`. If preprocessing changes in one, change the other.
+- `power_test.py` measures board power in four states (DPU idle, DPU running,
+  CPU at minimum clock, one CPU core). It restores all settings at the end, but
+  check `who` first, because it affects the whole board.
