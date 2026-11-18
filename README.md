@@ -130,17 +130,37 @@ When it prints **"Now power on the FireBeetle"**:
 1. Power on both gloves and the headset. Each one connects through stujump
    (about 5–10 s) and publishes `HELLO`. Check that `glove_01L`, `glove_01R`
    and `mic_lr_01` appear in the `coordinator` window.
-2. Calibrate each glove when its vibration motor cues you. Watch for
+2. Calibrate both gloves. Follow the vibration motor cues and watch
    `CALIBRATION_STATUS` in the `dashboard` window:
-   - **Straight:** keep your fingers straight and **hold the hand completely
-     still**. The gyro offset is measured at this step, and moving gives a bad
-     offset for the whole session.
-   - **Fist:** make a fist when prompted.
-3. Open **HearSay Sherpa** on both phones (see section 7), choosing:
+   - **Straight (one short vibration):** keep your fingers straight and **hold
+     the hand completely still**. The gyro offset is measured at this step, and
+     any movement gives an inaccurate offset for the whole session. One long
+     vibration marks the end of this step.
+   - **Fist (two short vibrations):** make a fist and hold it, so the bent flex
+     sensor readings can be recorded.
+   - **Done (one long vibration):** wait for it before signing. The dashboard
+     shows `SUCCESS`.
+
+   If calibration fails (`FAILED` in the dashboard), the glove starts it again
+   by itself. If it succeeds but the readings look wrong in step 3, press the
+   glove's reset button (or power-cycle it) to calibrate again.
+3. Check the sensor data:
+   - Confirm that both gloves are publishing telemetry: the `coordinator`
+     window prints `[glove_01L] telemetry seq=…` and `[glove_01R] telemetry
+     seq=…` lines, and the `stats` window shows about 10 messages per second
+     from each.
+   - Each glove sends readings from five flex sensors and one MPU6050 IMU.
+     Check that the flex readings change when you bend and straighten your
+     fingers, and that the IMU readings respond to hand movement. Each
+     telemetry line in the `coordinator` window holds the raw samples
+     (`[t, ax, ay, az, gx, gy, gz, flex1–5]`), and `~/logs/ultra96_inference.log`
+     prints every sample as `[sample] … accel=… gyro=… flex=…` (section 5).
+   - Avoid disconnecting or moving the sensors during operation.
+4. Open **HearSay Sherpa** on both phones (see section 7), choosing:
    - **Conversation partner:** sees the recognised words, and the headset
      speaker reads them aloud.
    - **Deaf user:** sees left/right sound waves from the headset, plus captions.
-4. Sign. Recognised words appear on the partner's phone and are spoken by the
+5. Sign. Recognised words appear on the partner's phone and are spoken by the
    headset.
 
 **Switching tmux windows:** `Ctrl+B` then the window number, or `Ctrl+B` then
