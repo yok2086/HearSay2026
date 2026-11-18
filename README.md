@@ -6,11 +6,11 @@ DPU → phones.
 
 ```
 Glove L / Glove R / Headset (ESP32)
-        │  MQTT over an SSH tunnel (ESP32 → stujump → Ultra96 localhost:1883)
+        │  
         ▼
 Ultra96: Mosquitto broker ──► tcn_handler.py (DPU) ──► tele/glove_pair/result
         ▲                                                   │
-        │  Mac: SSH tunnel to localhost:8883 (TLS)          ▼
+        │                                                   ▼
 Mac: coordinator / dashboard / stats               Phones (Unity app)
 ```
 
@@ -194,11 +194,10 @@ status line shows `sent`, `buffered`, `dropped` and `pub ok`/`fail`.
 |---|---|
 | The script hangs or times out at step 1 | stujump is unreachable from this network. Connect to the NUS VPN. |
 | No words appear and the handler log is empty or missing | `sudo -n` failed, or `paho-mqtt` or the model files are missing on the Ultra96. Check `~/logs/ultra96_inference.log` and the one-time setup above. |
-| The handler log says `No Devices Found` | `XILINX_XRT` isn't set. The handler sets it to `/usr` itself, so make sure the Ultra96 copy is up to date. |
 | A glove never appears in the coordinator | Check that its `DEVICE_ID` is `glove_01L` or `glove_01R`, that `Secrets.h` is correct, and the Serial Monitor for WiFi or SSH errors. |
-| A glove shows STALE or OFFLINE | Nothing heard for 10 s, or a broker disconnect. The glove reconnects on its own, and the Serial Monitor shows why it dropped. |
-| A glove reboots during calibration | The vibration motor is pulling the supply down. Drive it through a transistor with a flyback diode. |
-| Many `[align]` lines and poor recognition | One glove is stalling, usually its power supply on LiPo. Test it on USB-C to compare. |
+| A glove shows STALE or OFFLINE | Nothing heard for 10 s, or a broker disconnect. The glove reconnects on its own. Connect glove and check serial monitor |
+| A glove reboots during calibration | Battery is low, charge and retest |
+| Many `[align]` lines and poor recognition | One glove is stalling, power supply might be weak. Charge battery and retest |
 | Phones show nothing | Check both phones have network access and the app was rebuilt with the current `UnitySecrets.cs`. |
 | `localhost:8883` connection refused on the Mac | The tunnel isn't up. Rerun the script, or check `lsof -i :8883`. |
 
@@ -211,3 +210,4 @@ To use another inference script, change the commented
 (`dummy_inference.py`), dummy phone sender (`dummy_phone_sender.py`) and the
 older sensor inference (`ultra96_inference.py`), all in
 `Comms/ultra96_scripts/`.
+
