@@ -216,111 +216,25 @@ older sensor inference (`ultra96_inference.py`), all in
 
 ## 7. Phone app (HearSay Sherpa)
 
-The phone app is the Unity project in `HearSay2022/`. It installs on the phone
-as **HearSay Sherpa**. Speech captions are made on the phone with sherpa-onnx,
-so words appear while the person is still speaking. ASL translations and sound
-direction come from the pipeline above.
+The phone app is the Unity project in `HearSay2022/` (Unity 2023.2.22f1). Speech
+captions run on the phone with sherpa-onnx, so no server is needed for speech.
 
-```
-Lavalier mic ──► Phone: noise gate ──► sherpa-onnx ──► captions
-Phone camera ──► MediaPipe (face / body) ──► speaker highlight
-Ultra96 broker ──► tele/glove_pair/result ──► ASL text
-               ──► tele/mic_lr_01/raw     ──► left/right sound waves
-```
+### Build and install
 
-### One-time setup
+1. Plug the phone into the Mac with USB debugging on (check with `adb devices`).
+2. In Unity, click **Assets → Refresh**, then
+   **HearSay → VR → Build and run Sherpa APK on phone**.
 
-- **Unity:** install Unity **2023.2.22f1** with Android Build Support, and open
-  the `HearSay2022/` folder in Unity Hub.
-- **Phone:** turn on **Developer options → USB debugging**. When the phone is
-  plugged into the Mac, tap **Allow** on the "Allow USB debugging?" prompt.
-  Check the Mac can see it:
-  ```bash
-  adb devices
-  ```
-- **Lavalier mic:** a wireless lavalier whose receiver plugs into the phone.
-  Android switches to it automatically.
-- **Secrets:** the app needs `UnitySecrets.cs` (see section 1, Secrets).
+This builds `HearSay2022/Builds/HearSay-Sherpa.apk` and installs it on the phone.
 
-### Settings
-
-Change these in
-`HearSay2022/Assets/MediaPipeUnity/Samples/Common/Scripts/HearSaySherpa.cs` if
-needed:
-
-| Setting | Current value | What it does |
-|---|---|---|
-| `AutoGate` | `true` | Sets the noise gate from the measured room noise |
-| `NoiseGate` | `0.025` | Lowest gate level (fixed level if `AutoGate` is off) |
-| `GateAboveNoise` | `3` | Gate sits this many times above the room noise |
-| `GateMax` | `0.2` | Highest gate level |
-| `ShowMicMeter` | `true` | Shows the mic meter on the caption screen |
-| `Fixes` | `hullo → hello`, … | Words that sherpa often gets wrong |
-
----
-
-## 8. Building and installing the app
-
-1. Plug the phone into the Mac.
-2. In Unity, click **Assets → Refresh** and wait for compiling to finish.
-3. Click **HearSay → VR → Build and run Sherpa APK on phone**.
-
-This builds `HearSay2022/Builds/HearSay-Sherpa.apk` and installs it on the
-connected phone. Rebuild and reinstall on both phones after any app change.
-
-To install without a cable, copy `HearSay-Sherpa.apk` to the phone (e.g. Google
-Drive) and open it there.
-
----
-
-## 9. Running the app
+### Run it
 
 1. Start the pipeline (section 3) for ASL translations and sound direction.
-2. Plug the lavalier receiver into the Deaf user's phone, and clip the
-   transmitter near the speaker's mouth.
-3. Open **HearSay Sherpa** on both phones, put them in the VR headsets, and
-   choose:
-   - **Deaf user:** captions next to the speaker, speaker highlighting, and
-     left/right sound waves from the headset.
-   - **Conversation partner:** sees the recognised ASL words.
-4. The first launch takes a few extra seconds while the speech model is unpacked.
+2. Plug the lavalier mic receiver into the Deaf user's phone.
+3. Open **HearSay Sherpa** on both phones and choose **Deaf user** or
+   **Conversation partner**.
 
-**Selecting buttons:** look at a button for 2 seconds. On phones without a
-gyroscope (Galaxy A10), tap the button on the screen instead.
-
----
-
-## 10. Checking the phone logs
-
-With the phone connected:
-
+To see the captions on the Mac:
 ```bash
 adb logcat -s Unity | grep --line-buffered "HearSay"
 ```
-
-Useful lines:
-
-- `HearSay caption: <text>`: a finished caption.
-- `HearSay mic: lowest ... highest ... room noise ... gate ...`: printed once a
-  second. `SPEECH` means the mic was above the gate, `quiet` means it was
-  ignored.
-- `HearSay captions: using sherpa-onnx on the phone (streaming)`: sherpa
-  started correctly.
-
-The mic meter in the top-left of the caption screen shows the same levels, e.g.
-`Mic 0.012  peak 0.090  gate 0.025 auto`.
-
----
-
-## 11. Phone app troubleshooting
-
-| Symptom | Likely cause and fix |
-|---|---|
-| Unity says "No Android devices connected" | The Mac can't see the phone. Run `adb devices`. If empty, use a data cable (not charge-only), another USB port, and allow USB debugging on the phone. |
-| Build fails with "script class layout is incompatible" | Unity hasn't reloaded the scripts. Click on Unity, wait for compiling to finish, then build again. |
-| Captions appear when nobody is talking | Background noise is above the gate. Check the mic meter, and raise `NoiseGate` or `GateAboveNoise`. |
-| Quiet speech is missed or words get cut off | The gate is too high. Speak closer to the lavalier, or lower `GateAboveNoise`. |
-| Words are often wrong | Use the lavalier close to the mouth. Add repeated mistakes to `Fixes`. |
-| Captions lag behind speech | The phone is too slow (e.g. Galaxy A10). Use the Galaxy Z Fold4. |
-| No speaker outline on the Galaxy A10 | MediaPipe needs a 64-bit phone. Captions still work. |
-| No ASL words or sound waves | The pipeline isn't running, or the phone has no network. See sections 3 and 6. |
